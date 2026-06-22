@@ -2,7 +2,7 @@
   "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/((?!assets/|icon/|logo.png|og-image.png|site.webmanifest|sw.js|offline.html).*)",
+      "source": "/((?!api|static|.*\\..*$).*)",
       "destination": "/index.html"
     }
   ]
