@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>오프라인 - 코치패스</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: 'Pretendard', system-ui, -apple-system, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      .container {
+        text-align: center;
+        padding: 2rem;
+        max-width: 400px;
+      }
+      .icon {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: #f1f5f9;
+      }
+      p {
+        font-size: 0.95rem;
+        color: #94a3b8;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+      }
+      button {
+        background: #1e3a5f;
+        color: #f1f5f9;
+        border: 1px solid #334155;
+        padding: 0.6rem 1.5rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      button:hover {
+        background: #2d4f7f;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="icon">📡</div>
+      <h1>인터넷 연결이 없습니다</h1>
+      <p>
+        네트워크 연결을 확인한 후 다시 시도해 주세요.<br />
+        코치패스는 온라인 상태에서 정상적으로 사용할 수 있습니다.
+      </p>
+      <button onclick="window.location.reload()">다시 시도</button>
+    </div>
+  </body>
+</html>
