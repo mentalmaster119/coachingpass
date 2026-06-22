@@ -84,8 +84,8 @@ export const run = mutation({
 
     const adminId = await ctx.db.insert("users", {
       tokenIdentifier: "admin-token",
-      name: "MCCI 관리자",
-      email: "admin@mcci.com",
+      name: "박철수",
+      email: "mentalmaster119@gmail.com",
       role: "admin",
       approvalStatus: "approved",
       onboardingCompleted: true
