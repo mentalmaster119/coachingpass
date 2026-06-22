@@ -155,7 +155,7 @@ function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img
-              src="https://hercules-cdn.com/file_uHh39M39J1KleqsaYGSnjsic"
+              src="/logo.png"
               alt="MCCI-SMPCC 로고"
               className="w-8 h-8 rounded-lg object-cover"
             />
@@ -216,7 +216,7 @@ function LandingPage() {
             className="flex items-center justify-center gap-3"
           >
             <img
-              src="https://hercules-cdn.com/file_uHh39M39J1KleqsaYGSnjsic"
+              src="/logo.png"
               alt="MCCI-SMPCC 로고"
               className="w-14 h-14 rounded-2xl object-cover"
             />

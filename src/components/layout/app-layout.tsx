@@ -230,7 +230,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 py-5 border-b border-sidebar-border">
         <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
-          <img src="https://hercules-cdn.com/file_uHh39M39J1KleqsaYGSnjsic" alt="MCCI-SMPCC" className="w-full h-full object-cover" />
+          <img src="/logo.png" alt="MCCI-SMPCC" className="w-full h-full object-cover" />
         </div>
         <div>
           <p className="font-bold text-base leading-tight">MCCI-SMPCC</p>
@@ -542,7 +542,7 @@ function AppLayoutInner() {
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <header className="md:hidden flex items-center justify-between px-4 py-3 bg-sidebar text-sidebar-foreground border-b border-sidebar-border flex-shrink-0">
           <div className="flex items-center gap-2">
-            <img src="https://hercules-cdn.com/file_uHh39M39J1KleqsaYGSnjsic" alt="MCCI-SMPCC" className="w-5 h-5 rounded object-cover" />
+            <img src="/logo.png" alt="MCCI-SMPCC" className="w-5 h-5 rounded object-cover" />
             <span className="font-bold text-sm">MCCI-SMPCC</span>
           </div>
           <div className="flex items-center gap-1">
