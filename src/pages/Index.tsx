@@ -149,6 +149,30 @@ function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {showSamsungWarning && <SamsungInternetWarning />}
+      
+      {/* Header */}
+      <header className="absolute top-0 left-0 right-0 z-40 w-full border-b border-white/5 bg-transparent">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="https://hercules-cdn.com/file_uHh39M39J1KleqsaYGSnjsic"
+              alt="MCCI-SMPCC 로고"
+              className="w-8 h-8 rounded-lg object-cover"
+            />
+            <span className="text-white font-bold text-base tracking-tight">MCCI-SMPCC</span>
+          </div>
+          <button
+            className="text-white/80 hover:text-white hover:bg-white/10 text-sm h-9 px-4 rounded-lg font-medium transition-colors cursor-pointer border border-white/10 bg-transparent"
+            onClick={() => {
+              const element = document.getElementById("login-section");
+              element?.scrollIntoView({ behavior: "smooth" });
+            }}
+          >
+            로그인
+          </button>
+        </div>
+      </header>
+
       {/* Hero Section */}
       <section
         className="relative flex-1 flex flex-col items-center justify-center px-6 py-24 text-center overflow-hidden"
@@ -230,7 +254,7 @@ function LandingPage() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex flex-col gap-4 w-full max-w-xl mx-auto"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full" id="login-section">
               <button
                 onClick={() => handleLoginAs("trainee")}
                 className="h-12 px-6 text-sm font-semibold rounded-xl bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/10 transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-2"
