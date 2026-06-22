@@ -1,7 +1,9 @@
 {
   "cleanUrls": true,
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    {
+      "source": "/((?!assets/|icon/|logo.png|og-image.png|site.webmanifest|sw.js|offline.html).*)",
+      "destination": "/index.html"
+    }
   ]
 }
