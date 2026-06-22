@@ -140,6 +140,7 @@ function LandingPage() {
   const handleLoginAs = async (role: "admin" | "senior_coach" | "trainee") => {
     try {
       await mockLogin({ role });
+      localStorage.setItem("real_role", role);
       await signin();
     } catch (err) {
       console.error("Login failed:", err);

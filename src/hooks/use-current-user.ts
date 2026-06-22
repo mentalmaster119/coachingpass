@@ -1,6 +1,7 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api.js";
 import { useAuth } from "@/hooks/use-auth.ts";
+import { useEffect } from "react";
 
 export function useCurrentUser() {
   const { user: authUser } = useAuth();
@@ -8,14 +9,23 @@ export function useCurrentUser() {
   const isPreviewMode = localStorage.getItem("admin_preview_mode") === "true";
   const previewRole = (localStorage.getItem("preview_role") as "trainee" | "senior_coach") || "trainee";
 
-  const normalUser = useQuery(api.users.getCurrentUser, !isPreviewMode && authUser ? {} : "skip");
+  const normalUser = useQuery(api.users.getCurrentUser, authUser ? {} : "skip");
   const previewUser = useQuery(api.users.getMockUserByRole, isPreviewMode && authUser ? { role: previewRole } : "skip");
 
   const user = isPreviewMode ? previewUser : normalUser;
 
+  useEffect(() => {
+    if (normalUser && !localStorage.getItem("real_role")) {
+      localStorage.setItem("real_role", normalUser.role);
+    }
+  }, [normalUser]);
+
   return {
     user,
-    isLoading: authUser !== undefined && user === undefined,
+    realUser: normalUser,
+    isLoading: authUser !== undefined && (
+      normalUser === undefined || (isPreviewMode && previewUser === undefined)
+    ),
     isAdmin: user?.role === "admin",
     isSeniorCoach: user?.role === "senior_coach",
     isTrainee: user?.role === "trainee",

@@ -48,12 +48,12 @@ import PWAInstallBanner from "@/components/pwa/pwa-install-banner.tsx";
 type ViewModeContextType = {
   isPreviewMode: boolean;
   previewRole: "trainee" | "senior_coach";
-  setPreviewMode: (enabled: boolean, role?: "trainee" | "senior_coach") => void;
+  setPreviewMode: (enabled: boolean, role?: "trainee" | "senior_coach") => Promise<void>;
 };
 const ViewModeContext = createContext<ViewModeContextType>({
   isPreviewMode: false,
   previewRole: "trainee",
-  setPreviewMode: () => {},
+  setPreviewMode: async () => {},
 });
 export function useViewMode() {
   return useContext(ViewModeContext);
@@ -187,11 +187,13 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { signout } = useAuth();
-  const { user } = useCurrentUser();
+  const { user, realUser } = useCurrentUser();
   const myCert = useQuery(api.smpcc.getMyCertification);
-  const { isPreviewMode, setPreviewMode } = useViewMode();
+  const { isPreviewMode, previewRole, setPreviewMode } = useViewMode();
   const { unsubscribe: unsubscribePush } = usePushNotifications();
+  const mockLogin = useMutation(api.users.setActiveMockUser);
 
+  const realRole = realUser?.role || localStorage.getItem("real_role");
   const navItems = user ? getNavItems(user.role, isPreviewMode) : [];
 
   const handleNavClick = (item: NavItem) => {
@@ -212,15 +214,19 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
     window.location.replace("/");
   };
 
-  const handleTogglePreview = () => {
-    if (isPreviewMode) {
-      setPreviewMode(false);
-      navigate(user?.role === "admin" ? "/admin" : "/dashboard");
+  const handleRoleSwitch = async (targetRole: "admin" | "senior_coach" | "trainee") => {
+    try {
+      if (targetRole === realRole) {
+        await setPreviewMode(false);
+        navigate(realRole === "admin" ? "/admin" : "/dashboard");
+      } else {
+        await setPreviewMode(true, targetRole === "senior_coach" ? "senior_coach" : "trainee");
+        navigate("/dashboard");
+      }
       window.location.reload();
-    } else {
-      setPreviewMode(true, "trainee");
-      navigate("/dashboard");
-      window.location.reload();
+    } catch (err) {
+      console.error("Failed to switch role:", err);
+      toast.error("화면 전환에 실패했습니다.");
     }
     onClose?.();
   };
@@ -242,7 +248,9 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       {isPreviewMode && (
         <div className="mx-3 mt-3 px-3 py-2 rounded-md bg-amber-500/15 border border-amber-400/30 flex items-center gap-2">
           <Eye className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">사용자 화면 미리보기 중</span>
+          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+            {previewRole === "senior_coach" ? "멘토코치" : "교육생"} 화면 미리보기 중
+          </span>
         </div>
       )}
 
@@ -290,7 +298,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       </nav>
 
       {/* User info + sign out */}
-      <div className="px-3 py-4 border-t border-sidebar-border space-y-2">
+      <div className="px-3 py-4 border-t border-sidebar-border space-y-3">
         {user && (
           <div className="flex items-center gap-2">
             <div className="flex-1 px-3 py-2 rounded-md bg-sidebar-accent/50 min-w-0">
@@ -309,30 +317,71 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
             <NotificationBell />
           </div>
         )}
-        {/* Admin/senior_coach view toggle button */}
-        {((user?.role === "admin" || user?.role === "senior_coach") || isPreviewMode) && (
+
+        {/* Role switcher for Admin */}
+        {realRole === "admin" && (
+          <div className="space-y-1">
+            <p className="text-[10px] font-semibold text-sidebar-foreground/45 px-3 uppercase tracking-wider">
+              화면 모드 전환 (관리자)
+            </p>
+            <div className="grid grid-cols-3 gap-1 p-1 bg-sidebar-accent/30 rounded-lg">
+              <button
+                onClick={() => handleRoleSwitch("admin")}
+                className={cn(
+                  "px-1 py-1 text-[11px] font-semibold rounded-md transition-all cursor-pointer text-center",
+                  !isPreviewMode
+                    ? "bg-sidebar text-sidebar-foreground shadow-sm"
+                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                )}
+              >
+                관리자
+              </button>
+              <button
+                onClick={() => handleRoleSwitch("senior_coach")}
+                className={cn(
+                  "px-1 py-1 text-[11px] font-semibold rounded-md transition-all cursor-pointer text-center",
+                  isPreviewMode && previewRole === "senior_coach"
+                    ? "bg-sidebar text-sidebar-foreground shadow-sm"
+                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                )}
+              >
+                멘토코치
+              </button>
+              <button
+                onClick={() => handleRoleSwitch("trainee")}
+                className={cn(
+                  "px-1 py-1 text-[11px] font-semibold rounded-md transition-all cursor-pointer text-center",
+                  isPreviewMode && previewRole === "trainee"
+                    ? "bg-sidebar text-sidebar-foreground shadow-sm"
+                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                )}
+              >
+                교육생
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Role switcher for Senior Coach */}
+        {realRole === "senior_coach" && (
           <button
-            onClick={handleTogglePreview}
-            className={cn(
-              "w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer",
-              isPreviewMode
-                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25"
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            )}
+            onClick={() => handleRoleSwitch(isPreviewMode ? "senior_coach" : "trainee")}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
           >
             {isPreviewMode ? (
               <>
                 <ShieldAlert className="w-4 h-4" />
-                관리자 화면으로 돌아가기
+                멘토코치 화면으로 복귀
               </>
             ) : (
               <>
                 <Eye className="w-4 h-4" />
-                사용자 화면으로 보기
+                교육생 화면으로 보기
               </>
             )}
           </button>
         )}
+
         <button
           onClick={handleSignOut}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
@@ -439,8 +488,8 @@ function PreviewModeBanner() {
   const navigate = useNavigate();
   const { previewRole, setPreviewMode } = useViewMode();
 
-  const handleRoleChange = (role: "trainee" | "senior_coach") => {
-    setPreviewMode(true, role);
+  const handleRoleChange = async (role: "trainee" | "senior_coach") => {
+    await setPreviewMode(true, role);
     navigate("/dashboard");
     window.location.reload();
   };
@@ -472,9 +521,10 @@ function PreviewModeBanner() {
         </div>
       </div>
       <button
-        onClick={() => {
-          setPreviewMode(false);
-          navigate("/admin");
+        onClick={async () => {
+          const realRole = localStorage.getItem("real_role");
+          await setPreviewMode(false);
+          navigate(realRole === "admin" ? "/admin" : "/dashboard");
           window.location.reload();
         }}
         className="text-xs text-amber-700 dark:text-amber-300 font-bold hover:underline cursor-pointer"
@@ -606,17 +656,26 @@ export default function AppLayout() {
 
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const mockLogin = useMutation(api.users.setActiveMockUser);
 
-  const setPreviewMode = (enabled: boolean, role: "trainee" | "senior_coach" = "trainee") => {
-    if (enabled) {
-      localStorage.setItem("admin_preview_mode", "true");
-      localStorage.setItem("preview_role", role);
-      setIsPreviewModeState(true);
-      setPreviewRoleState(role);
-    } else {
-      localStorage.removeItem("admin_preview_mode");
-      localStorage.removeItem("preview_role");
-      setIsPreviewModeState(false);
+  const setPreviewMode = async (enabled: boolean, role: "trainee" | "senior_coach" = "trainee") => {
+    const realRole = (localStorage.getItem("real_role") as "admin" | "senior_coach" | "trainee") || "admin";
+    try {
+      if (enabled) {
+        await mockLogin({ role });
+        localStorage.setItem("admin_preview_mode", "true");
+        localStorage.setItem("preview_role", role);
+        setIsPreviewModeState(true);
+        setPreviewRoleState(role);
+      } else {
+        await mockLogin({ role: realRole });
+        localStorage.removeItem("admin_preview_mode");
+        localStorage.removeItem("preview_role");
+        setIsPreviewModeState(false);
+      }
+    } catch (err) {
+      console.error("Failed to set preview mode:", err);
+      toast.error("화면 전환에 실패했습니다.");
     }
   };
 

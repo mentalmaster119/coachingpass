@@ -17,6 +17,9 @@ export function useAuth() {
 
   const signout = async () => {
     localStorage.removeItem("mock_authenticated");
+    localStorage.removeItem("real_role");
+    localStorage.removeItem("admin_preview_mode");
+    localStorage.removeItem("preview_role");
     setIsAuthenticated(false);
     window.location.href = "/";
   };
