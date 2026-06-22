@@ -30,6 +30,7 @@ import {
   Eye,
   ShieldAlert,
   Search,
+  RotateCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet.tsx";
@@ -214,6 +215,31 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
     window.location.replace("/");
   };
 
+  const handleClearCache = async () => {
+    try {
+      if ("serviceWorker" in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+        }
+      }
+      if ("caches" in window) {
+        const cacheKeys = await caches.keys();
+        for (const key of cacheKeys) {
+          await caches.delete(key);
+        }
+      }
+      localStorage.clear();
+      toast.success("캐시가 초기화되었습니다. 페이지를 새로고침합니다.");
+      setTimeout(() => {
+        window.location.replace("/");
+      }, 1000);
+    } catch (err) {
+      console.error("Failed to clear cache:", err);
+      toast.error("캐시 초기화에 실패했습니다.");
+    }
+  };
+
   const handleRoleSwitch = async (targetRole: "admin" | "senior_coach" | "trainee") => {
     try {
       if (targetRole === realRole) {
@@ -381,6 +407,14 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
             )}
           </button>
         )}
+
+        <button
+          onClick={handleClearCache}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-amber-600 dark:text-amber-400 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
+        >
+          <RotateCw className="w-4 h-4" />
+          캐시 비우기 및 새로고침
+        </button>
 
         <button
           onClick={handleSignOut}
