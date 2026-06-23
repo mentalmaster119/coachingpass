@@ -36,6 +36,7 @@ export default defineSchema({
     reflectionReminderEnabled: v.optional(v.boolean()), // 주간 성찰 일지 리마인더
     coachingLogReminderEnabled: v.optional(v.boolean()), // 코칭 로그 초안 리마인더
     isMockActive: v.optional(v.boolean()), // 로컬 개발용 활성 모크 유저 플래그
+    passwordHash: v.optional(v.string()), // 자체 로그인을 위한 비밀번호 해시
   })
     .index("by_token", ["tokenIdentifier"])
     .index("by_approval_status", ["approvalStatus"])

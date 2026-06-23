@@ -3,8 +3,8 @@ import { AuthConfig } from "convex/server";
 export default {
   providers: [
     {
-      domain: process.env.HERCULES_OIDC_AUTHORITY || "https://dummy-auth-provider.com",
-      applicationID: process.env.HERCULES_OIDC_CLIENT_ID || "dummy-client-id",
+      domain: process.env.CONVEX_SITE_URL || "https://peaceful-wolverine-673.convex.site",
+      applicationID: "coachingpass-client-id",
     },
   ],
 } satisfies AuthConfig;

@@ -33,16 +33,18 @@ const originalAction = convex.action;
 };
 
 export function ConvexProvider({ children }: { children: React.ReactNode }) {
-  const useMockAuth = () => {
+  const auth = useAuth();
+
+  const useConvexAuth = () => {
     return useMemo(() => ({
-      isLoading: false,
-      isAuthenticated: true,
-      fetchAccessToken: async () => "mock-token-identifier",
-    }), []);
+      isLoading: auth.isLoading,
+      isAuthenticated: auth.isAuthenticated,
+      fetchAccessToken: auth.fetchAccessToken,
+    }), [auth.isLoading, auth.isAuthenticated, auth.fetchAccessToken]);
   };
 
   return (
-    <ConvexProviderWithAuth client={convex} useAuth={useMockAuth}>
+    <ConvexProviderWithAuth client={convex} useAuth={useConvexAuth}>
       {children}
     </ConvexProviderWithAuth>
   );

@@ -9,6 +9,7 @@ import { AuthLoading, Unauthenticated } from "@/components/providers/convex.tsx"
 import { SignInButton } from "@/components/ui/signin.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { useCurrentUser } from "@/hooks/use-current-user.ts";
+import LoginDialog from "@/components/auth/login-dialog.tsx";
 import {
   BarChart3,
   FileText,
@@ -85,6 +86,8 @@ function AuthRedirect() {
 }
 
 export default function Index() {
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+
   return (
     <div className="min-h-screen overflow-hidden">
       <Authenticated>
@@ -98,8 +101,10 @@ export default function Index() {
       </AuthLoading>
 
       <Unauthenticated>
-        <LandingPage />
+        <LandingPage onOpenLogin={() => setIsLoginOpen(true)} />
       </Unauthenticated>
+
+      <LoginDialog isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </div>
   );
 }
@@ -132,20 +137,8 @@ function SamsungInternetWarning() {
   );
 }
 
-function LandingPage() {
+function LandingPage({ onOpenLogin }: { onOpenLogin: () => void }) {
   const showSamsungWarning = isSamsungInternet();
-  const mockLogin = useMutation(api.users.setActiveMockUser);
-  const { signin } = useAuth();
-
-  const handleLoginAs = async (role: "admin" | "senior_coach" | "trainee") => {
-    try {
-      await mockLogin({ role });
-      localStorage.setItem("real_role", role);
-      await signin();
-    } catch (err) {
-      console.error("Login failed:", err);
-    }
-  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -164,10 +157,7 @@ function LandingPage() {
           </div>
           <button
             className="text-white/80 hover:text-white hover:bg-white/10 text-sm h-9 px-4 rounded-lg font-medium transition-colors cursor-pointer border border-white/10 bg-transparent"
-            onClick={() => {
-              const element = document.getElementById("login-section");
-              element?.scrollIntoView({ behavior: "smooth" });
-            }}
+            onClick={onOpenLogin}
           >
             로그인
           </button>
@@ -255,24 +245,12 @@ function LandingPage() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex flex-col gap-4 w-full max-w-xl mx-auto"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full" id="login-section">
+            <div className="flex flex-col sm:flex-row justify-center gap-3 w-full" id="login-section">
               <button
-                onClick={() => handleLoginAs("trainee")}
-                className="h-12 px-6 text-sm font-semibold rounded-xl bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/10 transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-2"
+                onClick={onOpenLogin}
+                className="h-12 px-8 text-sm font-semibold rounded-xl bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/10 transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-2"
               >
-                교육생으로 로그인
-              </button>
-              <button
-                onClick={() => handleLoginAs("senior_coach")}
-                className="h-12 px-6 text-sm font-semibold rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-2"
-              >
-                멘토코치로 로그인
-              </button>
-              <button
-                onClick={() => handleLoginAs("admin")}
-                className="h-12 px-6 text-sm font-semibold rounded-xl bg-amber-600 text-white hover:bg-amber-700 transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-2"
-              >
-                관리자로 로그인
+                시작하기 (로그인 / 가입 신청)
               </button>
             </div>
             <div className="flex items-center justify-center gap-2 text-white/60 text-sm mt-2">
@@ -349,13 +327,18 @@ function LandingPage() {
             수강생 등록 후 관리자 승인을 받으면 모든 기능을 이용할 수 있습니다.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <SignInButton signInText="로그인" className="h-11 px-8 font-semibold rounded-xl" />
-            <SignInButton
-              signInText="회원가입"
-              showIcon={false}
-              className="h-11 px-8 font-semibold rounded-xl"
-              variant="secondary"
-            />
+            <button
+              onClick={onOpenLogin}
+              className="h-11 px-8 font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-colors cursor-pointer"
+            >
+              로그인
+            </button>
+            <button
+              onClick={onOpenLogin}
+              className="h-11 px-8 font-semibold rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/90 transition-colors cursor-pointer"
+            >
+              회원가입 신청
+            </button>
           </div>
         </motion.div>
       </section>

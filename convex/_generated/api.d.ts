@@ -12,6 +12,8 @@ import type * as admin from "../admin.js";
 import type * as admin_resetData from "../admin/resetData.js";
 import type * as announcements from "../announcements.js";
 import type * as attendance from "../attendance.js";
+import type * as auth from "../auth.js";
+import type * as authUtils from "../authUtils.js";
 import type * as bcp from "../bcp.js";
 import type * as calendar from "../calendar.js";
 import type * as certification from "../certification.js";
@@ -59,6 +61,8 @@ declare const fullApi: ApiFromModules<{
   "admin/resetData": typeof admin_resetData;
   announcements: typeof announcements;
   attendance: typeof attendance;
+  auth: typeof auth;
+  authUtils: typeof authUtils;
   bcp: typeof bcp;
   calendar: typeof calendar;
   certification: typeof certification;
