@@ -59,7 +59,7 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
         toast.success(`${result.user.name}님, 환영합니다!`);
         await auth.signin(result.token);
         onClose();
-        navigate("/dashboard");
+        window.location.replace("/dashboard");
       }
     } catch (err: any) {
       console.error(err);
