@@ -1,49 +1,53 @@
-import { useMemo } from "react";
-import { useAuth as useHerculesAuth, useUser as useHerculesUser } from "@usehercules/auth/react";
+import { useState, useMemo } from "react";
 
 export function useAuth() {
-  const herculesAuth = useHerculesAuth();
-  const herculesUser = useHerculesUser();
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem("mock_authenticated") === "true";
+  });
 
   const signin = async () => {
-    await herculesAuth.signin();
-  };
-
-  const signout = async () => {
-    localStorage.removeItem("real_role");
-    localStorage.removeItem("admin_preview_mode");
-    localStorage.removeItem("preview_role");
-    await herculesAuth.signout();
+    localStorage.setItem("mock_authenticated", "true");
+    setIsAuthenticated(true);
+    window.location.href = "/dashboard";
   };
 
   const signinRedirect = async () => {
-    await herculesAuth.signin();
+    await signin();
   };
 
-  const user = herculesAuth.isAuthenticated ? {
-    id: herculesUser.id ?? "",
-    name: herculesUser.name ?? "User",
-    email: herculesUser.email ?? "",
+  const signout = async () => {
+    localStorage.removeItem("mock_authenticated");
+    localStorage.removeItem("real_role");
+    localStorage.removeItem("admin_preview_mode");
+    localStorage.removeItem("preview_role");
+    setIsAuthenticated(false);
+    window.location.href = "/";
+  };
+
+  const user = isAuthenticated ? {
+    id: "mock-user-id",
+    name: "테스트 코치",
+    email: "coach@test.com",
   } : null;
 
   return useMemo(() => ({
-    isAuthenticated: herculesAuth.isAuthenticated,
-    isLoading: herculesAuth.isLoading,
+    isAuthenticated,
+    isLoading: false,
     signin,
     signinRedirect,
     signout,
-    error: (herculesAuth.error as Error | null) || null,
+    error: null as Error | null,
     user
-  }), [herculesAuth.isAuthenticated, herculesAuth.isLoading, herculesAuth.error, user]);
+  }), [isAuthenticated]);
 }
 
 export function useUser() {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   return useMemo(() => ({
     isAuthenticated,
-    isLoading,
+    isLoading: false,
     id: user?.id ?? "",
     name: user?.name ?? "",
     email: user?.email ?? "",
-  }), [isAuthenticated, user, isLoading]);
+  }), [isAuthenticated, user]);
 }

@@ -1,5 +1,6 @@
+import { ConvexProviderWithAuth } from "convex/react";
 import { ConvexReactClient } from "convex/react";
-import { ConvexProviderWithHerculesAuth } from "@usehercules/auth/convex-react";
+import { useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth.ts";
 import { toast } from "sonner";
 
@@ -32,10 +33,18 @@ const originalAction = convex.action;
 };
 
 export function ConvexProvider({ children }: { children: React.ReactNode }) {
+  const useMockAuth = () => {
+    return useMemo(() => ({
+      isLoading: false,
+      isAuthenticated: true,
+      fetchAccessToken: async () => "mock-token-identifier",
+    }), []);
+  };
+
   return (
-    <ConvexProviderWithHerculesAuth client={convex}>
+    <ConvexProviderWithAuth client={convex} useAuth={useMockAuth}>
       {children}
-    </ConvexProviderWithHerculesAuth>
+    </ConvexProviderWithAuth>
   );
 }
 
