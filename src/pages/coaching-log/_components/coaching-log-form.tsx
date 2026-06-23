@@ -58,11 +58,10 @@ const COACHING_TYPES = [
 ] as const;
 
 const COACHING_PLACES = [
-  { value: "zoom", label: "Zoom" },
-  { value: "study_room", label: "공부방" },
+  { value: "hanyang", label: "한양대 올림픽체육관" },
   { value: "center", label: "센터" },
-  { value: "home", label: "가정집" },
-  { value: "other", label: "기타 (직접입력)" },
+  { value: "zoom", label: "Zoom" },
+  { value: "other", label: "기타(직접입력)" },
 ] as const;
 
 const SESSION_NUMBERS = [
@@ -421,7 +420,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
       durationMinutes: !isNaN(hoursNum) && hoursNum > 0 ? Math.round(hoursNum * 60) : undefined,
       coachingType: coachingType || undefined,
       coachingPlace: (coachingPlace || undefined) as
-        | "zoom" | "study_room" | "center" | "home" | "other" | undefined,
+        | "zoom" | "study_room" | "center" | "home" | "other" | "hanyang" | undefined,
       coachingPlaceOther: coachingPlace === "other" ? coachingPlaceOther || undefined : undefined,
       sessionNumber: sessionNumber || undefined,
       coacheeInfo: coacheeInfo.trim() || undefined,
@@ -477,7 +476,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
       durationMinutes: Math.round(hoursNum * 60),
       coachingType,
       coachingPlace: (coachingPlace || undefined) as
-        | "zoom" | "study_room" | "center" | "home" | "other" | undefined,
+        | "zoom" | "study_room" | "center" | "home" | "other" | "hanyang" | undefined,
       coachingPlaceOther: coachingPlace === "other" ? coachingPlaceOther || undefined : undefined,
       sessionNumber: sessionNumber || undefined,
       coacheeInfo: coacheeInfo.trim(),

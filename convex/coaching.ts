@@ -44,7 +44,7 @@ const coachingLogFields = {
   coachingType: v.union(v.literal("individual"), v.literal("group")),
   coachingPlace: v.optional(v.union(
     v.literal("zoom"), v.literal("study_room"), v.literal("center"),
-    v.literal("home"), v.literal("other")
+    v.literal("home"), v.literal("other"), v.literal("hanyang")
   )),
   coachingPlaceOther: v.optional(v.string()),
   sessionNumber: v.optional(v.string()),
@@ -95,7 +95,7 @@ const coachingDraftFields = {
   coachingType: v.optional(v.union(v.literal("individual"), v.literal("group"))),
   coachingPlace: v.optional(v.union(
     v.literal("zoom"), v.literal("study_room"), v.literal("center"),
-    v.literal("home"), v.literal("other")
+    v.literal("home"), v.literal("other"), v.literal("hanyang")
   )),
   coachingPlaceOther: v.optional(v.string()),
   sessionNumber: v.optional(v.string()),

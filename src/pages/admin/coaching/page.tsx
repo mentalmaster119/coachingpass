@@ -276,7 +276,11 @@ function DetailDialog({
               {log.coachingPlace && (
                 <div>
                   <span className="text-xs text-muted-foreground">장소</span>
-                  <p className="font-medium">{log.coachingPlace === "other" ? log.coachingPlaceOther : log.coachingPlace}</p>
+                  <p className="font-medium">
+                    {log.coachingPlace === "other"
+                      ? (log.coachingPlaceOther ?? "기타")
+                      : ({ zoom: "Zoom", study_room: "공부방", center: "센터", home: "가정집", hanyang: "한양대 올림픽체육관" }[log.coachingPlace] ?? log.coachingPlace)}
+                  </p>
                 </div>
               )}
             </div>

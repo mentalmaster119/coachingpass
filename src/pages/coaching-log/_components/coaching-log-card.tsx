@@ -179,7 +179,7 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
               {(log.coachingPlace || log.sessionNumber || log.coacheeGender || log.coacheeAge || log.coacheePersonality || (log.coacheeType && log.coacheeType.length > 0) || log.coacheeField) && (
                 <div className="bg-muted/40 rounded-md px-3 py-2 space-y-1 text-xs text-muted-foreground">
                   {log.sessionNumber && <span className="mr-3">회차: {log.sessionNumber}회차</span>}
-                  {log.coachingPlace && <span className="mr-3">장소: {{ zoom: "Zoom", study_room: "공부방", center: "센터", home: "가정집", other: log.coachingPlaceOther ?? "기타" }[log.coachingPlace]}</span>}
+                  {log.coachingPlace && <span className="mr-3">장소: {{ zoom: "Zoom", study_room: "공부방", center: "센터", home: "가정집", hanyang: "한양대 올림픽체육관", other: log.coachingPlaceOther ?? "기타" }[log.coachingPlace]}</span>}
                   {(log.coacheeGender || log.coacheeAge) && (
                     <span className="mr-3">코치이: {log.coacheeGender === "male" ? "남" : log.coacheeGender === "female" ? "여" : ""}{log.coacheeAge ? ` ${log.coacheeAge}세` : ""}</span>
                   )}
