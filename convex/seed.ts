@@ -1,4 +1,7 @@
 import { mutation } from "./mockAuth";
+import { hashPassword } from "./authUtils";
+
+const DEFAULT_ISSUER = "https://peaceful-wolverine-673.convex.site";
 
 export const run = mutation({
   args: {},
@@ -52,28 +55,34 @@ export const run = mutation({
     }
 
     console.log("Seeding users...");
+    const issuer = process.env.CONVEX_SITE_URL || DEFAULT_ISSUER;
+    const defaultPasswordHash = await hashPassword("123456");
+
     // 2. Create Users
     const coachId = await ctx.db.insert("users", {
-      tokenIdentifier: "coach-token",
+      tokenIdentifier: "temporary-coach-token",
       name: "김동식 코치",
       email: "coach_kds@mcci.com",
       role: "senior_coach",
       approvalStatus: "approved",
       onboardingCompleted: true,
+      passwordHash: defaultPasswordHash,
       bio: "국제멘탈코칭센터 Senior Coach / 스포츠 심리학 박사",
       phone: "010-1234-5678",
       specializations: ["골프", "야구", "집중력 조절"],
       coachingStyle: "선수 중심의 자발적 동기 부여 및 루틴 설계"
     });
+    await ctx.db.patch(coachId, { tokenIdentifier: `${issuer}|${coachId}` });
 
     const traineeId = await ctx.db.insert("users", {
-      tokenIdentifier: "mock-token-identifier",
+      tokenIdentifier: "temporary-trainee-token",
       name: "테스트 코치",
       email: "coach@test.com",
       role: "trainee",
       approvalStatus: "approved",
       onboardingCompleted: true,
       assignedCoachId: coachId,
+      passwordHash: defaultPasswordHash,
       bio: "SMPCC 18기 교육생 / 성장의 기록을 시각화합니다.",
       phone: "010-9876-5432",
       specializations: ["축구", "멘탈 케어", "부상 복귀 마인드셋"],
@@ -81,25 +90,30 @@ export const run = mutation({
       mbti: "ENFJ",
       motivationalMessage: "매일 한 발짝 성장하는 코치가 되자!"
     });
+    await ctx.db.patch(traineeId, { tokenIdentifier: `${issuer}|${traineeId}` });
 
     const adminId = await ctx.db.insert("users", {
-      tokenIdentifier: "admin-token",
+      tokenIdentifier: "temporary-admin-token",
       name: "박철수",
       email: "mentalmaster119@gmail.com",
       role: "admin",
       approvalStatus: "approved",
-      onboardingCompleted: true
+      onboardingCompleted: true,
+      passwordHash: defaultPasswordHash
     });
+    await ctx.db.patch(adminId, { tokenIdentifier: `${issuer}|${adminId}` });
 
     const buddyId = await ctx.db.insert("users", {
-      tokenIdentifier: "buddy-token",
+      tokenIdentifier: "temporary-buddy-token",
       name: "박민우 교육생",
       email: "buddy@test.com",
       role: "trainee",
       approvalStatus: "approved",
       onboardingCompleted: true,
-      assignedCoachId: coachId
+      assignedCoachId: coachId,
+      passwordHash: defaultPasswordHash
     });
+    await ctx.db.patch(buddyId, { tokenIdentifier: `${issuer}|${buddyId}` });
 
     console.log("Seeding cohorts and seminars...");
     // 3. Create Cohort
