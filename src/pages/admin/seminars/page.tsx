@@ -383,8 +383,6 @@ export default function AdminSeminarsPage() {
         <CardContent>
           {cohorts === undefined ? (
             <Skeleton className="h-10 w-64" />
-          ) : cohorts.length === 0 ? (
-            <p className="text-sm text-muted-foreground">등록된 기수가 없습니다. 먼저 기수를 추가해 주세요.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               <button
