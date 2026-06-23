@@ -1,53 +1,49 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
+import { useAuth as useHerculesAuth, useUser as useHerculesUser } from "@usehercules/auth/react";
 
 export function useAuth() {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem("mock_authenticated") === "true";
-  });
+  const herculesAuth = useHerculesAuth();
+  const herculesUser = useHerculesUser();
 
   const signin = async () => {
-    localStorage.setItem("mock_authenticated", "true");
-    setIsAuthenticated(true);
-    window.location.href = "/dashboard";
-  };
-
-  const signinRedirect = async () => {
-    await signin();
+    await herculesAuth.signin();
   };
 
   const signout = async () => {
-    localStorage.removeItem("mock_authenticated");
     localStorage.removeItem("real_role");
     localStorage.removeItem("admin_preview_mode");
     localStorage.removeItem("preview_role");
-    setIsAuthenticated(false);
-    window.location.href = "/";
+    await herculesAuth.signout();
   };
 
-  const user = isAuthenticated ? {
-    id: "mock-user-id",
-    name: "테스트 코치",
-    email: "coach@test.com",
+  const signinRedirect = async () => {
+    await herculesAuth.signin();
+  };
+
+  const user = herculesAuth.isAuthenticated ? {
+    id: herculesUser.id ?? "",
+    name: herculesUser.name ?? "User",
+    email: herculesUser.email ?? "",
   } : null;
 
   return useMemo(() => ({
-    isAuthenticated,
-    isLoading: false,
+    isAuthenticated: herculesAuth.isAuthenticated,
+    isLoading: herculesAuth.isLoading,
     signin,
     signinRedirect,
     signout,
-    error: null as Error | null,
+    error: (herculesAuth.error as Error | null) || null,
     user
-  }), [isAuthenticated]);
+  }), [herculesAuth.isAuthenticated, herculesAuth.isLoading, herculesAuth.error, user]);
 }
 
 export function useUser() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading } = useAuth();
   return useMemo(() => ({
     isAuthenticated,
-    isLoading: false,
+    isLoading,
     id: user?.id ?? "",
     name: user?.name ?? "",
     email: user?.email ?? "",
-  }), [isAuthenticated, user]);
+  }), [isAuthenticated, user, isLoading]);
 }
