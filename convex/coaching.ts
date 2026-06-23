@@ -56,6 +56,7 @@ const coachingLogFields = {
   ncpClientCategory: v.optional(v.union(v.literal("athlete"), v.literal("general"))),
   coacheeField: v.optional(v.string()),
   topic: v.string(),
+  coreIssues: v.optional(v.array(v.string())),
   preCoachingState: v.optional(v.object({
     motivation: v.union(v.number(), v.null()), confidence: v.union(v.number(), v.null()), focus: v.union(v.number(), v.null()),
     calmness: v.union(v.number(), v.null()), actionWill: v.union(v.number(), v.null()),
