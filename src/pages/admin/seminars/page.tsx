@@ -76,6 +76,17 @@ const SEMINAR_TYPE_COLORS: Record<SeminarType, string> = {
   group_coaching: "outline",
 };
 
+const COMMON_COURSE_OPTIONS = [
+  "KAC기본과정",
+  "KPC심화과정",
+  "KPC개발과정",
+  "MSPE명상기본과정",
+  "스포츠심리학강독기본과정",
+  "스포츠심리학강독심화과정",
+  "멘탈코칭슈퍼바이저양성과정",
+  "기타(직접입력)",
+];
+
 function seminarTypeIcon(type: SeminarType) {
   if (type === "two_day") return <BookOpen className="w-3.5 h-3.5" />;
   if (type === "one_day") return <FileText className="w-3.5 h-3.5" />;
@@ -217,6 +228,9 @@ export default function AdminSeminarsPage() {
   const [expandedSeminar, setExpandedSeminar] = useState<Id<"seminars"> | null>(null);
   const [groupManageSeminarId, setGroupManageSeminarId] = useState<Id<"seminars"> | null>(null);
 
+  const [commonCourseSelect, setCommonCourseSelect] = useState<string>("");
+  const [customCourseTitle, setCustomCourseTitle] = useState<string>("");
+
   // Copy cohort state
   const [showCopyDialog, setShowCopyDialog] = useState(false);
   const [copySourceId, setCopySourceId] = useState<Id<"cohorts"> | "">("");
@@ -228,10 +242,36 @@ export default function AdminSeminarsPage() {
 
   const selectedCohort = cohorts?.find((c) => c._id === selectedCohortId);
 
+  const handleCommonCourseChange = (val: string) => {
+    setCommonCourseSelect(val);
+    if (val !== "기타(직접입력)") {
+      setForm((prev) => ({ ...prev, title: val }));
+      setFormErrors((prev) => ({ ...prev, title: false }));
+    } else {
+      setForm((prev) => ({ ...prev, title: customCourseTitle }));
+    }
+  };
+
+  const handleCustomTitleChange = (val: string) => {
+    setCustomCourseTitle(val);
+    setForm((prev) => ({ ...prev, title: val }));
+    if (val) {
+      setFormErrors((prev) => ({ ...prev, title: false }));
+    }
+  };
+
   const openCreate = () => {
     setEditingSeminar(null);
     setForm({ ...defaultForm, sessionNumber: "" });
     setFormErrors({});
+    if (selectedCohortId === null) {
+      setCommonCourseSelect(COMMON_COURSE_OPTIONS[0]);
+      setForm((prev) => ({ ...prev, title: COMMON_COURSE_OPTIONS[0] }));
+      setCustomCourseTitle("");
+    } else {
+      setCommonCourseSelect("");
+      setCustomCourseTitle("");
+    }
     setShowForm(true);
   };
 
@@ -250,6 +290,19 @@ export default function AdminSeminarsPage() {
       description: s.description ?? "",
       isOnline: s.isOnline ?? false,
     });
+    if (selectedCohortId === null) {
+      const isPredefined = COMMON_COURSE_OPTIONS.slice(0, -1).includes(s.title);
+      if (isPredefined) {
+        setCommonCourseSelect(s.title);
+        setCustomCourseTitle("");
+      } else {
+        setCommonCourseSelect("기타(직접입력)");
+        setCustomCourseTitle(s.title);
+      }
+    } else {
+      setCommonCourseSelect("");
+      setCustomCourseTitle("");
+    }
     setShowForm(true);
   };
 
@@ -578,26 +631,71 @@ export default function AdminSeminarsPage() {
             <DialogTitle>{editingSeminar ? "세미나 수정" : "세미나 추가"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>세미나명 <span className="text-destructive">*</span></Label>
-                <Input
-                  placeholder="예: 1차 세미나"
-                  value={form.title}
-                  onChange={(e) => { setForm({ ...form, title: e.target.value }); setFormErrors((prev) => ({ ...prev, title: false })); }}
-                  className={cn(formErrors.title && "border-destructive focus-visible:ring-destructive")}
-                />
+            {selectedCohortId === null ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>과정 분류 <span className="text-destructive">*</span></Label>
+                    <Select
+                      value={commonCourseSelect}
+                      onValueChange={handleCommonCourseChange}
+                    >
+                      <SelectTrigger className={cn(formErrors.title && "border-destructive focus-visible:ring-destructive")}>
+                        <SelectValue placeholder="과정 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COMMON_COURSE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>회차 번호</Label>
+                    <Input
+                      type="number"
+                      placeholder="예: 1"
+                      value={form.sessionNumber}
+                      onChange={(e) => setForm({ ...form, sessionNumber: e.target.value })}
+                    />
+                  </div>
+                </div>
+                {commonCourseSelect === "기타(직접입력)" && (
+                  <div className="space-y-2">
+                    <Label>과정명 직접 입력 <span className="text-destructive">*</span></Label>
+                    <Input
+                      placeholder="과정명을 입력하세요"
+                      value={customCourseTitle}
+                      onChange={(e) => handleCustomTitleChange(e.target.value)}
+                      className={cn(formErrors.title && "border-destructive focus-visible:ring-destructive")}
+                    />
+                  </div>
+                )}
               </div>
-              <div className="space-y-2">
-                <Label>회차 번호</Label>
-                <Input
-                  type="number"
-                  placeholder="예: 1"
-                  value={form.sessionNumber}
-                  onChange={(e) => setForm({ ...form, sessionNumber: e.target.value })}
-                />
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>세미나명 <span className="text-destructive">*</span></Label>
+                  <Input
+                    placeholder="예: 1차 세미나"
+                    value={form.title}
+                    onChange={(e) => { setForm({ ...form, title: e.target.value }); setFormErrors((prev) => ({ ...prev, title: false })); }}
+                    className={cn(formErrors.title && "border-destructive focus-visible:ring-destructive")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>회차 번호</Label>
+                  <Input
+                    type="number"
+                    placeholder="예: 1"
+                    value={form.sessionNumber}
+                    onChange={(e) => setForm({ ...form, sessionNumber: e.target.value })}
+                  />
+                </div>
               </div>
-            </div>
+            )}
             <div className="space-y-2">
               <Label>세미나 유형</Label>
               <Select
