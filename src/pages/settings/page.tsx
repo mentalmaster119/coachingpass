@@ -5,6 +5,7 @@ import ProfileForm from "./_components/profile-form.tsx";
 import CertificationGoalCard from "./_components/certification-goal-card.tsx";
 import AccountInfoCard from "./_components/account-info-card.tsx";
 import NotificationSettingsCard from "./_components/notification-settings-card.tsx";
+import ChangePasswordCard from "./_components/change-password-card.tsx";
 
 export default function SettingsPage() {
   const { user, isLoading } = useCurrentUser();
@@ -16,6 +17,7 @@ export default function SettingsPage() {
         <Skeleton className="h-52 w-full rounded-xl" />
         <Skeleton className="h-40 w-full rounded-xl" />
         <Skeleton className="h-44 w-full rounded-xl" />
+        <Skeleton className="h-40 w-full rounded-xl" />
       </div>
     );
   }
@@ -44,8 +46,12 @@ export default function SettingsPage() {
       {/* Notification settings */}
       <NotificationSettingsCard />
 
+      {/* Change password */}
+      <ChangePasswordCard />
+
       {/* Account info */}
       <AccountInfoCard user={user} />
     </div>
   );
 }
+

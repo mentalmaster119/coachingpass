@@ -142,3 +142,97 @@ export const signIn = mutation({
     };
   },
 });
+
+/**
+ * Temporary migration to set default password for legacy users
+ * sets passwordHash to "123456" (or provided password) and updates tokenIdentifier
+ */
+export const migrateLegacyUsers = mutation({
+  args: {
+    defaultPassword: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const password = args.defaultPassword || "123456";
+    const passwordHash = await hashPassword(password);
+    const issuer = process.env.CONVEX_SITE_URL || DEFAULT_ISSUER;
+
+    const users = await ctx.db.query("users").collect();
+    let updatedCount = 0;
+
+    for (const user of users) {
+      let needsUpdate = false;
+      const patchData: any = {};
+
+      if (!user.passwordHash) {
+        patchData.passwordHash = passwordHash;
+        needsUpdate = true;
+      }
+
+      // Ensure tokenIdentifier matches the custom OIDC format (issuer|userId)
+      const expectedTokenIdentifier = `${issuer}|${user._id}`;
+      if (user.tokenIdentifier !== expectedTokenIdentifier) {
+        patchData.tokenIdentifier = expectedTokenIdentifier;
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        await ctx.db.patch(user._id, patchData);
+        updatedCount++;
+      }
+    }
+
+    return {
+      success: true,
+      updatedCount,
+    };
+  },
+});
+
+/**
+ * Change user password
+ */
+export const changePassword = mutation({
+  args: {
+    currentPassword: v.string(),
+    newPassword: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new ConvexError({
+        code: "UNAUTHORIZED",
+        message: "로그인이 필요합니다.",
+      });
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .first();
+
+    if (!user) {
+      throw new ConvexError({
+        code: "USER_NOT_FOUND",
+        message: "사용자를 찾을 수 없습니다.",
+      });
+    }
+
+    if (user.passwordHash) {
+      const isPasswordValid = await verifyPassword(args.currentPassword, user.passwordHash);
+      if (!isPasswordValid) {
+        throw new ConvexError({
+          code: "INVALID_CURRENT_PASSWORD",
+          message: "현재 비밀번호가 일치하지 않습니다.",
+        });
+      }
+    }
+
+    const newHash = await hashPassword(args.newPassword);
+    await ctx.db.patch(user._id, {
+      passwordHash: newHash,
+    });
+
+    return { success: true };
+  },
+});
+
