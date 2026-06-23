@@ -18,6 +18,10 @@ export async function getAuthenticatedUser(ctx: QueryCtx | MutationCtx) {
     throw new ConvexError({ message: "User not found", code: "NOT_FOUND" });
   }
 
+  if (user.approvalStatus !== "approved") {
+    throw new ConvexError({ message: "User is pending approval or access is restricted", code: "PENDING_APPROVAL" });
+  }
+
   return user;
 }
 

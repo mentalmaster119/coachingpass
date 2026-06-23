@@ -689,6 +689,7 @@ export default function AppLayout() {
   });
 
   const { isAuthenticated } = useAuth();
+  const { user, isLoading: isUserLoading, isPending, isRejected } = useCurrentUser();
   const navigate = useNavigate();
   const mockLogin = useMutation(api.users.setActiveMockUser);
 
@@ -716,10 +717,19 @@ export default function AppLayout() {
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/", { replace: true });
+      return;
     }
-  }, [isAuthenticated, navigate]);
 
-  if (!isAuthenticated) {
+    if (!isUserLoading && user && (isPending || isRejected)) {
+      navigate("/pending", { replace: true });
+    }
+  }, [isAuthenticated, isUserLoading, user, isPending, isRejected, navigate]);
+
+  if (!isAuthenticated || isUserLoading) {
+    return null;
+  }
+
+  if (user && (isPending || isRejected)) {
     return null;
   }
 
