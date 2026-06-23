@@ -63,7 +63,7 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
       }
     } catch (err: any) {
       console.error(err);
-      const errMsg = err.message || "로그인에 실패했습니다.";
+      const errMsg = err.data?.message || err.message || "로그인에 실패했습니다.";
       toast.error(errMsg);
     } finally {
       setIsLoading(false);
@@ -117,7 +117,7 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
       }
     } catch (err: any) {
       console.error(err);
-      const errMsg = err.message || "가입 신청에 실패했습니다.";
+      const errMsg = err.data?.message || err.message || "가입 신청에 실패했습니다.";
       toast.error(errMsg);
     } finally {
       setIsLoading(false);
