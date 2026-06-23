@@ -403,7 +403,7 @@ export default defineSchema({
   // 출석 기록
   attendances: defineTable({
     seminarId: v.id("seminars"),
-    cohortId: v.id("cohorts"),
+    cohortId: v.optional(v.id("cohorts")),
     userId: v.id("users"),
     date: v.string(), // YYYY-MM-DD
     status: v.union(
@@ -425,7 +425,7 @@ export default defineSchema({
 
   // 세미나 일정
   seminars: defineTable({
-    cohortId: v.id("cohorts"),
+    cohortId: v.optional(v.id("cohorts")),
     title: v.string(),                // e.g. "1차 세미나"
     sessionNumber: v.number(),        // 회차 번호
     seminarType: v.union(

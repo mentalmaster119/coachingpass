@@ -63,16 +63,31 @@ export const getWithStats = query({
   },
 });
 
-// Get members of a cohort with user info
+// Get members of a cohort with user info (or all unique members if cohortId is omitted)
 export const getMembers = query({
-  args: { cohortId: v.id("cohorts") },
+  args: { cohortId: v.optional(v.id("cohorts")) },
   handler: async (ctx, args): Promise<MemberWithUser[]> => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError({ message: "로그인이 필요합니다", code: "UNAUTHENTICATED" });
-    const members = await ctx.db
-      .query("cohortMembers")
-      .withIndex("by_cohort", (q) => q.eq("cohortId", args.cohortId))
-      .collect();
+    
+    let members;
+    if (args.cohortId) {
+      members = await ctx.db
+        .query("cohortMembers")
+        .withIndex("by_cohort", (q) => q.eq("cohortId", args.cohortId!))
+        .collect();
+    } else {
+      const allMembers = await ctx.db.query("cohortMembers").collect();
+      const uniqueUserIds = new Set<string>();
+      members = [];
+      for (const m of allMembers) {
+        if (!uniqueUserIds.has(m.userId)) {
+          uniqueUserIds.add(m.userId);
+          members.push(m);
+        }
+      }
+    }
+
     return await Promise.all(
       members.map(async (m) => {
         const user = await ctx.db.get(m.userId);

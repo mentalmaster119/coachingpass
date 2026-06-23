@@ -31,15 +31,21 @@ async function requireAdmin(ctx: QueryCtx | MutationCtx) {
 
 // List seminars for a cohort
 export const listByCohort = query({
-  args: { cohortId: v.id("cohorts") },
+  args: { cohortId: v.optional(v.id("cohorts")) },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError({ message: "로그인이 필요합니다", code: "UNAUTHENTICATED" });
-    const seminars = await ctx.db
-      .query("seminars")
-      .withIndex("by_cohort_and_date", (q) => q.eq("cohortId", args.cohortId))
-      .collect();
-    return seminars.sort((a, b) => a.sessionNumber - b.sessionNumber);
+    
+    const allSeminars = await ctx.db.query("seminars").collect();
+    const commonSeminars = allSeminars.filter((s) => s.cohortId === undefined || s.cohortId === null);
+
+    if (!args.cohortId) {
+      return commonSeminars.sort((a, b) => a.sessionNumber - b.sessionNumber);
+    }
+
+    const cohortSeminars = allSeminars.filter((s) => s.cohortId === args.cohortId);
+    const combined = [...cohortSeminars, ...commonSeminars];
+    return combined.sort((a, b) => a.sessionNumber - b.sessionNumber);
   },
 });
 
@@ -56,7 +62,7 @@ export const listAll = query({
 // Create seminar
 export const create = mutation({
   args: {
-    cohortId: v.id("cohorts"),
+    cohortId: v.optional(v.id("cohorts")),
     title: v.string(),
     sessionNumber: v.number(),
     seminarType: v.union(

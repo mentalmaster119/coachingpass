@@ -277,7 +277,7 @@ export const upsert = mutation({
 export const bulkUpsert = mutation({
   args: {
     seminarId: v.id("seminars"),
-    cohortId: v.id("cohorts"),
+    cohortId: v.optional(v.id("cohorts")),
     records: v.array(
       v.object({
         userId: v.id("users"),
@@ -308,9 +308,20 @@ export const bulkUpsert = mutation({
           recordedBy: admin._id,
         });
       } else {
+        let cohortId = args.cohortId;
+        if (!cohortId) {
+          const membership = await ctx.db
+            .query("cohortMembers")
+            .withIndex("by_user", (q) => q.eq("userId", rec.userId))
+            .first();
+          if (membership) {
+            cohortId = membership.cohortId;
+          }
+        }
+
         await ctx.db.insert("attendances", {
           seminarId: args.seminarId,
-          cohortId: args.cohortId,
+          cohortId,
           userId: rec.userId,
           date: rec.date,
           status: rec.status,
@@ -366,9 +377,20 @@ export const selfCheckIn = mutation({
         recordedBy: user._id,
       });
     } else {
+      let cohortId = seminar.cohortId;
+      if (!cohortId) {
+        const membership = await ctx.db
+          .query("cohortMembers")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .first();
+        if (membership) {
+          cohortId = membership.cohortId;
+        }
+      }
+
       await ctx.db.insert("attendances", {
         seminarId: args.seminarId,
-        cohortId: seminar.cohortId,
+        cohortId,
         userId: user._id,
         date: args.date,
         status: "present",
@@ -398,6 +420,17 @@ export const getAllMySeminars = query({
       .collect();
 
     const result: Array<Doc<"seminars"> & { myAttendances: Doc<"attendances">[]; cohortName: string; cohortNumber: number }> = [];
+
+    // Fetch common seminars (where cohortId is undefined or null)
+    const allSeminars = await ctx.db.query("seminars").collect();
+    const commonSeminars = allSeminars.filter((s) => s.cohortId === undefined || s.cohortId === null);
+    for (const s of commonSeminars) {
+      const existing = await ctx.db
+        .query("attendances")
+        .withIndex("by_seminar_and_user", (q) => q.eq("seminarId", s._id).eq("userId", user._id))
+        .collect();
+      result.push({ ...s, myAttendances: existing, cohortName: "공통", cohortNumber: 0 });
+    }
 
     for (const m of memberships) {
       const cohort = await ctx.db.get(m.cohortId);
@@ -459,10 +492,14 @@ export const getSeminarsByCohort = query({
       .unique();
     if (!user) return [];
 
-    const seminars = await ctx.db
+    const cohortSeminars = await ctx.db
       .query("seminars")
       .withIndex("by_cohort_and_date", (q) => q.eq("cohortId", args.cohortId))
       .collect();
+
+    const allSeminars = await ctx.db.query("seminars").collect();
+    const commonSeminars = allSeminars.filter((s) => s.cohortId === undefined || s.cohortId === null);
+    const seminars = [...cohortSeminars, ...commonSeminars];
 
     const result: Array<Doc<"seminars"> & { myAttendances: Doc<"attendances">[] }> = [];
     for (const s of seminars) {
@@ -497,6 +534,19 @@ export const getMyUpcomingSeminars = query({
 
     const today = new Date().toISOString().slice(0, 10);
     const result: Array<Doc<"seminars"> & { myAttendances: Doc<"attendances">[] }> = [];
+
+    // Fetch common seminars
+    const allSeminars = await ctx.db.query("seminars").collect();
+    const commonSeminars = allSeminars.filter((s) => s.cohortId === undefined || s.cohortId === null);
+    for (const s of commonSeminars) {
+      const existing = await ctx.db
+        .query("attendances")
+        .withIndex("by_seminar_and_user", (q) =>
+          q.eq("seminarId", s._id).eq("userId", user._id)
+        )
+        .collect();
+      result.push({ ...s, myAttendances: existing });
+    }
 
     for (const m of activeMemberships) {
       const seminars = await ctx.db

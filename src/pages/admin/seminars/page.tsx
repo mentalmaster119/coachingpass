@@ -204,7 +204,7 @@ export default function AdminSeminarsPage() {
   const [selectedCohortId, setSelectedCohortId] = useState<Id<"cohorts"> | null>(null);
   const seminars = useQuery(
     api.seminars.listByCohort,
-    selectedCohortId ? { cohortId: selectedCohortId } : "skip"
+    selectedCohortId ? { cohortId: selectedCohortId } : {}
   );
 
   const [showForm, setShowForm] = useState(false);
@@ -254,7 +254,6 @@ export default function AdminSeminarsPage() {
   };
 
   const handleSave = async () => {
-    if (!selectedCohortId) return;
     const errors: Partial<Record<keyof SeminarFormData, boolean>> = {};
     if (!form.title) errors.title = true;
     if (!form.startDate) errors.startDate = true;
@@ -283,7 +282,7 @@ export default function AdminSeminarsPage() {
         await updateSeminar({ seminarId: editingSeminar._id, ...payload });
         toast.success("세미나가 수정되었습니다");
       } else {
-        await createSeminar({ cohortId: selectedCohortId, ...payload });
+        await createSeminar({ cohortId: selectedCohortId || undefined, ...payload });
         toast.success("세미나가 추가되었습니다");
       }
       setShowForm(false);
@@ -388,6 +387,16 @@ export default function AdminSeminarsPage() {
             <p className="text-sm text-muted-foreground">등록된 기수가 없습니다. 먼저 기수를 추가해 주세요.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCohortId(null)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
+                  selectedCohortId === null
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background border-border hover:bg-muted"
+                }`}
+              >
+                공통
+              </button>
               {cohorts.map((c) => (
                 <button
                   key={c._id}
@@ -409,33 +418,37 @@ export default function AdminSeminarsPage() {
         </CardContent>
       </Card>
 
-      {selectedCohortId && (
+      {cohorts !== undefined && (
         <div className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <h2 className="text-lg font-semibold">
-              {selectedCohort?.name} 세미나 일정
+              {selectedCohortId === null ? "공통 세미나 일정" : `${selectedCohort?.name} 세미나 일정`}
               {seminars && <Badge variant="secondary" className="ml-2">{seminars.length}개</Badge>}
             </h2>
             <div className="flex gap-2 flex-wrap">
-              {seminars !== undefined && seminars.length === 0 && (
-                <Button
-                  variant="ghost"
-                  onClick={handleAutoGenerate}
-                  disabled={generating}
-                  className="gap-2 cursor-pointer"
-                >
-                  <Wand2 className="w-4 h-4" />
-                  {generating ? "생성 중..." : "자동 일정 생성"}
-                </Button>
+              {selectedCohortId !== null && (
+                <>
+                  {seminars !== undefined && seminars.length === 0 && (
+                    <Button
+                      variant="ghost"
+                      onClick={handleAutoGenerate}
+                      disabled={generating}
+                      className="gap-2 cursor-pointer"
+                    >
+                      <Wand2 className="w-4 h-4" />
+                      {generating ? "생성 중..." : "자동 일정 생성"}
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowCopyDialog(true)}
+                    className="gap-2 cursor-pointer"
+                  >
+                    <Copy className="w-4 h-4" />
+                    이전 기수 복사
+                  </Button>
+                </>
               )}
-              <Button
-                variant="ghost"
-                onClick={() => setShowCopyDialog(true)}
-                className="gap-2 cursor-pointer"
-              >
-                <Copy className="w-4 h-4" />
-                이전 기수 복사
-              </Button>
               <Button onClick={openCreate} className="gap-2 cursor-pointer">
                 <Plus className="w-4 h-4" />
                 세미나 추가
@@ -456,14 +469,18 @@ export default function AdminSeminarsPage() {
               </EmptyHeader>
               <EmptyContent>
                 <div className="flex gap-2 flex-wrap justify-center">
-                  <Button size="sm" variant="ghost" onClick={() => setShowCopyDialog(true)} className="gap-1.5">
-                    <Copy className="w-3.5 h-3.5" />
-                    이전 기수 복사
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={handleAutoGenerate} disabled={generating} className="gap-1.5">
-                    <Wand2 className="w-3.5 h-3.5" />
-                    자동 생성
-                  </Button>
+                  {selectedCohortId !== null && (
+                    <>
+                      <Button size="sm" variant="ghost" onClick={() => setShowCopyDialog(true)} className="gap-1.5">
+                        <Copy className="w-3.5 h-3.5" />
+                        이전 기수 복사
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={handleAutoGenerate} disabled={generating} className="gap-1.5">
+                        <Wand2 className="w-3.5 h-3.5" />
+                        자동 생성
+                      </Button>
+                    </>
+                  )}
                   <Button size="sm" onClick={openCreate}>세미나 추가</Button>
                 </div>
               </EmptyContent>

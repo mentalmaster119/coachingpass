@@ -90,6 +90,17 @@ export default function AdminAttendancePage() {
             <p className="text-sm text-muted-foreground">등록된 기수가 없습니다.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCohortId(null)}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer",
+                  selectedCohortId === null
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background border-border hover:bg-muted"
+                )}
+              >
+                공통
+              </button>
               {cohorts.map((c) => (
                 <button
                   key={c._id}
@@ -112,25 +123,33 @@ export default function AdminAttendancePage() {
         </CardContent>
       </Card>
 
-      {selectedCohortId && (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="record" className="gap-2">
-              <CalendarDays className="w-4 h-4" />
-              출석 입력
-            </TabsTrigger>
-            <TabsTrigger value="summary" className="gap-2">
-              <BarChart3 className="w-4 h-4" />
-              출석 현황
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="record" className="mt-4">
-            <AttendanceRecordTab cohortId={selectedCohortId} />
-          </TabsContent>
-          <TabsContent value="summary" className="mt-4">
-            <AttendanceSummaryTab cohortId={selectedCohortId} />
-          </TabsContent>
-        </Tabs>
+      {cohorts !== undefined && (
+        <>
+          {selectedCohortId === null ? (
+            <div className="mt-4">
+              <AttendanceRecordTab cohortId={null} />
+            </div>
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList>
+                <TabsTrigger value="record" className="gap-2">
+                  <CalendarDays className="w-4 h-4" />
+                  출석 입력
+                </TabsTrigger>
+                <TabsTrigger value="summary" className="gap-2">
+                  <BarChart3 className="w-4 h-4" />
+                  출석 현황
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="record" className="mt-4">
+                <AttendanceRecordTab cohortId={selectedCohortId} />
+              </TabsContent>
+              <TabsContent value="summary" className="mt-4">
+                <AttendanceSummaryTab cohortId={selectedCohortId} />
+              </TabsContent>
+            </Tabs>
+          )}
+        </>
       )}
     </div>
   );
@@ -138,8 +157,8 @@ export default function AdminAttendancePage() {
 
 // ── Attendance Record Tab ─────────────────────────────────────────────────────
 
-function AttendanceRecordTab({ cohortId }: { cohortId: Id<"cohorts"> }) {
-  const seminars = useQuery(api.seminars.listByCohort, { cohortId });
+function AttendanceRecordTab({ cohortId }: { cohortId: Id<"cohorts"> | null }) {
+  const seminars = useQuery(api.seminars.listByCohort, cohortId ? { cohortId } : {});
   const [selectedSeminarId, setSelectedSeminarId] = useState<Id<"seminars"> | null>(null);
 
   const selectedSeminar = seminars?.find((s) => s._id === selectedSeminarId);
@@ -260,8 +279,8 @@ type LocalRecord = {
   saved: boolean;
 };
 
-function AttendanceSheet({ seminar, cohortId }: { seminar: Seminar; cohortId: Id<"cohorts"> }) {
-  const members = useQuery(api.cohorts.getMembers, { cohortId });
+function AttendanceSheet({ seminar, cohortId }: { seminar: Seminar; cohortId: Id<"cohorts"> | null }) {
+  const members = useQuery(api.cohorts.getMembers, cohortId ? { cohortId } : {});
   const existingRecords = useQuery(api.attendance.getBySeminar, { seminarId: seminar._id });
   const bulkUpsert = useMutation(api.attendance.bulkUpsert);
 
@@ -393,7 +412,7 @@ function AttendanceSheet({ seminar, cohortId }: { seminar: Seminar; cohortId: Id
 
       await bulkUpsert({
         seminarId: seminar._id,
-        cohortId,
+        cohortId: cohortId || undefined,
         records: upsertRecords,
       });
       setLocalRecords((prev) => {
