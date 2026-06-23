@@ -91,27 +91,6 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
 
       if (result.success) {
         toast.success("가입 신청이 성공적으로 접수되었습니다!");
-        
-        // Auto signin with simulated pending user triggers redirect to /pending
-        // We call signIn mutation immediately to obtain token for pending redirection
-        try {
-          const loginResult = await signInMutation({
-            email: email.trim(),
-            password: password.trim(),
-          });
-          if (loginResult.token) {
-            await auth.signin(loginResult.token);
-          }
-        } catch (loginErr: any) {
-          // If signIn throws PENDING_APPROVAL, we can capture the error and route manually
-          if (loginErr.message?.includes("승인 대기") || loginErr.message?.includes("PENDING_APPROVAL")) {
-            // We need a session to hold /pending page context.
-            // In our system, the token can be obtained only if the user is approved,
-            // so we redirect to /pending directly.
-            navigate("/pending");
-          }
-        }
-        
         onClose();
         navigate("/pending");
       }
