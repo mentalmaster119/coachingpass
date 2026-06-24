@@ -162,15 +162,30 @@ export default function ProfileForm({ user }: { user: User }) {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="예: 010-1234-5678"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSave();
+                if (e.key === "Escape") handleCancel();
+              }}
             />
           ) : (
-            <Input
-              id="phone"
-              value={user.phone ?? ""}
-              readOnly
-              className="bg-muted/50 cursor-default"
-              placeholder="미입력"
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                id="phone"
+                value={user.phone ?? ""}
+                readOnly
+                className="flex-1 bg-muted/50 cursor-default"
+                placeholder="미입력"
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setEditing(true)}
+                className="gap-1.5 text-muted-foreground"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                수정
+              </Button>
+            </div>
           )}
         </div>
 
