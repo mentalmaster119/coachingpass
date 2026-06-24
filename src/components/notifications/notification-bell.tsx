@@ -25,6 +25,7 @@ const NOTIFICATION_ICONS: Record<Notification["type"], React.ReactNode> = {
   mentor_coaching_rejected: <MessageSquare className="w-4 h-4 text-red-500" />,
   account_approved: <UserCheck className="w-4 h-4 text-green-500" />,
   account_rejected: <UserCheck className="w-4 h-4 text-red-500" />,
+  account_pending: <UserCheck className="w-4 h-4 text-amber-500" />,
   certification_approved: <Award className="w-4 h-4 text-green-500" />,
   certification_rejected: <Award className="w-4 h-4 text-red-500" />,
   feedback_received: <MessageSquareDot className="w-4 h-4 text-blue-500" />,
@@ -59,6 +60,10 @@ function getNotificationRoute(notification: Notification): string | null {
     case "account_approved":
     case "account_rejected":
       return "/";
+    case "account_pending":
+      return "/admin/users";
+    case "coaching_log_submitted":
+      return "/admin/coaching";
     case "announcement":
       return notification.relatedId
         ? `/announcements/${notification.relatedId}`

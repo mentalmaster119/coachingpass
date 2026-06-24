@@ -5,23 +5,44 @@ import { insertNotification } from "./notifications";
 import type { MutationCtx } from "./mockAuth";
 import type { Id } from "./_generated/dataModel.d.ts";
 
-// ── Helper: notify assigned coach when a pending coaching log is submitted ────
+// ── Helper: notify assigned coach and admins when a pending coaching log is submitted ────
 async function notifyCoachOfSubmission(
   ctx: MutationCtx,
   traineeName: string,
   traineeId: Id<"users">,
   topic: string,
 ) {
-  // Find the trainee's assigned coach
   const trainee = await ctx.db.get(traineeId);
-  if (!trainee?.assignedCoachId) return;
-  await insertNotification(ctx, {
-    userId: trainee.assignedCoachId,
-    type: "coaching_log_submitted",
-    title: "코칭 로그 제출",
-    message: `${traineeName}님이 코칭 로그를 제출했습니다: "${topic}"`,
-    relatedId: traineeId,
-  });
+  
+  // 1. Notify the assigned coach if exists
+  if (trainee?.assignedCoachId) {
+    await insertNotification(ctx, {
+      userId: trainee.assignedCoachId,
+      type: "coaching_log_submitted",
+      title: "코칭 로그 제출",
+      message: `${traineeName}님이 코칭 로그를 제출했습니다: "${topic}"`,
+      relatedId: traineeId,
+    });
+  }
+
+  // 2. Notify all administrators
+  const admins = await ctx.db
+    .query("users")
+    .withIndex("by_role", (q) => q.eq("role", "admin"))
+    .collect();
+  
+  for (const admin of admins) {
+    // Avoid duplicate notification if the admin is also the assigned coach
+    if (trainee?.assignedCoachId === admin._id) continue;
+    
+    await insertNotification(ctx, {
+      userId: admin._id,
+      type: "coaching_log_submitted",
+      title: "코칭 로그 승인 요청",
+      message: `${traineeName}님이 코칭 로그 승인을 요청했습니다: "${topic}"`,
+      relatedId: traineeId,
+    });
+  }
 }
 
 // ── File storage ────────────────────────────────────────────────────────────

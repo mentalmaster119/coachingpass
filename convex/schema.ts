@@ -150,6 +150,7 @@ export default defineSchema({
       v.literal("mentor_coaching_rejected"),
       v.literal("account_approved"),
       v.literal("account_rejected"),
+      v.literal("account_pending"),
       v.literal("certification_approved"),
       v.literal("certification_rejected"),
       v.literal("feedback_received"),

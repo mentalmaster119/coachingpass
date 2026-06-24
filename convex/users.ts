@@ -59,7 +59,7 @@ export const updateCurrentUser = mutation({
 
     const isFirstUser = existingAdmin === null;
 
-    return await ctx.db.insert("users", {
+    const newUserId = await ctx.db.insert("users", {
       name: identity.name,
       email: identity.email,
       tokenIdentifier: identity.tokenIdentifier,
@@ -67,6 +67,29 @@ export const updateCurrentUser = mutation({
       approvalStatus: isFirstUser ? "approved" : "pending",
       onboardingCompleted: isFirstUser,
     });
+
+    if (!isFirstUser) {
+      // Find all admins
+      const admins = await ctx.db
+        .query("users")
+        .withIndex("by_role", (q) => q.eq("role", "admin"))
+        .collect();
+
+      const userName = identity.name || identity.email || "새로운 교육생";
+
+      for (const admin of admins) {
+        await ctx.db.insert("notifications", {
+          userId: admin._id,
+          type: "account_pending",
+          title: "가입 승인 대기",
+          message: `${userName}님이 가입 승인을 요청했습니다.`,
+          isRead: false,
+          relatedId: newUserId,
+        });
+      }
+    }
+
+    return newUserId;
   },
 });
 

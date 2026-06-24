@@ -14,6 +14,7 @@ type NotificationType =
   | "mentor_coaching_rejected"
   | "account_approved"
   | "account_rejected"
+  | "account_pending"
   | "certification_approved"
   | "certification_rejected"
   | "feedback_received"
