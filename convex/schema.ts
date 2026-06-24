@@ -417,6 +417,7 @@ export default defineSchema({
     recordedBy: v.id("users"),
     selfCheckedIn: v.optional(v.boolean()),
     checkedInAt: v.optional(v.string()),
+    dayNumber: v.optional(v.number()),
   })
     .index("by_seminar", ["seminarId"])
     .index("by_cohort_and_user", ["cohortId", "userId"])
