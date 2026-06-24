@@ -151,6 +151,9 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
             <Label htmlFor="profile-phone">전화번호</Label>
             <Input
               id="profile-phone"
+              type="text"
+              inputMode="tel"
+              autoComplete="off"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="010-0000-0000"
