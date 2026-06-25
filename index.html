@@ -51,6 +51,30 @@
     <meta name="apple-mobile-web-app-title" content="MCCI-SMPCC" />
     <link rel="apple-touch-icon" href="/icon/icon-192.png" />
 
+    <!-- Automatic chunk load error and cache recovery -->
+    <script>
+      window.addEventListener('error', function (e) {
+        if (e.message && (e.message.indexOf('chunk') > -1 || e.message.indexOf('dynamically imported module') > -1)) {
+          console.warn('Chunk load error detected. Clearing service workers and caches...');
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              regs.forEach(function (r) { r.unregister(); });
+            });
+          }
+          if ('caches' in window) {
+            caches.keys().then(function (keys) {
+              keys.forEach(function (k) { caches.delete(k); });
+            });
+          }
+          localStorage.clear();
+          sessionStorage.clear();
+          setTimeout(function () {
+            window.location.reload(true);
+          }, 500);
+        }
+      }, true);
+    </script>
+
     <!-- Detect dark mode preference and set the class before next-themes loads. This avoids a flash of unstyled content (FOUC) when the page loads. -->
     <script>
       (function () {
