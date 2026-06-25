@@ -89,8 +89,9 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
         password: password.trim(),
       });
 
-      if (result.success) {
+      if (result.success && result.token) {
         toast.success("가입 신청이 성공적으로 접수되었습니다!");
+        await auth.signin(result.token);
         onClose();
         navigate("/pending");
       }

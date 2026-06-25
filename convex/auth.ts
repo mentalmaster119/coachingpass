@@ -60,9 +60,20 @@ export const signUp = mutation({
     // Update with correct tokenIdentifier
     await ctx.db.patch(userId, { tokenIdentifier });
 
+    // Generate custom RS256 JWT token matching issuer domain
+    const token = await signToken(
+      {
+        id: userId,
+        email: emailNormalized,
+        name: args.name.trim(),
+      },
+      issuer
+    );
+
     return {
       success: true,
       userId,
+      token,
       isPending: approvalStatus === "pending",
     };
   },
@@ -106,16 +117,6 @@ export const signIn = mutation({
       throw new ConvexError({
         code: "INVALID_CREDENTIALS",
         message: "이메일 혹은 비밀번호를 확인해 주세요.",
-      });
-    }
-
-    // Check approval status
-    if (user.approvalStatus !== "approved") {
-      throw new ConvexError({
-        code: "PENDING_APPROVAL",
-        message: user.approvalStatus === "pending"
-          ? "가입 승인 대기 중입니다. 관리자 승인 완료 후 이용 가능합니다."
-          : `가입이 거부된 계정입니다. 사유: ${user.rejectionReason || "없음"}`,
       });
     }
 

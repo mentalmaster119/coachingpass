@@ -128,6 +128,19 @@ function PendingContent() {
 }
 
 export default function PendingPage() {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
@@ -140,18 +153,7 @@ export default function PendingPage() {
       </header>
 
       <main className="flex-1 flex items-center justify-center p-6">
-        <AuthLoading>
-          <Skeleton className="h-64 w-80" />
-        </AuthLoading>
-        <Unauthenticated>
-          <div className="text-center space-y-4">
-            <p className="text-muted-foreground">로그인이 필요합니다.</p>
-            <SignInButton />
-          </div>
-        </Unauthenticated>
-        <Authenticated>
-          <PendingContent />
-        </Authenticated>
+        <PendingContent />
       </main>
     </div>
   );
