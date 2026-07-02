@@ -38,6 +38,7 @@ import type * as notifications from "../notifications.js";
 import type * as progress from "../progress.js";
 import type * as pushIdentities from "../pushIdentities.js";
 import type * as pushNotifications from "../pushNotifications.js";
+import type * as realUser from "../realUser.js";
 import type * as reflections from "../reflections.js";
 import type * as reminderQueries from "../reminderQueries.js";
 import type * as reminders from "../reminders.js";
@@ -87,6 +88,7 @@ declare const fullApi: ApiFromModules<{
   progress: typeof progress;
   pushIdentities: typeof pushIdentities;
   pushNotifications: typeof pushNotifications;
+  realUser: typeof realUser;
   reflections: typeof reflections;
   reminderQueries: typeof reminderQueries;
   reminders: typeof reminders;

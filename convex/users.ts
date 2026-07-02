@@ -293,23 +293,6 @@ export const getMyPortfolio = query({
   },
 });
 
-import { query as convexQuery } from "./_generated/server";
-
-export const getRealUser = convexQuery({
-  args: {},
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return null;
-
-    return await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier),
-      )
-      .unique();
-  },
-});
-
 export const getMockUserByRole = query({
   args: { role: v.union(v.literal("trainee"), v.literal("senior_coach"), v.literal("admin")) },
   handler: async (ctx, args) => {
