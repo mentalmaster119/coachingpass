@@ -49,13 +49,17 @@ export default function ProfileForm({ user }: { user: User }) {
     }
     setLoading(true);
     try {
-      await updateProfile({ name: trimmed, phone: phone.trim() || undefined });
+      const payload: any = { name: trimmed };
+      if (phone.trim()) payload.phone = phone.trim();
+      await updateProfile(payload);
       toast.success("프로필이 저장되었습니다.");
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
       setEditing(false);
-    } catch {
-      toast.error("저장에 실패했습니다. 다시 시도해 주세요.");
+    } catch (err: any) {
+      console.error("Settings save error:", err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      toast.error(`저장에 실패했습니다: ${errMsg}`);
     } finally {
       setLoading(false);
     }

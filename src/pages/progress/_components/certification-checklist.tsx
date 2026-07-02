@@ -26,6 +26,12 @@ type ProgressData = {
   approvedCoachingHours: number;
   educationPendingCount: number;
   coachingPendingCount: number;
+  buddyCount?: number;
+  mentorCount?: number;
+  svCount?: number;
+  sportsCount?: number;
+  generalCount?: number;
+  totalCoachingCount?: number;
 };
 
 const REQUIREMENTS = {
@@ -54,17 +60,92 @@ export default function CertificationChecklist({
 }) {
   const [changeDialogOpen, setChangeDialogOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<GoalKey>(
-    (user.certificationGoal as GoalKey) ?? "KAC",
+    (user.certificationGoal === "KPC" ? "KPC" : "KAC"),
   );
   const [isChanging, setIsChanging] = useState(false);
   const changeGoal = useMutation(api.users.setCertificationGoal);
 
-  const currentGoal = (user.certificationGoal as GoalKey) ?? "KAC";
-  const req = REQUIREMENTS[currentGoal];
+  const currentGoal = (user.certificationGoal as string) ?? "KAC";
+  const isSMPCC = currentGoal === "SMPCC";
+  const req = !isSMPCC ? REQUIREMENTS[currentGoal as GoalKey] : null;
 
-  const educationDone = progress.approvedEducationHours >= req.education.hours;
-  const coachingDone = progress.approvedCoachingHours >= req.coaching.hours;
-  const allDone = educationDone && coachingDone;
+  const requirements = isSMPCC ? [
+    {
+      label: "교육 이수 시간 (최소 60시간)",
+      current: progress.approvedEducationHours,
+      target: 60,
+      pending: progress.educationPendingCount,
+      done: progress.approvedEducationHours >= 60,
+      unit: "시간",
+    },
+    {
+      label: "버디코칭 (최소 2회)",
+      current: progress.buddyCount ?? 0,
+      target: 2,
+      pending: 0,
+      done: (progress.buddyCount ?? 0) >= 2,
+      unit: "회",
+    },
+    {
+      label: "멘토코칭 (최소 2회)",
+      current: progress.mentorCount ?? 0,
+      target: 2,
+      pending: 0,
+      done: (progress.mentorCount ?? 0) >= 2,
+      unit: "회",
+    },
+    {
+      label: "SV코칭 (최소 1회)",
+      current: progress.svCount ?? 0,
+      target: 1,
+      pending: 0,
+      done: (progress.svCount ?? 0) >= 1,
+      unit: "회",
+    },
+    {
+      label: "스포츠선수코칭 (최소 8회)",
+      current: progress.sportsCount ?? 0,
+      target: 8,
+      pending: 0,
+      done: (progress.sportsCount ?? 0) >= 8,
+      unit: "회",
+    },
+    {
+      label: "일반인코칭 (최소 7회)",
+      current: progress.generalCount ?? 0,
+      target: 7,
+      pending: 0,
+      done: (progress.generalCount ?? 0) >= 7,
+      unit: "회",
+    },
+    {
+      label: "총 코칭 실습 보고서 (최소 20회)",
+      current: progress.totalCoachingCount ?? 0,
+      target: 20,
+      pending: progress.coachingPendingCount,
+      done: (progress.totalCoachingCount ?? 0) >= 20,
+      unit: "회",
+    },
+  ] : [
+    {
+      label: req!.education.label,
+      current: progress.approvedEducationHours,
+      target: req!.education.hours,
+      pending: progress.educationPendingCount,
+      done: progress.approvedEducationHours >= req!.education.hours,
+      unit: "시간",
+    },
+    {
+      label: req!.coaching.label,
+      current: progress.approvedCoachingHours,
+      target: req!.coaching.hours,
+      pending: progress.coachingPendingCount,
+      done: progress.approvedCoachingHours >= req!.coaching.hours,
+      unit: "시간",
+    },
+  ];
+
+  const allDone = requirements.every((r) => r.done);
 
   const handleChangeGoal = async () => {
     if (selectedGoal === currentGoal) {
@@ -83,22 +164,7 @@ export default function CertificationChecklist({
     }
   };
 
-  const requirements = [
-    {
-      label: req.education.label,
-      current: progress.approvedEducationHours,
-      target: req.education.hours,
-      pending: progress.educationPendingCount,
-      done: educationDone,
-    },
-    {
-      label: req.coaching.label,
-      current: progress.approvedCoachingHours,
-      target: req.coaching.hours,
-      pending: progress.coachingPendingCount,
-      done: coachingDone,
-    },
-  ];
+  // Requirements array is built dynamically above
 
   return (
     <motion.div
@@ -218,7 +284,7 @@ export default function CertificationChecklist({
                       />
                     </div>
                     <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                      {Math.round(req.current * 10) / 10}/{req.target}시간
+                      {Math.round(req.current * 10) / 10}/{req.target}{req.unit}
                     </span>
                   </div>
                   {req.pending > 0 && (

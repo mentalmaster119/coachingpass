@@ -49,7 +49,14 @@ export default defineSchema({
     coachingStartTime: v.optional(v.string()), // HH:mm
     coachingEndTime: v.optional(v.string()),   // HH:mm
     durationMinutes: v.number(),
-    coachingType: v.union(v.literal("individual"), v.literal("group")),
+    coachingType: v.union(
+      v.literal("individual"),
+      v.literal("group"),
+      v.literal("team"),
+      v.literal("buddy"),
+      v.literal("mentor"),
+      v.literal("sv")
+    ),
     coachingPlace: v.optional(v.union(
       v.literal("zoom"), v.literal("study_room"), v.literal("center"),
       v.literal("home"), v.literal("other"), v.literal("hanyang")

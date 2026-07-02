@@ -87,20 +87,24 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
     }
     setIsSaving(true);
     try {
-      await updateProfile({
+      const payload: any = {
         name: name.trim(),
-        bio: bio.trim() || undefined,
-        phone: phone.trim() || undefined,
-        specializations: specializations.length > 0 ? specializations : undefined,
-        coachingStyle: coachingStyle.trim() || undefined,
-        mbti: (mbti.trim() && mbti !== "none") ? mbti.trim() : undefined,
-        motivationalMessage: motivationalMessage.trim() || undefined,
-      });
+      };
+      if (bio.trim()) payload.bio = bio.trim();
+      if (phone.trim()) payload.phone = phone.trim();
+      if (specializations.length > 0) payload.specializations = specializations;
+      if (coachingStyle.trim()) payload.coachingStyle = coachingStyle.trim();
+      if (mbti.trim() && mbti !== "none") payload.mbti = mbti.trim();
+      if (motivationalMessage.trim()) payload.motivationalMessage = motivationalMessage.trim();
+
+      await updateProfile(payload);
       toast.success("프로필이 저장되었습니다.");
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
-    } catch {
-      toast.error("저장 중 오류가 발생했습니다.");
+    } catch (err: any) {
+      console.error("Profile save error:", err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      toast.error(`저장 중 오류가 발생했습니다: ${errMsg}`);
     } finally {
       setIsSaving(false);
     }

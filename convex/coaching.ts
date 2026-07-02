@@ -62,7 +62,14 @@ const coachingLogFields = {
   coachingStartTime: v.optional(v.string()),
   coachingEndTime: v.optional(v.string()),
   durationMinutes: v.number(),
-  coachingType: v.union(v.literal("individual"), v.literal("group")),
+  coachingType: v.union(
+    v.literal("individual"),
+    v.literal("group"),
+    v.literal("team"),
+    v.literal("buddy"),
+    v.literal("mentor"),
+    v.literal("sv")
+  ),
   coachingPlace: v.optional(v.union(
     v.literal("zoom"), v.literal("study_room"), v.literal("center"),
     v.literal("home"), v.literal("other"), v.literal("hanyang")
@@ -114,7 +121,14 @@ const coachingDraftFields = {
   coachingStartTime: v.optional(v.string()),
   coachingEndTime: v.optional(v.string()),
   durationMinutes: v.optional(v.number()),
-  coachingType: v.optional(v.union(v.literal("individual"), v.literal("group"))),
+  coachingType: v.optional(v.union(
+    v.literal("individual"),
+    v.literal("group"),
+    v.literal("team"),
+    v.literal("buddy"),
+    v.literal("mentor"),
+    v.literal("sv")
+  )),
   coachingPlace: v.optional(v.union(
     v.literal("zoom"), v.literal("study_room"), v.literal("center"),
     v.literal("home"), v.literal("other"), v.literal("hanyang")
@@ -320,6 +334,22 @@ export const getMySummary = query({
       approvedLogs
         .filter((l) => l.coachingType === "group")
         .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
+    const teamHours =
+      approvedLogs
+        .filter((l) => l.coachingType === "team")
+        .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
+    const buddyHours =
+      approvedLogs
+        .filter((l) => l.coachingType === "buddy")
+        .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
+    const mentorHours =
+      approvedLogs
+        .filter((l) => l.coachingType === "mentor")
+        .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
+    const svHours =
+      approvedLogs
+        .filter((l) => l.coachingType === "sv")
+        .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
     const pendingCount = logs.filter((l) => l.approvalStatus === "pending").length;
     const rejectedCount = logs.filter((l) => l.approvalStatus === "rejected").length;
 
@@ -338,6 +368,10 @@ export const getMySummary = query({
       approvedHours,
       individualHours,
       groupHours,
+      teamHours,
+      buddyHours,
+      mentorHours,
+      svHours,
       pendingCount,
       rejectedCount,
       totalCount: logs.length,
@@ -381,7 +415,14 @@ export const getAllLogs = query({
     status: v.optional(v.union(
       v.literal("pending"), v.literal("approved"), v.literal("rejected")
     )),
-    coachingType: v.optional(v.union(v.literal("individual"), v.literal("group"))),
+    coachingType: v.optional(v.union(
+      v.literal("individual"),
+      v.literal("group"),
+      v.literal("team"),
+      v.literal("buddy"),
+      v.literal("mentor"),
+      v.literal("sv")
+    )),
   },
   handler: async (ctx, args) => {
     await requireRole(ctx, ["admin", "senior_coach"]);
@@ -477,6 +518,10 @@ export const getMyStats = query({
     // ── Coaching type ratio ──
     const individualCount = approved.filter((l) => l.coachingType === "individual").length;
     const groupCount = approved.filter((l) => l.coachingType === "group").length;
+    const teamCount = approved.filter((l) => l.coachingType === "team").length;
+    const buddyCount = approved.filter((l) => l.coachingType === "buddy").length;
+    const mentorCount = approved.filter((l) => l.coachingType === "mentor").length;
+    const svCount = approved.filter((l) => l.coachingType === "sv").length;
 
     // ── Top 5 techniques ──
     const techniqueCount: Record<string, number> = {};
@@ -526,6 +571,10 @@ export const getMyStats = query({
       monthlyData,
       individualCount,
       groupCount,
+      teamCount,
+      buddyCount,
+      mentorCount,
+      svCount,
       topTechniques,
       domainCount,
       stateData,

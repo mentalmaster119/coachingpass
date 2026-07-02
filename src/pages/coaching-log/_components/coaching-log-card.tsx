@@ -31,6 +31,15 @@ import {
 } from "lucide-react";
 import CoachingLogForm from "./coaching-log-form.tsx";
 
+export const COACHING_TYPE_MAP: Record<string, string> = {
+  individual: "개인",
+  group: "그룹",
+  team: "팀",
+  buddy: "버디",
+  mentor: "멘토",
+  sv: "SV",
+};
+
 type CoachingLog = Doc<"coachingLogs"> & { evidenceUrl?: string | null };
 
 const statusConfig = {
@@ -91,7 +100,7 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
                 <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground flex-wrap">
                   <span>{format(date, "yyyy.MM.dd (EEE)", { locale: ko })}</span>
                   <span>·</span>
-                  <span>{log.coachingType === "individual" ? "개인" : "그룹"} 코칭</span>
+                  <span>{COACHING_TYPE_MAP[log.coachingType] ?? log.coachingType} 코칭</span>
                   <span>·</span>
                   <span className="flex items-center gap-0.5">
                     <Clock className="w-3 h-3" />

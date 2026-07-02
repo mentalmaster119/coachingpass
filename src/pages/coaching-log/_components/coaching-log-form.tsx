@@ -55,6 +55,10 @@ const NA_SCORES: StateScores = {
 const COACHING_TYPES = [
   { value: "individual", label: "개인 코칭" },
   { value: "group", label: "그룹 코칭" },
+  { value: "team", label: "팀 코칭" },
+  { value: "buddy", label: "버디 코칭" },
+  { value: "mentor", label: "멘토 코칭" },
+  { value: "sv", label: "SV 코칭" },
 ] as const;
 
 const COACHING_PLACES = [
@@ -316,8 +320,10 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
   );
   const [coachingStartTime, setCoachingStartTime] = useState(editLog?.coachingStartTime ?? "");
   const [coachingEndTime, setCoachingEndTime] = useState(editLog?.coachingEndTime ?? "");
-  const [coachingType, setCoachingType] = useState<"individual" | "group">(
-    editLog?.coachingType ?? "individual",
+  const [coachingType, setCoachingType] = useState<
+    "individual" | "group" | "team" | "buddy" | "mentor" | "sv"
+  >(
+    (editLog?.coachingType as any) ?? "individual",
   );
   const [coachingPlace, setCoachingPlace] = useState(editLog?.coachingPlace ?? "");
   const [coachingPlaceOther, setCoachingPlaceOther] = useState(editLog?.coachingPlaceOther ?? "");
@@ -665,7 +671,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
               </div>
               <div className="space-y-1.5">
                 <Label>코칭 유형 <span className="text-destructive">*</span></Label>
-                <Select value={coachingType} onValueChange={(v) => setCoachingType(v as "individual" | "group")}>
+                <Select value={coachingType} onValueChange={(v) => setCoachingType(v as any)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {COACHING_TYPES.map((t) => (

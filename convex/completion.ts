@@ -26,6 +26,88 @@ async function requireAuth(ctx: QueryCtx) {
   return identity;
 }
 
+export async function calculateCoachingProgress(ctx: QueryCtx, userId: Id<"users">) {
+  // Fetch new coaching logs
+  const coachingLogs = await ctx.db
+    .query("coachingLogs")
+    .withIndex("by_user_and_status", (q) =>
+      q.eq("userId", userId).eq("approvalStatus", "approved")
+    )
+    .collect();
+
+  // Fetch legacy BCP logs
+  const bcpLogs = await ctx.db
+    .query("bcpLogs")
+    .withIndex("by_user_and_status", (q) =>
+      q.eq("userId", userId).eq("approvalStatus", "approved")
+    )
+    .collect();
+
+  // Fetch legacy mentor coaching logs
+  const mentorLogs = await ctx.db
+    .query("mentorCoachingLogs")
+    .withIndex("by_user_and_status", (q) =>
+      q.eq("userId", userId).eq("approvalStatus", "approved")
+    )
+    .collect();
+
+  // 1. Buddy coaching count
+  const newBuddyCount = coachingLogs.filter((l) => l.coachingType === "buddy").length;
+  const legacyBuddyCount = bcpLogs.length;
+  const buddyCount = newBuddyCount + legacyBuddyCount;
+
+  // 2. Mentor coaching count
+  const newMentorCount = coachingLogs.filter((l) => l.coachingType === "mentor").length;
+  const legacyMentorCount = mentorLogs.filter((l) => l.sessionType === "mentor_coaching").length;
+  const mentorCount = newMentorCount + legacyMentorCount;
+
+  // 3. SV coaching count
+  const newSvCount = coachingLogs.filter((l) => l.coachingType === "sv").length;
+  const legacySvCount = mentorLogs.filter((l) => l.sessionType === "coder_co").length;
+  const svCount = newSvCount + legacySvCount;
+
+  // 4. Sports Athlete coaching count (ncpClientCategory === "athlete" & not buddy/mentor/sv)
+  const sportsLogs = coachingLogs.filter(
+    (l) => l.ncpClientCategory === "athlete" && !["buddy", "mentor", "sv"].includes(l.coachingType)
+  );
+  // Group by coachee and cap at 2 each
+  const sportsCoacheeCounts: Record<string, number> = {};
+  for (const log of sportsLogs) {
+    const key = log.coacheeInfo.trim();
+    sportsCoacheeCounts[key] = (sportsCoacheeCounts[key] ?? 0) + 1;
+  }
+  const sportsCount = Object.values(sportsCoacheeCounts)
+    .reduce((sum, count) => sum + Math.min(count, 2), 0);
+
+  // 5. General coaching count (ncpClientCategory === "general" & not buddy/mentor/sv)
+  const generalLogs = coachingLogs.filter(
+    (l) => l.ncpClientCategory === "general" && !["buddy", "mentor", "sv"].includes(l.coachingType)
+  );
+  // Group by coachee and cap at 2 each
+  const generalCoacheeCounts: Record<string, number> = {};
+  for (const log of generalLogs) {
+    const key = log.coacheeInfo.trim();
+    generalCoacheeCounts[key] = (generalCoacheeCounts[key] ?? 0) + 1;
+  }
+  const generalCount = Object.values(generalCoacheeCounts)
+    .reduce((sum, count) => sum + Math.min(count, 2), 0);
+
+  // Raw counts
+  const rawSportsCount = sportsLogs.length;
+  const rawGeneralCount = generalLogs.length;
+
+  return {
+    buddyCount,
+    mentorCount,
+    svCount,
+    sportsCount,
+    generalCount,
+    rawSportsCount,
+    rawGeneralCount,
+    totalCount: buddyCount + mentorCount + svCount + sportsCount + generalCount,
+  };
+}
+
 // Evaluate completion status for a single user in a cohort
 export const evaluateCompletion = query({
   args: {
@@ -35,22 +117,18 @@ export const evaluateCompletion = query({
   handler: async (ctx, args) => {
     await requireAuth(ctx);
 
-    // ── 1. Coaching logs (approved) ─────────────────────────────────────────
-    const allLogs = await ctx.db
-      .query("coachingLogs")
-      .withIndex("by_user_and_status", (q) =>
-        q.eq("userId", args.userId).eq("approvalStatus", "approved")
-      )
-      .collect();
+    const progress = await calculateCoachingProgress(ctx, args.userId);
 
-    const approvedCoachingCount = allLogs.length;
-
-    // Completion: 10건
-    const coachingForCompletion = approvedCoachingCount >= 10;
+    // Completion: 15건
+    const coachingForCompletion =
+      progress.buddyCount >= 2 &&
+      progress.mentorCount >= 2 &&
+      progress.svCount >= 1 &&
+      progress.sportsCount >= 8 &&
+      progress.generalCount >= 2 &&
+      progress.totalCount >= 15;
 
     // ── 2. Attendance ────────────────────────────────────────────────────────
-    // 수료 기준 출석: 2일 세미나(two_day)만 해당
-    // 교재학습(one_day), 그룹코칭(group_coaching)은 출석체크는 하되 수료 판단에 미포함
     const stats = await calculateUserCohortAttendance(ctx, args.cohortId, args.userId, true);
     const {
       attendanceRate,
@@ -64,20 +142,13 @@ export const evaluateCompletion = query({
     const isCompleted = coachingForCompletion && attendanceForCompletion;
 
     // ── 3. Certification criteria ────────────────────────────────────────────
-    // 20건 total, 8건 sports, max 2 per coachee
-    const sportsCount = allLogs.filter((l) => l.coacheeType?.includes("선수") === true).length;
-
-    // Count per coachee identifier (cap at 2 each)
-    const coacheeCounts: Record<string, number> = {};
-    for (const log of allLogs) {
-      const key = log.coacheeInfo;
-      coacheeCounts[key] = (coacheeCounts[key] ?? 0) + 1;
-    }
-    const eligibleCoachingCount = Object.values(coacheeCounts)
-      .reduce((sum, count) => sum + Math.min(count, 2), 0);
-
-    const coachingForCert = eligibleCoachingCount >= 20;
-    const sportsForCert = sportsCount >= 8;
+    const coachingForCert =
+      progress.buddyCount >= 2 &&
+      progress.mentorCount >= 2 &&
+      progress.svCount >= 1 &&
+      progress.sportsCount >= 8 &&
+      progress.generalCount >= 7 &&
+      progress.totalCount >= 20;
 
     // Book reports
     const bookReports = await ctx.db
@@ -99,29 +170,21 @@ export const evaluateCompletion = query({
     const essayCount = essays.length;
     const essayForCert = essayCount >= 1;
 
-    // Supervision/mentoring
-    const mentorLogs = await ctx.db
-      .query("mentorCoachingLogs")
-      .withIndex("by_user_and_status", (q) =>
-        q.eq("userId", args.userId).eq("approvalStatus", "approved")
-      )
-      .collect();
-    const mentorCount = mentorLogs.length;
-    const mentorForCert = mentorCount >= 1;
-
     const isCertEligible =
       isCompleted &&
       coachingForCert &&
-      sportsForCert &&
       bookReportsForCert &&
-      essayForCert &&
-      mentorForCert;
+      essayForCert;
 
     return {
-      // Completion
       isCompleted,
       completion: {
-        coaching: { count: approvedCoachingCount, required: 10, met: coachingForCompletion },
+        coaching: { count: progress.totalCount, required: 15, met: coachingForCompletion },
+        buddy: { count: progress.buddyCount, required: 2, met: progress.buddyCount >= 2 },
+        mentor: { count: progress.mentorCount, required: 2, met: progress.mentorCount >= 2 },
+        sv: { count: progress.svCount, required: 1, met: progress.svCount >= 1 },
+        sports: { count: progress.sportsCount, required: 8, met: progress.sportsCount >= 8 },
+        general: { count: progress.generalCount, required: 2, met: progress.generalCount >= 2 },
         attendance: {
           rate: attendanceRate,
           totalSlots,
@@ -130,14 +193,16 @@ export const evaluateCompletion = query({
           met: attendanceForCompletion,
         },
       },
-      // Certification eligibility
       isCertEligible,
       certification: {
-        coaching: { eligible: eligibleCoachingCount, total: approvedCoachingCount, required: 20, met: coachingForCert },
-        sports: { count: sportsCount, required: 8, met: sportsForCert },
+        coaching: { eligible: progress.totalCount, total: progress.totalCount, required: 20, met: coachingForCert },
+        buddy: { count: progress.buddyCount, required: 2, met: progress.buddyCount >= 2 },
+        mentor: { count: progress.mentorCount, required: 2, met: progress.mentorCount >= 2 },
+        sv: { count: progress.svCount, required: 1, met: progress.svCount >= 1 },
+        sports: { count: progress.sportsCount, required: 8, met: progress.sportsCount >= 8 },
+        general: { count: progress.generalCount, required: 7, met: progress.generalCount >= 7 },
         bookReports: { count: bookReportCount, required: 2, met: bookReportsForCert },
         essay: { count: essayCount, required: 1, met: essayForCert },
-        mentor: { count: mentorCount, required: 1, met: mentorForCert },
       },
     };
   },
@@ -159,7 +224,6 @@ export const evaluateCohort = query({
       .withIndex("by_cohort", (q) => q.eq("cohortId", args.cohortId))
       .collect();
     seminars.sort((a, b) => a.sessionNumber - b.sessionNumber);
-    // 수료 출석 기준: 2일 세미나만 해당
     const twoDay = seminars.filter((s) => s.seminarType === "two_day");
     const totalSlots = twoDay.length * 2;
 
@@ -167,22 +231,16 @@ export const evaluateCohort = query({
       members.map(async (m) => {
         const user = await ctx.db.get(m.userId);
 
-        // Coaching logs
-        const logs = await ctx.db
-          .query("coachingLogs")
-          .withIndex("by_user_and_status", (q) =>
-            q.eq("userId", m.userId).eq("approvalStatus", "approved")
-          )
-          .collect();
-        const approvedCoachingCount = logs.length;
-        const sportsCount = logs.filter((l) => l.coacheeType?.includes("선수") === true).length;
-        const coacheeCounts: Record<string, number> = {};
-        for (const log of logs) {
-          const key = log.coacheeInfo;
-          coacheeCounts[key] = (coacheeCounts[key] ?? 0) + 1;
-        }
-        const eligibleCoachingCount = Object.values(coacheeCounts)
-          .reduce((sum, count) => sum + Math.min(count, 2), 0);
+        // Coaching progress using helper
+        const progress = await calculateCoachingProgress(ctx, m.userId);
+
+        const coachingOk =
+          progress.buddyCount >= 2 &&
+          progress.mentorCount >= 2 &&
+          progress.svCount >= 1 &&
+          progress.sportsCount >= 8 &&
+          progress.generalCount >= 2 &&
+          progress.totalCount >= 15;
 
         // Attendance
         const attendanceRecords = await ctx.db
@@ -195,7 +253,6 @@ export const evaluateCohort = query({
         let attendedSlots = 0;
         let sessionAbsenceViolation = false;
 
-        // Cross-cohort makeup check
         const otherMemberships = await ctx.db
           .query("cohortMembers")
           .withIndex("by_user", (q) => q.eq("userId", m.userId))
@@ -239,6 +296,9 @@ export const evaluateCohort = query({
           ? Math.round((attendedSlots / totalSlots) * 100)
           : 0;
 
+        const attendanceOk = attendanceRate >= 80 && !sessionAbsenceViolation;
+        const isCompleted = coachingOk && attendanceOk;
+
         // Docs
         const bookReports = await ctx.db
           .query("bookReports")
@@ -252,24 +312,20 @@ export const evaluateCohort = query({
             q.eq("userId", m.userId).eq("approvalStatus", "approved")
           )
           .collect();
-        const mentorLogs = await ctx.db
-          .query("mentorCoachingLogs")
-          .withIndex("by_user_and_status", (q) =>
-            q.eq("userId", m.userId).eq("approvalStatus", "approved")
-          )
-          .collect();
 
-        const coachingOk = approvedCoachingCount >= 10;
-        const attendanceOk = attendanceRate >= 80 && !sessionAbsenceViolation;
-        const isCompleted = coachingOk && attendanceOk;
+        const coachingForCert =
+          progress.buddyCount >= 2 &&
+          progress.mentorCount >= 2 &&
+          progress.svCount >= 1 &&
+          progress.sportsCount >= 8 &&
+          progress.generalCount >= 7 &&
+          progress.totalCount >= 20;
 
         const isCertEligible =
           isCompleted &&
-          eligibleCoachingCount >= 20 &&
-          sportsCount >= 8 &&
+          coachingForCert &&
           bookReports.length >= 2 &&
-          essays.length >= 1 &&
-          mentorLogs.length >= 1;
+          essays.length >= 1;
 
         return {
           userId: m.userId,
@@ -281,12 +337,17 @@ export const evaluateCohort = query({
           isCertEligible,
           attendanceRate,
           sessionAbsenceViolation,
-          approvedCoachingCount,
-          eligibleCoachingCount,
-          sportsCount,
+          
+          approvedCoachingCount: progress.totalCount,
+          eligibleCoachingCount: progress.totalCount,
+          buddyCount: progress.buddyCount,
+          mentorCount: progress.mentorCount,
+          svCount: progress.svCount,
+          sportsCount: progress.sportsCount,
+          generalCount: progress.generalCount,
+          
           bookReportCount: bookReports.length,
           essayCount: essays.length,
-          mentorCount: mentorLogs.length,
         };
       })
     );

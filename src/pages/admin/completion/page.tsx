@@ -104,7 +104,7 @@ export default function AdminCompletionPage() {
           <CardContent className="space-y-2 pt-0">
             <div className="flex items-start gap-2 text-sm">
               <ClipboardList className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-              <span>코칭 실습 보고서 승인 <strong>10건</strong> 이상</span>
+              <span>코칭 실습 <strong>총 15회</strong> (버디 2회, 멘토 2회, SV 1회, 스포츠선수 8회, 일반인 2회)</span>
             </div>
             <div className="flex items-start gap-2 text-sm">
               <BarChart3 className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
@@ -123,11 +123,7 @@ export default function AdminCompletionPage() {
           <CardContent className="space-y-2 pt-0">
             <div className="flex items-start gap-2 text-sm">
               <ClipboardList className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-              <span>코칭 실습 보고서 <strong>20건</strong> (수료기준 10건 포함, 동일인 최대 2건)</span>
-            </div>
-            <div className="flex items-start gap-2 text-sm">
-              <Dumbbell className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-              <span>스포츠선수 대상 코칭 <strong>8건</strong> 이상</span>
+              <span>코칭 실습 <strong>총 20회</strong> (버디 2회, 멘토 2회, SV 1회, 스포츠선수 8회, 일반인 7회, 동일인 최대 2건)</span>
             </div>
             <div className="flex items-start gap-2 text-sm">
               <BookOpen className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
@@ -135,11 +131,7 @@ export default function AdminCompletionPage() {
             </div>
             <div className="flex items-start gap-2 text-sm">
               <FileText className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-              <span>멘탈코칭 에세이 제출 <strong>1편</strong></span>
-            </div>
-            <div className="flex items-start gap-2 text-sm">
-              <UserCheck className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-              <span>슈퍼비전/멘토링 <strong>*회</strong> 이상 (예정)</span>
+              <span>멘탈코칭 에세이 제출 <strong>1편</strong> 이상</span>
             </div>
           </CardContent>
         </Card>
@@ -295,10 +287,47 @@ function CompletionTable({ cohortId }: { cohortId: Id<"cohorts"> }) {
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">수료 기준</p>
                     <CriterionRow
                       icon={<ClipboardList className="w-3.5 h-3.5" />}
-                      label="코칭 실습 보고서"
-                      current={r.approvedCoachingCount}
-                      required={10}
-                      met={r.approvedCoachingCount >= 10}
+                      label="버디코칭"
+                      current={r.buddyCount ?? 0}
+                      required={2}
+                      met={(r.buddyCount ?? 0) >= 2}
+                    />
+                    <CriterionRow
+                      icon={<ClipboardList className="w-3.5 h-3.5" />}
+                      label="멘토코칭"
+                      current={r.mentorCount ?? 0}
+                      required={2}
+                      met={(r.mentorCount ?? 0) >= 2}
+                    />
+                    <CriterionRow
+                      icon={<ClipboardList className="w-3.5 h-3.5" />}
+                      label="SV코칭"
+                      current={r.svCount ?? 0}
+                      required={1}
+                      met={(r.svCount ?? 0) >= 1}
+                    />
+                    <CriterionRow
+                      icon={<ClipboardList className="w-3.5 h-3.5" />}
+                      label="스포츠선수코칭 (유효)"
+                      current={r.sportsCount ?? 0}
+                      required={8}
+                      met={(r.sportsCount ?? 0) >= 8}
+                      detail="동일인 최대 2건"
+                    />
+                    <CriterionRow
+                      icon={<ClipboardList className="w-3.5 h-3.5" />}
+                      label="일반인코칭 (유효)"
+                      current={r.generalCount ?? 0}
+                      required={2}
+                      met={(r.generalCount ?? 0) >= 2}
+                      detail="동일인 최대 2건"
+                    />
+                    <CriterionRow
+                      icon={<ClipboardList className="w-3.5 h-3.5" />}
+                      label="총 코칭 실습 보고서"
+                      current={r.approvedCoachingCount ?? 0}
+                      required={15}
+                      met={(r.approvedCoachingCount ?? 0) >= 15}
                     />
                     <CriterionRow
                       icon={<BarChart3 className="w-3.5 h-3.5" />}
@@ -314,18 +343,47 @@ function CompletionTable({ cohortId }: { cohortId: Id<"cohorts"> }) {
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">인증 응시 자격</p>
                     <CriterionRow
                       icon={<ClipboardList className="w-3.5 h-3.5" />}
-                      label="코칭 보고서 (유효)"
-                      current={r.eligibleCoachingCount}
-                      required={20}
-                      met={r.eligibleCoachingCount >= 20}
-                      detail={`전체 ${r.approvedCoachingCount}건 · 동일인 2건 초과분 제외`}
+                      label="버디코칭"
+                      current={r.buddyCount ?? 0}
+                      required={2}
+                      met={(r.buddyCount ?? 0) >= 2}
                     />
                     <CriterionRow
-                      icon={<Dumbbell className="w-3.5 h-3.5" />}
-                      label="스포츠선수 대상 코칭"
-                      current={r.sportsCount}
+                      icon={<ClipboardList className="w-3.5 h-3.5" />}
+                      label="멘토코칭"
+                      current={r.mentorCount ?? 0}
+                      required={2}
+                      met={(r.mentorCount ?? 0) >= 2}
+                    />
+                    <CriterionRow
+                      icon={<ClipboardList className="w-3.5 h-3.5" />}
+                      label="SV코칭"
+                      current={r.svCount ?? 0}
+                      required={1}
+                      met={(r.svCount ?? 0) >= 1}
+                    />
+                    <CriterionRow
+                      icon={<ClipboardList className="w-3.5 h-3.5" />}
+                      label="스포츠선수코칭 (유효)"
+                      current={r.sportsCount ?? 0}
                       required={8}
-                      met={r.sportsCount >= 8}
+                      met={(r.sportsCount ?? 0) >= 8}
+                      detail="동일인 최대 2건"
+                    />
+                    <CriterionRow
+                      icon={<ClipboardList className="w-3.5 h-3.5" />}
+                      label="일반인코칭 (유효)"
+                      current={r.generalCount ?? 0}
+                      required={7}
+                      met={(r.generalCount ?? 0) >= 7}
+                      detail="동일인 최대 2건"
+                    />
+                    <CriterionRow
+                      icon={<ClipboardList className="w-3.5 h-3.5" />}
+                      label="총 코칭 실습 보고서"
+                      current={r.approvedCoachingCount ?? 0}
+                      required={20}
+                      met={(r.approvedCoachingCount ?? 0) >= 20}
                     />
                     <CriterionRow
                       icon={<BookOpen className="w-3.5 h-3.5" />}
@@ -340,13 +398,6 @@ function CompletionTable({ cohortId }: { cohortId: Id<"cohorts"> }) {
                       current={r.essayCount}
                       required={1}
                       met={r.essayCount >= 1}
-                    />
-                    <CriterionRow
-                      icon={<UserCheck className="w-3.5 h-3.5" />}
-                      label="슈퍼비전/멘토링"
-                      current={r.mentorCount}
-                      required={1}
-                      met={r.mentorCount >= 1}
                     />
                   </div>
                 </div>

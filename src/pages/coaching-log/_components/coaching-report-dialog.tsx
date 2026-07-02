@@ -5,6 +5,7 @@ import { ko } from "date-fns/locale";
 import { toast } from "sonner";
 import { FileDown, Printer } from "lucide-react";
 import type { Doc } from "@/convex/_generated/dataModel.d.ts";
+import { COACHING_TYPE_MAP } from "./coaching-log-card.tsx";
 import {
   Dialog,
   DialogContent,
@@ -267,7 +268,7 @@ function ReportContent({ logs, user, summary }: Omit<Props, "open" | "onOpenChan
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {log.coachingType === "individual" ? "개인" : "그룹"}
+                    {COACHING_TYPE_MAP[log.coachingType] ?? log.coachingType}
                   </td>
                   <td
                     style={{

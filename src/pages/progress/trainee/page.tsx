@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
 import type { Id } from "@/convex/_generated/dataModel.d.ts";
+import { COACHING_TYPE_MAP } from "@/pages/coaching-log/_components/coaching-log-card.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button.tsx";
@@ -388,7 +389,7 @@ export default function TraineeDetailPage() {
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">{log.topic}</p>
                             <p className="text-xs text-muted-foreground">
-                              {log.coachingType === "individual" ? "개인" : "그룹"} ·{" "}
+                              {COACHING_TYPE_MAP[log.coachingType] ?? log.coachingType} ·{" "}
                               {format(new Date(log.coachingDate), "yyyy.MM.dd (EEE)", { locale: ko })} ·{" "}
                               {Math.round((log.durationMinutes / 60) * 10) / 10}시간
                             </p>

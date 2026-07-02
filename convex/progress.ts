@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { query } from "./mockAuth";
 import { getAuthenticatedUser, requireRole } from "./helpers";
 import type { Id } from "./_generated/dataModel.d.ts";
+import { calculateCoachingProgress } from "./completion";
 
 // ── Trainee: full progress overview ─────────────────────────────────────────
 
@@ -83,6 +84,8 @@ export const getMyProgress = query({
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, 10);
 
+    const coachingProgress = await calculateCoachingProgress(ctx, user._id);
+
     return {
       approvedEducationHours,
       approvedCoachingHours,
@@ -90,6 +93,13 @@ export const getMyProgress = query({
       coachingPendingCount: coachingLogs.filter((l) => l.approvalStatus === "pending").length,
       monthlyActivity,
       recentActivity,
+      
+      buddyCount: coachingProgress.buddyCount,
+      mentorCount: coachingProgress.mentorCount,
+      svCount: coachingProgress.svCount,
+      sportsCount: coachingProgress.sportsCount,
+      generalCount: coachingProgress.generalCount,
+      totalCoachingCount: coachingProgress.totalCount,
     };
   },
 });

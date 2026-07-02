@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { api } from "@/convex/_generated/api.js";
 import type { Doc } from "@/convex/_generated/dataModel.d.ts";
+import { COACHING_TYPE_MAP } from "@/pages/coaching-log/_components/coaching-log-card.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Card, CardContent } from "@/components/ui/card.tsx";
@@ -48,7 +49,7 @@ type CoachingLog = Doc<"coachingLogs"> & {
 };
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
-type TypeFilter = "all" | "individual" | "group";
+type TypeFilter = "all" | "individual" | "group" | "team" | "buddy" | "mentor" | "sv";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -265,7 +266,7 @@ function DetailDialog({
               </div>
               <div>
                 <span className="text-xs text-muted-foreground">코칭유형</span>
-                <p className="font-medium">{log.coachingType === "individual" ? "개인" : "그룹"}</p>
+                <p className="font-medium">{COACHING_TYPE_MAP[log.coachingType] ?? log.coachingType}</p>
               </div>
               {log.sessionNumber && (
                 <div>
@@ -492,7 +493,7 @@ function LogCard({
                 </span>
                 <span className="flex items-center gap-1">
                   {log.coachingType === "individual" ? <User className="w-3 h-3" /> : <Users className="w-3 h-3" />}
-                  {log.coachingType === "individual" ? "개인" : "그룹"}
+                  {COACHING_TYPE_MAP[log.coachingType] ?? log.coachingType}
                 </span>
                 <span className="flex items-center gap-1 font-semibold text-foreground">
                   <Clock className="w-3 h-3 text-primary" />
@@ -645,6 +646,10 @@ export default function AdminCoachingPage() {
             <SelectItem value="all">전체 유형</SelectItem>
             <SelectItem value="individual">개인</SelectItem>
             <SelectItem value="group">그룹</SelectItem>
+            <SelectItem value="team">팀</SelectItem>
+            <SelectItem value="buddy">버디</SelectItem>
+            <SelectItem value="mentor">멘토</SelectItem>
+            <SelectItem value="sv">SV</SelectItem>
           </SelectContent>
         </Select>
       </motion.div>

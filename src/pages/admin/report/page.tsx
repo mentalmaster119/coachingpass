@@ -308,11 +308,16 @@ export default function AdminReportPage() {
                     </TableHeader>
                     <TableBody>
                       {evaluation.map((m) => {
-                        const coachingOk = m.eligibleCoachingCount >= 20;
-                        const sportsOk = m.sportsCount >= 8;
+                        const coachingOk =
+                          (m.buddyCount ?? 0) >= 2 &&
+                          (m.mentorCount ?? 0) >= 2 &&
+                          (m.svCount ?? 0) >= 1 &&
+                          (m.sportsCount ?? 0) >= 8 &&
+                          (m.generalCount ?? 0) >= 7;
+                        const sportsOk = (m.sportsCount ?? 0) >= 8;
                         const bookOk = m.bookReportCount >= 2;
                         const essayOk = m.essayCount >= 1;
-                        const mentorOk = m.mentorCount >= 1;
+                        const mentorOk = (m.mentorCount ?? 0) >= 2 && (m.svCount ?? 0) >= 1;
                         const attendanceOk = m.attendanceRate >= 80 && !m.sessionAbsenceViolation;
                         return (
                           <TableRow key={m.userId} className={m.isCertEligible ? "" : "bg-muted/30"}>
@@ -421,18 +426,22 @@ export default function AdminReportPage() {
                     const missing: string[] = [];
                     if (m.attendanceRate < 80 || m.sessionAbsenceViolation)
                       missing.push(`출석 ${m.attendanceRate}% (80% 미달${m.sessionAbsenceViolation ? ", 결석 위반" : ""})`);
-                    if (m.approvedCoachingCount < 10)
-                      missing.push(`코칭 보고서 수료기준 미달 (${m.approvedCoachingCount}/10건)`);
-                    if (m.eligibleCoachingCount < 20)
-                      missing.push(`코칭 보고서 인증기준 미달 (${m.eligibleCoachingCount}/20건)`);
-                    if (m.sportsCount < 8)
-                      missing.push(`스포츠선수 코칭 부족 (${m.sportsCount}/8건)`);
+                    if ((m.buddyCount ?? 0) < 2)
+                      missing.push(`버디코칭 부족 (${m.buddyCount ?? 0}/2회)`);
+                    if ((m.mentorCount ?? 0) < 2)
+                      missing.push(`멘토코칭 부족 (${m.mentorCount ?? 0}/2회)`);
+                    if ((m.svCount ?? 0) < 1)
+                      missing.push(`SV코칭 부족 (${m.svCount ?? 0}/1회)`);
+                    if ((m.sportsCount ?? 0) < 8)
+                      missing.push(`스포츠선수 코칭 부족 (${m.sportsCount ?? 0}/8회)`);
+                    if ((m.generalCount ?? 0) < 7)
+                      missing.push(`일반인코칭 부족 (${m.generalCount ?? 0}/7회)`);
+                    if (m.approvedCoachingCount < 20)
+                      missing.push(`총 코칭횟수 부족 (${m.approvedCoachingCount}/20회)`);
                     if (m.bookReportCount < 2)
                       missing.push(`독후감 부족 (${m.bookReportCount}/2건)`);
                     if (m.essayCount < 1)
                       missing.push("에세이 미제출");
-                    if (m.mentorCount < 1)
-                      missing.push("슈퍼비전/멘토링 미이수");
                     return (
                       <div
                         key={m.userId}

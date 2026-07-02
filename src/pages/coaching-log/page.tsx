@@ -116,6 +116,10 @@ export default function CoachingLogPage() {
       if (activeTab === "all") return true;
       if (activeTab === "individual") return log.coachingType === "individual";
       if (activeTab === "group") return log.coachingType === "group";
+      if (activeTab === "team") return log.coachingType === "team";
+      if (activeTab === "buddy") return log.coachingType === "buddy";
+      if (activeTab === "mentor") return log.coachingType === "mentor";
+      if (activeTab === "sv") return log.coachingType === "sv";
       if (activeTab === "draft") return log.approvalStatus === "draft";
       if (activeTab === "pending") return log.approvalStatus === "pending";
       if (activeTab === "approved") return log.approvalStatus === "approved";
@@ -250,6 +254,10 @@ export default function CoachingLogPage() {
             </TabsTrigger>
             <TabsTrigger value="individual">개인 코칭</TabsTrigger>
             <TabsTrigger value="group">그룹 코칭</TabsTrigger>
+            <TabsTrigger value="team">팀 코칭</TabsTrigger>
+            <TabsTrigger value="buddy">버디 코칭</TabsTrigger>
+            <TabsTrigger value="mentor">멘토 코칭</TabsTrigger>
+            <TabsTrigger value="sv">SV 코칭</TabsTrigger>
             <TabsTrigger value="pending">검토중</TabsTrigger>
             <TabsTrigger value="approved">승인됨</TabsTrigger>
             <TabsTrigger value="stats">통계 & 인사이트</TabsTrigger>
