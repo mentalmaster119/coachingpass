@@ -9,7 +9,7 @@ export function useCurrentUser() {
   const isPreviewMode = localStorage.getItem("admin_preview_mode") === "true";
   const previewRole = (localStorage.getItem("preview_role") as "trainee" | "senior_coach") || "trainee";
 
-  const normalUser = useQuery(api.users.getRealUser, authUser ? {} : "skip");
+  const normalUser = useQuery(api.sessions.getRealUser, authUser ? {} : "skip");
   const previewUser = useQuery(api.users.getMockUserByRole, isPreviewMode && authUser ? { role: previewRole } : "skip");
 
   const user = isPreviewMode ? previewUser : normalUser;
