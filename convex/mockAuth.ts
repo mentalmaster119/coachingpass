@@ -14,6 +14,10 @@ async function getMockIdentity(ctx: any, originalGetUserIdentity: any) {
   const identity = await originalGetUserIdentity.call(ctx.auth);
   if (!identity) return null;
 
+  if (ctx.skipMockAuth) {
+    return identity;
+  }
+
   if (ctx.db) {
     const activeMockUser = await ctx.db
       .query("users")
