@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
-import { mutation, query } from "./mockAuth";
+import { mutation, query as mockQuery } from "./mockAuth";
+import { query } from "./_generated/server";
 import { getAuthenticatedUser } from "./helpers";
 import type { Id } from "./_generated/dataModel.d.ts";
 
@@ -93,7 +94,7 @@ export const updateCurrentUser = mutation({
   },
 });
 
-export const getCurrentUser = query({
+export const getCurrentUser = mockQuery({
   args: {},
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -168,7 +169,7 @@ export const updateAvatar = mutation({
   },
 });
 
-export const getMyPortfolio = query({
+export const getMyPortfolio = mockQuery({
   args: {},
   handler: async (ctx): Promise<{
     user: {
@@ -293,7 +294,22 @@ export const getMyPortfolio = query({
   },
 });
 
-export const getMockUserByRole = query({
+export const getRealUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    return await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier),
+      )
+      .unique();
+  },
+});
+
+export const getMockUserByRole = mockQuery({
   args: { role: v.union(v.literal("trainee"), v.literal("senior_coach"), v.literal("admin")) },
   handler: async (ctx, args) => {
     if (args.role === "trainee") {
