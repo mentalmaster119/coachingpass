@@ -229,10 +229,32 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           await caches.delete(key);
         }
       }
+      // Preserve auth-related keys in localStorage to prevent logging out
+      const authKeys = Object.keys(localStorage).filter(
+        (key) =>
+          key.startsWith("oidc.") ||
+          key.includes("token") ||
+          key.includes("auth") ||
+          key.includes("hercules")
+      );
+      const authValues = authKeys.reduce(
+        (acc, key) => {
+          acc[key] = localStorage.getItem(key) || "";
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+
       localStorage.clear();
+
+      // Restore auth keys
+      Object.entries(authValues).forEach(([key, val]) => {
+        localStorage.setItem(key, val);
+      });
+
       toast.success("캐시가 초기화되었습니다. 페이지를 새로고침합니다.");
       setTimeout(() => {
-        window.location.replace("/");
+        window.location.reload();
       }, 1000);
     } catch (err) {
       console.error("Failed to clear cache:", err);

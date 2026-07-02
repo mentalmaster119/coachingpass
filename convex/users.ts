@@ -293,9 +293,53 @@ export const getMyPortfolio = query({
   },
 });
 
+import { query as convexQuery } from "./_generated/server";
+
+export const getRealUser = convexQuery({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    return await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier),
+      )
+      .unique();
+  },
+});
+
 export const getMockUserByRole = query({
   args: { role: v.union(v.literal("trainee"), v.literal("senior_coach"), v.literal("admin")) },
   handler: async (ctx, args) => {
+    if (args.role === "trainee") {
+      const u = await ctx.db
+        .query("users")
+        .collect()
+        .then((users) =>
+          users.find(
+            (user) =>
+              user.role === "trainee" &&
+              (user.name?.toLowerCase().includes("chul") ||
+                user.name?.toLowerCase().includes("park") ||
+                user.name?.includes("철수"))
+          )
+        );
+      if (u) return u;
+    } else if (args.role === "senior_coach") {
+      const u = await ctx.db
+        .query("users")
+        .collect()
+        .then((users) =>
+          users.find(
+            (user) =>
+              user.role === "senior_coach" &&
+              user.email?.toLowerCase().includes("mentalcoach119")
+          )
+        );
+      if (u) return u;
+    }
     return await ctx.db
       .query("users")
       .withIndex("by_role", (q) => q.eq("role", args.role))
@@ -312,10 +356,25 @@ export const setActiveMockUser = mutation({
         await ctx.db.patch(u._id, { isMockActive: false });
       }
     }
-    const targetUser = await ctx.db
-      .query("users")
-      .withIndex("by_role", (q) => q.eq("role", args.role))
-      .first();
+    let targetUser = null;
+    if (args.role === "trainee") {
+      targetUser = allUsers.find(
+        (user) =>
+          user.role === "trainee" &&
+          (user.name?.toLowerCase().includes("chul") ||
+            user.name?.toLowerCase().includes("park") ||
+            user.name?.includes("철수"))
+      );
+    } else if (args.role === "senior_coach") {
+      targetUser = allUsers.find(
+        (user) =>
+          user.role === "senior_coach" &&
+          user.email?.toLowerCase().includes("mentalcoach119")
+      );
+    }
+    if (!targetUser) {
+      targetUser = allUsers.find((user) => user.role === args.role);
+    }
     if (targetUser) {
       await ctx.db.patch(targetUser._id, { isMockActive: true });
       return targetUser._id;
