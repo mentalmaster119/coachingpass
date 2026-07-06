@@ -31,13 +31,17 @@ import {
   ShieldAlert,
   Search,
   RotateCw,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button.tsx";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { useAuth } from "@/hooks/use-auth.ts";
 import { useCurrentUser } from "@/hooks/use-current-user.ts";
 import { cn } from "@/lib/utils.ts";
+import { PageTransition } from "./page-transition.tsx";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import NotificationBell from "@/components/notifications/notification-bell.tsx";
@@ -193,6 +197,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const { isPreviewMode, previewRole, setPreviewMode } = useViewMode();
   const { unsubscribe: unsubscribePush } = usePushNotifications();
   const mockLogin = useMutation(api.users.setActiveMockUser);
+  const { theme, setTheme } = useTheme();
 
   const realRole = realUser?.role || localStorage.getItem("real_role");
   const navItems = user ? getNavItems(user.role, isPreviewMode) : [];
@@ -439,6 +444,14 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         </button>
 
         <button
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
+        >
+          {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          {theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환"}
+        </button>
+
+        <button
           onClick={handleSignOut}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
         >
@@ -596,6 +609,7 @@ function AppLayoutInner() {
   const { user, isLoading } = useCurrentUser();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isPreviewMode } = useViewMode();
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     if (isLoading) return;
@@ -661,6 +675,15 @@ function AppLayoutInner() {
             >
               <Search className="w-5 h-5" />
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-sidebar-foreground hover:bg-sidebar-accent"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              title={theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환"}
+            >
+              {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </Button>
             <NotificationBell />
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
@@ -681,7 +704,9 @@ function AppLayoutInner() {
           {isPreviewMode && (
             <PreviewModeBanner />
           )}
-          <Outlet />
+          <PageTransition key={location.pathname}>
+            <Outlet />
+          </PageTransition>
         </main>
       </div>
 
@@ -713,6 +738,7 @@ export default function AppLayout() {
   const { isAuthenticated } = useAuth();
   const { user, isLoading: isUserLoading, isPending, isRejected } = useCurrentUser();
   const navigate = useNavigate();
+  const location = useLocation();
   const mockLogin = useMutation(api.users.setActiveMockUser);
 
   const setPreviewMode = async (enabled: boolean, role: "trainee" | "senior_coach" = "trainee") => {
