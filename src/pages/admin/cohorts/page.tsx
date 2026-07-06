@@ -408,7 +408,9 @@ type Member = {
   joinedAt: string;
   status: MemberStatus;
   _creationTime: number;
-  user: { _id: Id<"users">; name?: string; email?: string; certificationGoal?: "KAC" | "KPC"; role: string } | null;
+  approvedCount?: number;
+  totalCount?: number;
+  user: { _id: Id<"users">; name?: string; email?: string; certificationGoal?: "KAC" | "KPC" | "SMPCC"; role: string } | null;
 };
 
 function CohortMemberPanel({ cohortId }: { cohortId: Id<"cohorts"> }) {
@@ -424,6 +426,21 @@ function CohortMemberPanel({ cohortId }: { cohortId: Id<"cohorts"> }) {
 
   const memberUserIds = new Set(members?.map((m) => m.userId) ?? []);
   const eligibleUsers = allUsers?.filter((u) => u.role === "trainee" && !memberUserIds.has(u._id)) ?? [];
+
+  // ── Calculate Stats ──
+  const activeMembers = members?.filter((m) => m.status === "active") ?? [];
+  const completedMembers = members?.filter((m) => m.status === "completed") ?? [];
+  const totalCount = members?.length ?? 0;
+
+  const activeApprovedLogs = activeMembers.map((m) => m.approvedCount ?? 0);
+  const averageLogs = activeApprovedLogs.length > 0
+    ? parseFloat((activeApprovedLogs.reduce((a, b) => a + b, 0) / activeApprovedLogs.length).toFixed(1))
+    : 0;
+
+  const completionFulfilled = activeMembers.filter((m) => (m.approvedCount ?? 0) >= 15).length;
+  const completionRate = activeMembers.length > 0
+    ? Math.round((completionFulfilled / activeMembers.length) * 100)
+    : 0;
 
   const handleAdd = async () => {
     if (!selectedUserId) return;
@@ -464,7 +481,28 @@ function CohortMemberPanel({ cohortId }: { cohortId: Id<"cohorts"> }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      {/* Cohort Stats Summary */}
+      {members && members.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="rounded-xl border bg-card p-3 space-y-1">
+            <p className="text-[11px] font-medium text-muted-foreground">평균 제출 개수 (수강생)</p>
+            <p className="text-lg font-bold">{averageLogs} 회</p>
+            <p className="text-[10px] text-muted-foreground">활성 수강생 평균 승인 건수</p>
+          </div>
+          <div className="rounded-xl border bg-card p-3 space-y-1">
+            <p className="text-[11px] font-medium text-muted-foreground">과정 수료 조건 충족률</p>
+            <p className="text-lg font-bold">{completionRate}%</p>
+            <p className="text-[10px] text-muted-foreground">승인 15회 이상 인원 비율</p>
+          </div>
+          <div className="rounded-xl border bg-card p-3 space-y-1">
+            <p className="text-[11px] font-medium text-muted-foreground">수료생 현황</p>
+            <p className="text-lg font-bold">{completedMembers.length} / {totalCount} 명</p>
+            <p className="text-[10px] text-muted-foreground">전체 등록 인원 중 수료 완료자</p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between border-t border-border/40 pt-3">
         <div className="flex items-center gap-2 text-sm font-medium">
           <Users className="w-4 h-4" />
           교육생 목록
@@ -489,14 +527,24 @@ function CohortMemberPanel({ cohortId }: { cohortId: Id<"cohorts"> }) {
         <div className="space-y-2">
           {(members as Member[]).map((m) => (
             <div key={m._id} className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-muted/50">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <span className="text-xs font-semibold text-primary">
                     {(m.user?.name ?? "?")[0]}
                   </span>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{m.user?.name ?? "알 수 없음"}</p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-sm font-medium truncate">{m.user?.name ?? "알 수 없음"}</p>
+                    <span className="text-[11px] font-bold text-muted-foreground">
+                      ({m.approvedCount ?? 0}회 승인)
+                    </span>
+                    {m.status === "active" && (m.approvedCount ?? 0) < 10 && (
+                      <Badge variant="outline" className="text-[9px] h-4.5 px-1 bg-amber-50 text-amber-600 border-amber-300 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/40">
+                        진도 지연
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground truncate">{m.user?.email ?? ""}</p>
                 </div>
               </div>

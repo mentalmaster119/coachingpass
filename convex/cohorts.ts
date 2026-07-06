@@ -12,7 +12,11 @@ type UserInfo = {
   role: string;
 };
 
-type MemberWithUser = Doc<"cohortMembers"> & { user: UserInfo | null };
+type MemberWithUser = Doc<"cohortMembers"> & {
+  user: UserInfo | null;
+  approvedCount?: number;
+  totalCount?: number;
+};
 
 // Helper: require admin
 async function requireAdmin(ctx: QueryCtx | MutationCtx) {
@@ -91,8 +95,20 @@ export const getMembers = query({
     return await Promise.all(
       members.map(async (m) => {
         const user = await ctx.db.get(m.userId);
+        let approvedCount = 0;
+        let totalCount = 0;
+        if (user) {
+          const logs = await ctx.db
+            .query("coachingLogs")
+            .withIndex("by_user", (q) => q.eq("userId", user._id))
+            .collect();
+          approvedCount = logs.filter((l) => l.approvalStatus === "approved").length;
+          totalCount = logs.length;
+        }
         return {
           ...m,
+          approvedCount,
+          totalCount,
           user: user ? { _id: user._id, name: user.name, email: user.email, certificationGoal: "SMPCC" as const, role: user.role } : null,
         };
       })

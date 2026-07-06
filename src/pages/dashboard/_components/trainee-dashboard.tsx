@@ -118,6 +118,7 @@ export default function TraineeDashboard({ user }: { user: User }) {
   const mcciStats = useQuery(api.dashboard.getMyMcciDomainStats);
   const todayOverview = useQuery(api.dashboard.getTraineeTodayOverview);
   const attendanceStats = useQuery(api.dashboard.getMyAttendanceStats);
+  const myLogs = useQuery(api.coaching.getMyLogs);
 
   const MCCI_COLORS = [
     "hsl(var(--chart-1))",
@@ -141,6 +142,49 @@ export default function TraineeDashboard({ user }: { user: User }) {
 
   // Last 6 months of chart data
   const chartData = progressData?.monthlyActivity?.slice(-6) ?? [];
+
+  // Group logs by date (excluding drafts)
+  const submissionCounts: Record<string, number> = {};
+  if (myLogs) {
+    for (const log of myLogs) {
+      if (log.approvalStatus !== "draft") {
+        try {
+          const dateStr = format(new Date(log.coachingDate), "yyyy-MM-dd");
+          submissionCounts[dateStr] = (submissionCounts[dateStr] ?? 0) + 1;
+        } catch {
+          // skip
+        }
+      }
+    }
+  }
+
+  // Generate date array for the last 18 weeks (126 days), aligned to start on a Sunday or Monday
+  const daysToRender: Date[] = [];
+  const today = new Date();
+  const startDay = new Date();
+  startDay.setDate(today.getDate() - 18 * 7);
+  const startDaySunday = new Date(startDay);
+  startDaySunday.setDate(startDay.getDate() - startDay.getDay());
+
+  const current = new Date(startDaySunday);
+  while (daysToRender.length < 18 * 7) {
+    daysToRender.push(new Date(current));
+    current.setDate(current.getDate() + 1);
+  }
+
+  const weeks: Date[][] = [];
+  for (let i = 0; i < daysToRender.length; i += 7) {
+    weeks.push(daysToRender.slice(i, i + 7));
+  }
+
+  const getMonthLabel = (week: Date[]) => {
+    const firstDayOfWeek = week[0];
+    const dayOfMonth = firstDayOfWeek.getDate();
+    if (dayOfMonth <= 7) {
+      return format(firstDayOfWeek, "M월", { locale: ko });
+    }
+    return null;
+  };
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
@@ -585,6 +629,101 @@ export default function TraineeDashboard({ user }: { user: User }) {
                       <span className="text-xs text-muted-foreground">{mcciStats.untagged}회</span>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* ── 코칭 실습 활성도 잔디 차트 ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.16 }}
+      >
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-muted-foreground" />
+                코칭 실습 기록 제출 활성도 (최근 18주)
+              </span>
+              <span className="text-[10px] font-normal text-muted-foreground">
+                제출 완료 및 승인된 기록 기준 일별 빈도
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-2">
+            {myLogs === undefined ? (
+              <Skeleton className="h-28 w-full" />
+            ) : (
+              <div className="flex flex-col">
+                {/* Month labels */}
+                <div className="flex gap-1 text-[9px] pl-6 mb-1 h-4">
+                  {weeks.map((week, wIdx) => {
+                    const label = getMonthLabel(week);
+                    return (
+                      <div key={wIdx} className="w-2.5 relative flex-shrink-0">
+                        {label && (
+                          <span className="absolute left-0 bottom-0 whitespace-nowrap text-muted-foreground/75 font-semibold">
+                            {label}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex gap-2 items-start">
+                  {/* Day-of-week labels */}
+                  <div className="flex flex-col justify-between text-[9px] text-muted-foreground/70 h-[86px] pt-0.5 select-none w-4 flex-shrink-0 text-right leading-[10px]">
+                    <span>일</span>
+                    <span>화</span>
+                    <span>목</span>
+                    <span>토</span>
+                  </div>
+
+                  {/* Heatmap Grid */}
+                  <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-none flex-1">
+                    {weeks.map((week, wIdx) => (
+                      <div key={wIdx} className="grid grid-rows-7 gap-1 flex-shrink-0">
+                        {week.map((day) => {
+                          const dateStr = format(day, "yyyy-MM-dd");
+                          const count = submissionCounts[dateStr] ?? 0;
+
+                          let colorClass = "bg-muted/40 dark:bg-muted/10";
+                          if (count === 1) colorClass = "bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400";
+                          else if (count === 2) colorClass = "bg-emerald-300 dark:bg-emerald-700 text-emerald-900 dark:text-emerald-300";
+                          else if (count >= 3) colorClass = "bg-emerald-500 text-primary-foreground";
+
+                          const formattedDate = format(day, "yyyy년 M월 d일 (E)", { locale: ko });
+                          const tooltipText = `${formattedDate}: ${count}회 제출`;
+
+                          return (
+                            <div
+                              key={dateStr}
+                              className={cn(
+                                "w-2.5 h-2.5 rounded-[1.5px] cursor-pointer transition-all hover:scale-125 hover:ring-1 hover:ring-emerald-400/50",
+                                colorClass
+                              )}
+                              title={tooltipText}
+                            />
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Legend */}
+                <div className="flex items-center justify-end gap-1.5 mt-2 text-[10px] text-muted-foreground/80 pr-1">
+                  <span>덜 제출함</span>
+                  <div className="w-2.5 h-2.5 rounded-[1.5px] bg-muted/40 dark:bg-muted/10" />
+                  <div className="w-2.5 h-2.5 rounded-[1.5px] bg-emerald-100 dark:bg-emerald-950/30" />
+                  <div className="w-2.5 h-2.5 rounded-[1.5px] bg-emerald-300 dark:bg-emerald-700" />
+                  <div className="w-2.5 h-2.5 rounded-[1.5px] bg-emerald-500" />
+                  <span>더 제출함</span>
                 </div>
               </div>
             )}
