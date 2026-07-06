@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { toast } from "sonner";
 import { ConvexError } from "convex/values";
@@ -298,6 +298,8 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
   const isEdit = !!editLog;
   const isDraft = editLog?.approvalStatus === "draft";
 
+  const [hasAutosave, setHasAutosave] = useState(false);
+
   const createLog = useMutation(api.coaching.create);
   const updateLog = useMutation(api.coaching.update);
   const saveDraft = useMutation(api.coaching.saveDraft);
@@ -313,6 +315,8 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
   const [currentDraftId, setCurrentDraftId] = useState<Id<"coachingLogs"> | undefined>(
     isDraft ? editLog?._id : undefined,
   );
+
+
 
   // ── Ⅰ. 기본정보
   const [coachingDate, setCoachingDate] = useState(
@@ -381,6 +385,161 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
     editLog?.evidenceStorageId,
   );
 
+  // ── Auto-save to localStorage (only when creating a new log)
+  useEffect(() => {
+    if (open && !isEdit) {
+      const dataToSave = {
+        coachingDate,
+        coachingStartTime,
+        coachingEndTime,
+        coachingType,
+        coachingPlace,
+        coachingPlaceOther,
+        sessionNumber,
+        coacheeInfo,
+        coacheeGender,
+        coacheeAge,
+        coacheePersonality,
+        coacheeType,
+        ncpClientCategory,
+        coacheeField,
+        hours,
+        topic,
+        coreIssues,
+        preState,
+        postState,
+        techniquesUsed,
+        techniqueOther,
+        clientInsight,
+        coachPattern,
+        goals,
+        actionPlan,
+        nextSessionPractice,
+        summary,
+        reflection,
+        bestOfSession,
+        improvementForNext,
+        changeKeywordsText,
+        mostEffectiveTechnique,
+        clientQuote,
+        coachOverallFeedback,
+        mcciDomain,
+      };
+      localStorage.setItem("coachingpass_autosave_log", JSON.stringify(dataToSave));
+    }
+  }, [
+    open,
+    isEdit,
+    coachingDate,
+    coachingStartTime,
+    coachingEndTime,
+    coachingType,
+    coachingPlace,
+    coachingPlaceOther,
+    sessionNumber,
+    coacheeInfo,
+    coacheeGender,
+    coacheeAge,
+    coacheePersonality,
+    coacheeType,
+    ncpClientCategory,
+    coacheeField,
+    hours,
+    topic,
+    coreIssues,
+    preState,
+    postState,
+    techniquesUsed,
+    techniqueOther,
+    clientInsight,
+    coachPattern,
+    goals,
+    actionPlan,
+    nextSessionPractice,
+    summary,
+    reflection,
+    bestOfSession,
+    improvementForNext,
+    changeKeywordsText,
+    mostEffectiveTechnique,
+    clientQuote,
+    coachOverallFeedback,
+    mcciDomain,
+  ]);
+
+  // Check for existing auto-saved draft when opening dialog
+  useEffect(() => {
+    if (open && !isEdit) {
+      const saved = localStorage.getItem("coachingpass_autosave_log");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.topic || parsed.coacheeInfo || parsed.reflection || parsed.summary) {
+            setHasAutosave(true);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    } else {
+      setHasAutosave(false);
+    }
+  }, [open, isEdit]);
+
+  const handleRestore = () => {
+    const saved = localStorage.getItem("coachingpass_autosave_log");
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed.coachingDate) setCoachingDate(parsed.coachingDate);
+      if (parsed.coachingStartTime) setCoachingStartTime(parsed.coachingStartTime);
+      if (parsed.coachingEndTime) setCoachingEndTime(parsed.coachingEndTime);
+      if (parsed.coachingType) setCoachingType(parsed.coachingType);
+      if (parsed.coachingPlace) setCoachingPlace(parsed.coachingPlace);
+      if (parsed.coachingPlaceOther) setCoachingPlaceOther(parsed.coachingPlaceOther);
+      if (parsed.sessionNumber) setSessionNumber(parsed.sessionNumber);
+      if (parsed.coacheeInfo) setCoacheeInfo(parsed.coacheeInfo);
+      if (parsed.coacheeGender) setCoacheeGender(parsed.coacheeGender);
+      if (parsed.coacheeAge) setCoacheeAge(parsed.coacheeAge);
+      if (parsed.coacheePersonality) setCoacheePersonality(parsed.coacheePersonality);
+      if (parsed.coacheeType) setCoacheeType(parsed.coacheeType);
+      if (parsed.ncpClientCategory) setNcpClientCategory(parsed.ncpClientCategory);
+      if (parsed.coacheeField) setCoacheeField(parsed.coacheeField);
+      if (parsed.hours) setHours(parsed.hours);
+      if (parsed.topic) setTopic(parsed.topic);
+      if (parsed.coreIssues) setCoreIssues(parsed.coreIssues);
+      if (parsed.preState) setPreState(parsed.preState);
+      if (parsed.postState) setPostState(parsed.postState);
+      if (parsed.techniquesUsed) setTechniquesUsed(parsed.techniquesUsed);
+      if (parsed.techniqueOther) setTechniqueOther(parsed.techniqueOther);
+      if (parsed.clientInsight) setClientInsight(parsed.clientInsight);
+      if (parsed.coachPattern) setCoachPattern(parsed.coachPattern);
+      if (parsed.goals) setGoals(parsed.goals);
+      if (parsed.actionPlan) setActionPlan(parsed.actionPlan);
+      if (parsed.nextSessionPractice) setNextSessionPractice(parsed.nextSessionPractice);
+      if (parsed.summary) setSummary(parsed.summary);
+      if (parsed.reflection) setReflection(parsed.reflection);
+      if (parsed.bestOfSession) setBestOfSession(parsed.bestOfSession);
+      if (parsed.improvementForNext) setImprovementForNext(parsed.improvementForNext);
+      if (parsed.changeKeywordsText) setChangeKeywordsText(parsed.changeKeywordsText);
+      if (parsed.mostEffectiveTechnique) setMostEffectiveTechnique(parsed.mostEffectiveTechnique);
+      if (parsed.clientQuote) setClientQuote(parsed.clientQuote);
+      if (parsed.coachOverallFeedback) setCoachOverallFeedback(parsed.coachOverallFeedback);
+      if (parsed.mcciDomain) setMcciDomain(parsed.mcciDomain);
+
+      toast.success("임시저장된 내용이 복구되었습니다.");
+      setHasAutosave(false);
+    } catch {
+      toast.error("복구 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleDiscard = () => {
+    localStorage.removeItem("coachingpass_autosave_log");
+    setHasAutosave(false);
+    toast.info("임시저장 기록이 삭제되었습니다.");
+  };
+
   const toggleItem = (arr: string[], setArr: (v: string[]) => void) => (val: string) => {
     setArr(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
   };
@@ -404,6 +563,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
     setFile(null); setExistingEvidenceId(undefined);
     setCurrentDraftId(undefined);
     setSubmitted(false);
+    localStorage.removeItem("coachingpass_autosave_log");
   };
 
   const handleClose = () => {
@@ -555,6 +715,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
         setCurrentDraftId(newId as Id<"coachingLogs">);
         toast.success("임시저장되었습니다. 언제든지 이어서 작성할 수 있습니다.");
       }
+      localStorage.removeItem("coachingpass_autosave_log");
     } catch (err) {
       if (err instanceof ConvexError) {
         const { message } = err.data as { message: string };
@@ -606,6 +767,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
       }
 
       handleClose();
+      localStorage.removeItem("coachingpass_autosave_log");
     } catch (err) {
       if (err instanceof ConvexError) {
         const { message } = err.data as { message: string };
@@ -1042,6 +1204,20 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
             * 표시는 제출 시 필수 항목입니다. 임시저장은 언제든 가능합니다.
           </p>
         </DialogHeader>
+
+        {hasAutosave && (
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-lg p-3 flex items-center justify-between text-xs text-amber-800 dark:text-amber-300 gap-3 mx-6 my-2">
+            <span className="font-medium">이전에 작성하던 임시저장 내용이 있습니다. 복구하시겠습니까?</span>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <Button size="sm" variant="outline" className="h-7 text-xs border-amber-300 hover:bg-amber-100 text-amber-800 dark:border-amber-800 dark:hover:bg-amber-950 cursor-pointer" onClick={handleRestore}>
+                복구하기
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 hover:bg-amber-100 cursor-pointer" onClick={handleDiscard}>
+                지우기
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Step indicator */}
         <div className="flex-shrink-0 pt-1 pb-2">

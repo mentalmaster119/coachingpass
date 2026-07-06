@@ -48,6 +48,7 @@ import NotificationBell from "@/components/notifications/notification-bell.tsx";
 import { api } from "@/convex/_generated/api.js";
 import { usePushNotifications } from "@/hooks/use-push-notifications.ts";
 import PWAInstallBanner from "@/components/pwa/pwa-install-banner.tsx";
+import { ErrorBoundary } from "@/components/ui/error-boundary.tsx";
 
 // Context for admin preview mode (admin viewing as trainee/coach)
 type ViewModeContextType = {
@@ -705,7 +706,9 @@ function AppLayoutInner() {
             <PreviewModeBanner />
           )}
           <PageTransition key={location.pathname}>
-            <Outlet />
+            <ErrorBoundary>
+              <Outlet />
+            </ErrorBoundary>
           </PageTransition>
         </main>
       </div>
