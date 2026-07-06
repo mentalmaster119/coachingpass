@@ -23,10 +23,23 @@ import { EVENT_COLORS, SEMINAR_COLORS, EVENT_TYPE_LABELS, SEMINAR_TYPE_LABELS } 
 import type { CalendarEvent, SeminarItem } from "./calendar-view.tsx";
 import type { Id } from "@/convex/_generated/dataModel.d.ts";
 
+const BOOKING_COLORS = {
+  buddy: { bg: "bg-emerald-50 dark:bg-emerald-950/20", text: "text-emerald-800 dark:text-emerald-300", border: "border-emerald-200 dark:border-emerald-800/30" },
+  mentor: { bg: "bg-sky-50 dark:bg-sky-950/20", text: "text-sky-800 dark:text-sky-300", border: "border-sky-200 dark:border-sky-800/30" },
+  supervision: { bg: "bg-violet-50 dark:bg-violet-950/20", text: "text-violet-800 dark:text-violet-300", border: "border-violet-200 dark:border-violet-800/30" },
+};
+
+const BOOKING_TYPE_LABELS = {
+  buddy: "교육장: 버디코칭",
+  mentor: "교육장: 멘토코칭",
+  supervision: "교육장: 슈퍼비전",
+};
+
 type Props = {
   selectedDate: Date | null;
   events: CalendarEvent[];
   seminars: SeminarItem[];
+  bookings: any[];
   currentUserId: Id<"users"> | undefined;
   onAddEvent: () => void;
   onEditEvent: (event: CalendarEvent) => void;
@@ -37,6 +50,7 @@ export default function DayEventsPanel({
   selectedDate,
   events,
   seminars,
+  bookings,
   currentUserId,
   onAddEvent,
   onEditEvent,
@@ -63,7 +77,7 @@ export default function DayEventsPanel({
   }
 
   const dateLabel = format(selectedDate, "M월 d일 (EEE)", { locale: ko });
-  const totalItems = seminars.length + events.length;
+  const totalItems = seminars.length + events.length + (bookings?.length ?? 0);
 
   return (
     <div className="flex flex-col h-full">
@@ -133,6 +147,43 @@ export default function DayEventsPanel({
                     <span className={cn("text-[10px] opacity-60", colors.text)}>
                       {seminar.startDate} {seminar.startDate !== seminar.endDate ? `~ ${seminar.endDate}` : ""}
                     </span>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Classroom Booking items (read-only in calendar) */}
+            {bookings?.map((booking) => {
+              const colors = BOOKING_COLORS[booking.coachingType as keyof typeof BOOKING_COLORS] || BOOKING_COLORS.buddy;
+              const label = BOOKING_TYPE_LABELS[booking.coachingType as keyof typeof BOOKING_TYPE_LABELS] || "교육장 예약";
+              return (
+                <div
+                  key={booking._id}
+                  className={cn("rounded-lg border p-3 space-y-1.5", colors.bg, colors.border)}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className={cn("text-sm font-semibold leading-tight flex-1", colors.text)}>
+                      {booking.userName}님의 예약
+                    </p>
+                    <Badge variant="outline" className={cn("text-[10px] h-4 px-1.5 border-current/30 flex-shrink-0", colors.text)}>
+                      {label}
+                    </Badge>
+                  </div>
+
+                  <div className={cn("flex items-center gap-1 text-xs opacity-80", colors.text)}>
+                    <Clock className="w-3 h-3" />
+                    <span>{booking.timeSlot}</span>
+                  </div>
+
+                  {booking.notes && (
+                    <p className={cn("text-xs opacity-70 leading-relaxed", colors.text)}>
+                      <span className="font-medium">메모:</span> {booking.notes}
+                    </p>
+                  )}
+
+                  <div className={cn("flex items-center gap-1 text-xs opacity-80", colors.text)}>
+                    <MapPin className="w-3 h-3" />
+                    <span>양재 센터 교육장</span>
                   </div>
                 </div>
               );

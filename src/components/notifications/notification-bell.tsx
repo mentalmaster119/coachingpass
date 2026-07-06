@@ -36,6 +36,7 @@ const NOTIFICATION_ICONS: Record<Notification["type"], React.ReactNode> = {
   coaching_log_submitted: <ClipboardList className="w-4 h-4 text-blue-500" />,
   reflection_submitted: <BookOpen className="w-4 h-4 text-blue-500" />,
   trainee_progress_alert: <AlertCircle className="w-4 h-4 text-amber-500" />,
+  coaching_log_commented: <MessageSquare className="w-4 h-4 text-primary" />,
 };
 
 // Map notification type to the page route it should navigate to
@@ -43,6 +44,7 @@ function getNotificationRoute(notification: Notification): string | null {
   switch (notification.type) {
     case "coaching_approved":
     case "coaching_rejected":
+    case "coaching_log_commented":
       return "/coaching-log";
     case "education_approved":
     case "education_rejected":

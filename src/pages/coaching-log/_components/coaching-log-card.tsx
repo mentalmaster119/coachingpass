@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import type { Doc } from "@/convex/_generated/dataModel.d.ts";
 import { Card, CardContent } from "@/components/ui/card.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button.tsx";
+import CoachingLogCommentsDrawer from "./coaching-log-comments-drawer.tsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +29,7 @@ import {
   User,
   Users,
   Clock,
+  MessageSquare,
 } from "lucide-react";
 import CoachingLogForm from "./coaching-log-form.tsx";
 
@@ -60,7 +62,11 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
   const [expanded, setExpanded] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const removeLog = useMutation(api.coaching.remove);
+
+  const comments = useQuery(api.comments.list, { coachingLogId: log._id });
+  const commentsCount = comments?.length ?? 0;
 
   const status = statusConfig[log.approvalStatus];
   const canEdit = log.approvalStatus !== "approved";
@@ -163,23 +169,38 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
             </div>
           )}
 
-          {/* Expand toggle */}
-          <button
-            onClick={() => setExpanded((v) => !v)}
-            className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {expanded ? (
-              <>
-                <ChevronUp className="w-3.5 h-3.5" />
-                내용 접기
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-3.5 h-3.5" />
-                내용 보기
-              </>
-            )}
-          </button>
+          {/* Expand toggle and comments button row */}
+          <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2.5">
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
+              {expanded ? (
+                <>
+                  <ChevronUp className="w-3.5 h-3.5" />
+                  내용 접기
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                  내용 보기
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={() => setCommentsOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>댓글 피드백</span>
+              {commentsCount > 0 && (
+                <span className="bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4.5 h-4.5 flex items-center justify-center">
+                  {commentsCount}
+                </span>
+              )}
+            </button>
+          </div>
 
           {/* Expanded details */}
           {expanded && (
@@ -346,6 +367,12 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
         open={editOpen}
         onOpenChange={setEditOpen}
         editLog={log}
+      />
+
+      <CoachingLogCommentsDrawer
+        open={commentsOpen}
+        onOpenChange={setCommentsOpen}
+        coachingLogId={log._id}
       />
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>

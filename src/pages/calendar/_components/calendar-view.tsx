@@ -59,6 +59,12 @@ const SEMINAR_COLORS: Record<SeminarItem["seminarType"], { bg: string; text: str
   group_coaching: { bg: "bg-orange-100 dark:bg-orange-900/40", text: "text-orange-800 dark:text-orange-200", dot: "bg-orange-500" },
 };
 
+const BOOKING_COLORS = {
+  buddy: { bg: "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300", dot: "bg-emerald-500" },
+  mentor: { bg: "bg-sky-50 dark:bg-sky-950/20 text-sky-800 dark:text-sky-300", dot: "bg-sky-500" },
+  supervision: { bg: "bg-violet-50 dark:bg-violet-950/20 text-violet-800 dark:text-violet-300", dot: "bg-violet-500" },
+};
+
 const SEMINAR_TYPE_LABELS: Record<SeminarItem["seminarType"], string> = {
   two_day: "2일 세미나",
   one_day: "교재학습",
@@ -78,6 +84,7 @@ type Props = {
   onMonthChange: (date: Date) => void;
   events: CalendarEvent[];
   seminars: SeminarItem[];
+  bookings?: any[];
   onDayClick: (date: Date) => void;
   onEventClick: (event: CalendarEvent) => void;
   onSeminarClick: (seminar: SeminarItem) => void;
@@ -89,6 +96,7 @@ export default function CalendarView({
   onMonthChange,
   events,
   seminars,
+  bookings,
   onDayClick,
   onEventClick,
   onSeminarClick,
@@ -132,6 +140,15 @@ export default function CalendarView({
       }
     } catch {
       // skip invalid dates
+    }
+  }
+
+  const bookingsByDate: Record<string, any[]> = {};
+  if (bookings) {
+    for (const booking of bookings) {
+      const dateStr = booking.date;
+      if (!bookingsByDate[dateStr]) bookingsByDate[dateStr] = [];
+      bookingsByDate[dateStr].push(booking);
     }
   }
 
@@ -183,7 +200,8 @@ export default function CalendarView({
           const dateStr = format(date, "yyyy-MM-dd");
           const dayEvents = eventsByDate[dateStr] ?? [];
           const daySeminars = seminarsByDate[dateStr] ?? [];
-          const allItems = [...daySeminars, ...dayEvents];
+          const dayBookings = bookingsByDate[dateStr] ?? [];
+          const allItems = [...daySeminars, ...dayBookings, ...dayEvents];
           const isCurrentMonth = isSameMonth(date, currentDate);
           const isSelected = selectedDate ? isSameDay(date, selectedDate) : false;
           const todayDate = isToday(date);
@@ -240,6 +258,24 @@ export default function CalendarView({
                       </div>
                     );
                   }
+                  // Classroom booking item
+                  if ("timeSlot" in item) {
+                    const booking = item as any;
+                    const colors = BOOKING_COLORS[booking.coachingType as keyof typeof BOOKING_COLORS] || BOOKING_COLORS.buddy;
+                    return (
+                      <div
+                        key={`b-${booking._id}-${i}`}
+                        className={cn(
+                          "text-[10px] px-1.5 py-0.5 rounded truncate font-medium hover:opacity-80 transition-opacity",
+                          colors.bg, colors.dot.replace("bg-", "text-")
+                        )}
+                        title={`${booking.userName}님 예약: ${booking.timeSlot} (${booking.notes ?? ""})`}
+                      >
+                        {booking.timeSlot && <span className="mr-0.5 opacity-70">{booking.timeSlot.split("-")[0]}</span>}
+                        {booking.userName} 예약
+                      </div>
+                    );
+                  }
                   // Calendar event
                   const ev = item as CalendarEvent;
                   const colors = EVENT_COLORS[ev.eventType];
@@ -283,6 +319,18 @@ export default function CalendarView({
             <span className="text-xs text-muted-foreground">{EVENT_TYPE_LABELS[type]}</span>
           </div>
         ))}
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+          <span className="text-xs text-muted-foreground">교육장: 버디코칭</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-sky-500" />
+          <span className="text-xs text-muted-foreground">교육장: 멘토코칭</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-violet-500" />
+          <span className="text-xs text-muted-foreground">교육장: 슈퍼비전</span>
+        </div>
       </div>
     </div>
   );

@@ -126,6 +126,16 @@ export default defineSchema({
     .index("by_user_and_status", ["userId", "approvalStatus"])
     .index("by_approval_status", ["approvalStatus"]),
 
+  coachingLogComments: defineTable({
+    coachingLogId: v.id("coachingLogs"),
+    userId: v.id("users"),
+    userName: v.string(),
+    role: v.union(v.literal("admin"), v.literal("senior_coach"), v.literal("trainee")),
+    content: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_log", ["coachingLogId"]),
+
   educationRecords: defineTable({
     userId: v.id("users"),
     educationName: v.string(),
@@ -168,6 +178,7 @@ export default defineSchema({
       v.literal("coaching_log_submitted"),    // for coach: trainee submitted log
       v.literal("reflection_submitted"),      // for coach: trainee wrote reflection
       v.literal("trainee_progress_alert"),    // for admin: trainee inactive
+      v.literal("coaching_log_commented"),    // for comment alerts
     ),
     title: v.string(),
     message: v.string(),

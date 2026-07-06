@@ -304,12 +304,20 @@ export const getMyLogs = query({
       .collect();
 
     return await Promise.all(
-      logs.map(async (log) => ({
-        ...log,
-        evidenceUrl: log.evidenceStorageId
-          ? await ctx.storage.getUrl(log.evidenceStorageId)
-          : null,
-      })),
+      logs.map(async (log) => {
+        let reviewerName = null;
+        if (log.reviewedBy) {
+          const reviewer = await ctx.db.get(log.reviewedBy);
+          reviewerName = reviewer?.name ?? null;
+        }
+        return {
+          ...log,
+          reviewerName,
+          evidenceUrl: log.evidenceStorageId
+            ? await ctx.storage.getUrl(log.evidenceStorageId)
+            : null,
+        };
+      }),
     );
   },
 });

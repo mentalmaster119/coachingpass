@@ -25,6 +25,7 @@ function CalendarPageInner() {
 
   const events = useQuery(api.calendar.listEventsForMonth, { year, month });
   const seminars = useQuery(api.seminars.listForMonth, { year, month });
+  const bookings = useQuery(api.classroomBookings.list, {});
 
   // Filter events and seminars for selected date
   const selectedDateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : null;
@@ -44,6 +45,10 @@ function CalendarPageInner() {
       })
     : [];
 
+  const selectedDayBookings = selectedDateStr
+    ? (bookings ?? []).filter((b) => b.date === selectedDateStr)
+    : [];
+
   const handleDayClick = (date: Date) => setSelectedDate(date);
 
   const handleAddEvent = () => {
@@ -60,7 +65,7 @@ function CalendarPageInner() {
     // Selecting seminar date shows it in side panel (already done via day click)
   };
 
-  const isLoading = events === undefined || seminars === undefined;
+  const isLoading = events === undefined || seminars === undefined || bookings === undefined;
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -101,6 +106,7 @@ function CalendarPageInner() {
                 onMonthChange={setCurrentDate}
                 events={events as CalendarEvent[]}
                 seminars={seminars as SeminarItem[]}
+                bookings={bookings}
                 onDayClick={handleDayClick}
                 onEventClick={handleEditEvent}
                 onSeminarClick={handleSeminarClick}
@@ -115,6 +121,7 @@ function CalendarPageInner() {
               selectedDate={selectedDate}
               events={selectedDayEvents as CalendarEvent[]}
               seminars={selectedDaySeminars as SeminarItem[]}
+              bookings={selectedDayBookings}
               currentUserId={user?._id as Id<"users"> | undefined}
               onAddEvent={handleAddEvent}
               onEditEvent={handleEditEvent}

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog.tsx";
 import { Button } from "@/components/ui/button.tsx";
 
-type CoachingLog = Doc<"coachingLogs"> & { evidenceUrl?: string | null };
+type CoachingLog = Doc<"coachingLogs"> & { evidenceUrl?: string | null; reviewerName?: string | null };
 
 type UserInfo = {
   name?: string;
@@ -197,11 +197,11 @@ function ReportContent({ logs, user, summary }: Omit<Props, "open" | "onOpenChan
       <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "20px" }}>
         <thead>
           <tr style={{ background: "#1e3a5f", color: "#fff" }}>
-            {["No.", "날짜", "유형", "코치이", "코칭 주제", "목표", "시간", "상태"].map((h) => (
+            {["연번", "일시", "코칭구분", "코치이 성명/성별", "고객구분", "코칭주제", "코칭방법", "시간(H)", "확인인 서명"].map((h) => (
               <th
                 key={h}
                 style={{
-                  padding: "7px 6px",
+                  padding: "7px 4px",
                   border: "1px solid #1e3a5f",
                   textAlign: "center",
                   fontSize: "10px",
@@ -218,7 +218,7 @@ function ReportContent({ logs, user, summary }: Omit<Props, "open" | "onOpenChan
           {logs.length === 0 ? (
             <tr>
               <td
-                colSpan={8}
+                colSpan={9}
                 style={{
                   padding: "20px",
                   textAlign: "center",
@@ -233,6 +233,32 @@ function ReportContent({ logs, user, summary }: Omit<Props, "open" | "onOpenChan
           ) : (
             logs.map((log, i) => {
               const st = STATUS_MAP[log.approvalStatus];
+              const dateStr = format(new Date(log.coachingDate), "yyyy.MM.dd");
+              const timeStr = log.coachingStartTime && log.coachingEndTime
+                ? ` ${log.coachingStartTime}~${log.coachingEndTime}`
+                : "";
+              const coacheeGenderStr = log.coacheeGender === "male"
+                ? "남"
+                : log.coacheeGender === "female"
+                ? "여"
+                : "—";
+              const clientCatStr = log.ncpClientCategory === "athlete"
+                ? "스포츠"
+                : log.ncpClientCategory === "general"
+                ? "일반"
+                : "—";
+              const methodStr = log.coachingPlace
+                ? ({
+                    zoom: "Zoom",
+                    study_room: "공부방",
+                    center: "양재센터",
+                    home: "가정",
+                    other: log.coachingPlaceOther || "기타",
+                    hanyang: "한양대",
+                  }[log.coachingPlace] || log.coachingPlace)
+                : "—";
+              const hoursStr = (log.durationMinutes / 60).toFixed(1);
+
               return (
                 <tr
                   key={log._id}
@@ -240,7 +266,7 @@ function ReportContent({ logs, user, summary }: Omit<Props, "open" | "onOpenChan
                 >
                   <td
                     style={{
-                      padding: "6px",
+                      padding: "6px 4px",
                       border: "1px solid #e5e7eb",
                       textAlign: "center",
                       fontSize: "10px",
@@ -250,18 +276,17 @@ function ReportContent({ logs, user, summary }: Omit<Props, "open" | "onOpenChan
                   </td>
                   <td
                     style={{
-                      padding: "6px",
+                      padding: "6px 4px",
                       border: "1px solid #e5e7eb",
                       textAlign: "center",
-                      fontSize: "10px",
-                      whiteSpace: "nowrap",
+                      fontSize: "9px",
                     }}
                   >
-                    {format(new Date(log.coachingDate), "yy.MM.dd")}
+                    {dateStr}{timeStr}
                   </td>
                   <td
                     style={{
-                      padding: "6px",
+                      padding: "6px 4px",
                       border: "1px solid #e5e7eb",
                       textAlign: "center",
                       fontSize: "10px",
@@ -272,56 +297,98 @@ function ReportContent({ logs, user, summary }: Omit<Props, "open" | "onOpenChan
                   </td>
                   <td
                     style={{
-                      padding: "6px",
+                      padding: "6px 4px",
                       border: "1px solid #e5e7eb",
                       fontSize: "10px",
-                      maxWidth: "70px",
-                      overflow: "hidden",
+                      textAlign: "center",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    {log.coacheeInfo}
+                    {log.coacheeInfo} / {coacheeGenderStr}
                   </td>
                   <td
                     style={{
-                      padding: "6px",
+                      padding: "6px 4px",
+                      border: "1px solid #e5e7eb",
+                      textAlign: "center",
+                      fontSize: "10px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {clientCatStr}
+                  </td>
+                  <td
+                    style={{
+                      padding: "6px 4px",
                       border: "1px solid #e5e7eb",
                       fontSize: "10px",
+                      maxWidth: "140px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
+                    title={log.topic}
                   >
                     {log.topic}
                   </td>
                   <td
                     style={{
-                      padding: "6px",
-                      border: "1px solid #e5e7eb",
-                      fontSize: "10px",
-                    }}
-                  >
-                    {log.goals}
-                  </td>
-                  <td
-                    style={{
-                      padding: "6px",
+                      padding: "6px 4px",
                       border: "1px solid #e5e7eb",
                       textAlign: "center",
                       fontSize: "10px",
-                      whiteSpace: "nowrap",
                     }}
                   >
-                    {formatDuration(log.durationMinutes)}
+                    {methodStr}
                   </td>
                   <td
                     style={{
-                      padding: "6px",
+                      padding: "6px 4px",
                       border: "1px solid #e5e7eb",
                       textAlign: "center",
                       fontSize: "10px",
-                      fontWeight: "600",
-                      color: st.color,
-                      whiteSpace: "nowrap",
+                      fontWeight: "700",
                     }}
                   >
-                    {st.label}
+                    {hoursStr}H
+                  </td>
+                  <td
+                    style={{
+                      padding: "4px",
+                      border: "1px solid #e5e7eb",
+                      textAlign: "center",
+                      fontSize: "10px",
+                      verticalAlign: "middle",
+                    }}
+                  >
+                    {log.approvalStatus === "approved" ? (
+                      <div
+                        style={{
+                          display: "inline-flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "1.5px solid #1d4ed8",
+                          borderRadius: "4px",
+                          padding: "2px 4px",
+                          background: "#eff6ff",
+                          transform: "rotate(-3deg)",
+                        }}
+                      >
+                        <span style={{ fontSize: "8px", color: "#1d4ed8", fontWeight: "800", letterSpacing: "0.5px" }}>
+                          승인완료
+                        </span>
+                        {log.reviewerName && (
+                          <span style={{ fontSize: "8px", color: "#1e3a5f", fontWeight: "700", marginTop: "1px" }}>
+                            {log.reviewerName}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span style={{ fontWeight: "600", color: st.color }}>
+                        {st.label}
+                      </span>
+                    )}
                   </td>
                 </tr>
               );

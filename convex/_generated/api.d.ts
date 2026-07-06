@@ -22,6 +22,7 @@ import type * as coachFeedback from "../coachFeedback.js";
 import type * as coaching from "../coaching.js";
 import type * as coachingGroups from "../coachingGroups.js";
 import type * as cohorts from "../cohorts.js";
+import type * as comments from "../comments.js";
 import type * as community from "../community.js";
 import type * as competencyAssessments from "../competencyAssessments.js";
 import type * as completion from "../completion.js";
@@ -71,6 +72,7 @@ declare const fullApi: ApiFromModules<{
   coaching: typeof coaching;
   coachingGroups: typeof coachingGroups;
   cohorts: typeof cohorts;
+  comments: typeof comments;
   community: typeof community;
   competencyAssessments: typeof competencyAssessments;
   completion: typeof completion;

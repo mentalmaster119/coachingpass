@@ -24,7 +24,8 @@ type NotificationType =
   | "bcp_rejected"
   | "coaching_log_submitted"
   | "reflection_submitted"
-  | "trainee_progress_alert";
+  | "trainee_progress_alert"
+  | "coaching_log_commented";
 
 // ── Queries ──────────────────────────────────────────────────────────────────
 
