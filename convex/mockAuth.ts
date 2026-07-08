@@ -19,18 +19,27 @@ async function getMockIdentity(ctx: any, originalGetUserIdentity: any) {
   }
 
   if (ctx.db) {
-    const activeMockUser = await ctx.db
+    // 1. Find the REAL user in the database using the original identity
+    const realUser = await ctx.db
       .query("users")
-      .filter((q: any) => q.eq(q.field("isMockActive"), true))
+      .withIndex("by_token", (q: any) => q.eq("tokenIdentifier", identity.tokenIdentifier))
       .first();
 
-    if (activeMockUser) {
-      return {
-        ...identity,
-        tokenIdentifier: activeMockUser.tokenIdentifier,
-        email: activeMockUser.email ?? identity.email,
-        name: activeMockUser.name ?? identity.name,
-      };
+    // 2. Only intercept and substitute if the real logged-in user is an admin!
+    if (realUser && realUser.role === "admin") {
+      const activeMockUser = await ctx.db
+        .query("users")
+        .filter((q: any) => q.eq(q.field("isMockActive"), true))
+        .first();
+
+      if (activeMockUser) {
+        return {
+          ...identity,
+          tokenIdentifier: activeMockUser.tokenIdentifier,
+          email: activeMockUser.email ?? identity.email,
+          name: activeMockUser.name ?? identity.name,
+        };
+      }
     }
   }
 
