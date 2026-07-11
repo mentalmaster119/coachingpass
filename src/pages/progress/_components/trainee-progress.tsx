@@ -108,9 +108,16 @@ function ActivityStatusBadge({ status }: { status: string }) {
     );
   if (status === "pending")
     return (
-      <span className="flex items-center gap-1 text-[10px] text-chart-2 font-medium">
+      <span className="flex items-center gap-1 text-[10px] text-amber-600 font-medium">
         <Circle className="w-3 h-3" />
-        검토중
+        대기
+      </span>
+    );
+  if (status === "draft")
+    return (
+      <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+        <Circle className="w-3 h-3" />
+        임시저장
       </span>
     );
   return (

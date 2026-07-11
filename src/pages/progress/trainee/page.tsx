@@ -44,9 +44,16 @@ function StatusBadge({ status }: { status: string }) {
     );
   if (status === "pending")
     return (
-      <Badge variant="secondary" className="text-[10px] px-2 py-0">
+      <Badge variant="secondary" className="text-[10px] px-2 py-0 bg-amber-50 text-amber-700 border-amber-200">
         <Circle className="w-3 h-3 mr-1" />
-        검토중
+        대기
+      </Badge>
+    );
+  if (status === "draft")
+    return (
+      <Badge variant="outline" className="text-[10px] px-2 py-0 bg-muted text-muted-foreground border-border">
+        <Circle className="w-3 h-3 mr-1" />
+        임시저장
       </Badge>
     );
   return (

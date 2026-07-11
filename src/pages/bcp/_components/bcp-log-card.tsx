@@ -40,11 +40,13 @@ type BcpLog = Doc<"bcpLogs"> & {
 
 function StatusBadge({ status }: { status: BcpLog["approvalStatus"] }) {
   const map = {
-    pending: { label: "검토중", className: "bg-amber-100 text-amber-700 border-amber-200" },
+    pending: { label: "대기", className: "bg-amber-100 text-amber-700 border-amber-200" },
     approved: { label: "승인됨", className: "bg-emerald-100 text-emerald-700 border-emerald-200" },
     rejected: { label: "반려됨", className: "bg-red-100 text-red-700 border-red-200" },
+    draft: { label: "임시저장", className: "bg-muted text-muted-foreground border-border" },
   };
-  const { label, className } = map[status];
+  const config = map[status] || { label: "임시저장", className: "bg-muted text-muted-foreground border-border" };
+  const { label, className } = config;
   return (
     <Badge variant="outline" className={cn("text-[11px] font-medium", className)}>
       {label}

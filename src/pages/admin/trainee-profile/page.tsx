@@ -65,7 +65,10 @@ function StatusBadge({ status }: { status: string }) {
   if (status === "rejected") {
     return <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/10 text-xs">거절</Badge>;
   }
-  return <Badge variant="secondary" className="text-xs">대기</Badge>;
+  if (status === "draft") {
+    return <Badge variant="outline" className="text-xs bg-muted text-muted-foreground border-border">임시저장</Badge>;
+  }
+  return <Badge variant="secondary" className="text-xs bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/40">대기</Badge>;
 }
 
 function StatCard({
