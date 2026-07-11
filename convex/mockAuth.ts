@@ -26,11 +26,29 @@ async function getMockIdentity(ctx: any, originalGetUserIdentity: any) {
       .first();
 
     // 2. Only intercept and substitute if the real logged-in user is an admin!
-    if (realUser && realUser.role === "admin") {
-      const activeMockUser = await ctx.db
-        .query("users")
-        .filter((q: any) => q.eq(q.field("isMockActive"), true))
-        .first();
+    if (realUser && realUser.role === "admin" && realUser.activeMockRole) {
+      let activeMockUser = null;
+      const allUsers = await ctx.db.query("users").collect();
+
+      if (realUser.activeMockRole === "trainee") {
+        activeMockUser = allUsers.find(
+          (user: any) =>
+            user.role === "trainee" &&
+            (user.name?.toLowerCase().includes("chul") ||
+              user.name?.toLowerCase().includes("park") ||
+              user.name?.includes("철수"))
+        );
+      } else if (realUser.activeMockRole === "senior_coach") {
+        activeMockUser = allUsers.find(
+          (user: any) =>
+            user.role === "senior_coach" &&
+            user.email?.toLowerCase().includes("mentalcoach119")
+        );
+      }
+
+      if (!activeMockUser) {
+        activeMockUser = allUsers.find((user: any) => user.role === realUser.activeMockRole);
+      }
 
       if (activeMockUser) {
         return {

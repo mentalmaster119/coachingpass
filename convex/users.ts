@@ -350,35 +350,18 @@ export const getMockUserByRole = query({
 export const setActiveMockUser = mutation({
   args: { role: v.union(v.literal("admin"), v.literal("senior_coach"), v.literal("trainee")) },
   handler: async (ctx, args) => {
-    const allUsers = await ctx.db.query("users").collect();
-    for (const u of allUsers) {
-      if (u.isMockActive) {
-        await ctx.db.patch(u._id, { isMockActive: false });
-      }
+    (ctx as any).skipMockAuth = true;
+    const realUser = await getAuthenticatedUser(ctx);
+
+    if (realUser.role !== "admin") {
+      throw new ConvexError({ message: "Only admins can change preview role", code: "FORBIDDEN" });
     }
-    let targetUser = null;
-    if (args.role === "trainee") {
-      targetUser = allUsers.find(
-        (user) =>
-          user.role === "trainee" &&
-          (user.name?.toLowerCase().includes("chul") ||
-            user.name?.toLowerCase().includes("park") ||
-            user.name?.includes("철수"))
-      );
-    } else if (args.role === "senior_coach") {
-      targetUser = allUsers.find(
-        (user) =>
-          user.role === "senior_coach" &&
-          user.email?.toLowerCase().includes("mentalcoach119")
-      );
+
+    if (args.role === "admin") {
+      await ctx.db.patch(realUser._id, { activeMockRole: undefined });
+    } else {
+      await ctx.db.patch(realUser._id, { activeMockRole: args.role });
     }
-    if (!targetUser) {
-      targetUser = allUsers.find((user) => user.role === args.role);
-    }
-    if (targetUser) {
-      await ctx.db.patch(targetUser._id, { isMockActive: true });
-      return targetUser._id;
-    }
-    throw new ConvexError({ message: "Mock user for role not found", code: "NOT_FOUND" });
+    return realUser._id;
   },
 });
