@@ -144,7 +144,7 @@ export default function SupervisionPage() {
         <div className="flex items-center gap-2 self-start sm:self-center">
           <Button onClick={() => setAddOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            실습 기록 작성
+            기록 추가
           </Button>
         </div>
       </motion.div>
@@ -263,7 +263,7 @@ export default function SupervisionPage() {
                   <EmptyContent>
                     <Button size="sm" onClick={() => setAddOpen(true)}>
                       <Plus className="w-3.5 h-3.5 mr-1" />
-                      실습 기록 작성
+                      기록 추가
                     </Button>
                   </EmptyContent>
                 )}

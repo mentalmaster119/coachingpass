@@ -860,24 +860,26 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
           <div className="space-y-4">
             {/* 날짜 + 코칭 유형 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
+              <div className={cn("space-y-1.5", coachingType === "sv" && "col-span-2")}>
                 <Label htmlFor="coachingDate">코칭 날짜 <span className="text-destructive">*</span></Label>
                 <Input id="coachingDate" type="date" value={coachingDate}
                   onChange={(e) => setCoachingDate(e.target.value)}
                   className={submitted && !coachingDate ? "border-destructive" : ""} />
                 {submitted && !coachingDate && <p className="text-xs text-destructive">날짜를 선택해 주세요.</p>}
               </div>
-              <div className="space-y-1.5">
-                <Label>코칭 유형 <span className="text-destructive">*</span></Label>
-                <Select value={coachingType} onValueChange={(v) => setCoachingType(v as any)} disabled={!!defaultCoachingType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {COACHING_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {coachingType !== "sv" && (
+                <div className="space-y-1.5">
+                  <Label>코칭 유형 <span className="text-destructive">*</span></Label>
+                  <Select value={coachingType} onValueChange={(v) => setCoachingType(v as any)} disabled={!!defaultCoachingType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {COACHING_TYPES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             {/* 시작/종료 시각 */}
@@ -942,7 +944,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
 
             {/* 코치이 성별 + 나이 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
+              <div className={cn("space-y-1.5", coachingType === "sv" && "col-span-2")}>
                 <Label>{getCoacheeLabel("코치이 성별")}</Label>
                 <Select value={coacheeGender} onValueChange={setCoacheeGender}>
                   <SelectTrigger><SelectValue placeholder="선택" /></SelectTrigger>
@@ -952,55 +954,61 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="coacheeAge">{getCoacheeLabel("코치이 나이")}</Label>
-                <Input id="coacheeAge" type="number" min="1" max="120"
-                  placeholder="예: 28" value={coacheeAge}
-                  onChange={(e) => setCoacheeAge(e.target.value)} />
-              </div>
+              {coachingType !== "sv" && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="coacheeAge">{getCoacheeLabel("코치이 나이")}</Label>
+                  <Input id="coacheeAge" type="number" min="1" max="120"
+                    placeholder="예: 28" value={coacheeAge}
+                    onChange={(e) => setCoacheeAge(e.target.value)} />
+                </div>
+              )}
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="coacheePersonality">{getCoacheeLabel("고객 성격 특성")}</Label>
-              <Input id="coacheePersonality" placeholder="예: 내향적, 완벽주의 성향"
-                value={coacheePersonality} onChange={(e) => setCoacheePersonality(e.target.value)} />
-            </div>
+            {coachingType !== "sv" && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="coacheePersonality">{getCoacheeLabel("고객 성격 특성")}</Label>
+                  <Input id="coacheePersonality" placeholder="예: 내향적, 완벽주의 성향"
+                    value={coacheePersonality} onChange={(e) => setCoacheePersonality(e.target.value)} />
+                </div>
 
-            <div className="space-y-1.5">
-              <Label>{getCoacheeLabel("고객 유형")}</Label>
-              <CheckboxGroup options={COACHEE_TYPES} selected={coacheeType}
-                onToggle={toggleItem(coacheeType, setCoacheeType)} />
-            </div>
+                <div className="space-y-1.5">
+                  <Label>{getCoacheeLabel("고객 유형")}</Label>
+                  <CheckboxGroup options={COACHEE_TYPES} selected={coacheeType}
+                    onToggle={toggleItem(coacheeType, setCoacheeType)} />
+                </div>
 
-            <div className="space-y-1.5">
-              <Label>
-                {getCoacheeLabel("NCP 고객 분류")}{" "}
-                <span className="text-xs text-muted-foreground font-normal">(선수 최소 5명 이상 필요)</span>
-              </Label>
-              <div className="flex gap-2">
-                {(["athlete", "general"] as const).map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setNcpClientCategory(ncpClientCategory === cat ? "" : cat)}
-                    className={cn(
-                      "px-4 py-1.5 rounded-full text-xs border transition-colors cursor-pointer",
-                      ncpClientCategory === cat
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "border-border text-muted-foreground hover:border-primary/50",
-                    )}
-                  >
-                    {cat === "athlete" ? "스포츠선수" : "일반인"}
-                  </button>
-                ))}
-              </div>
-            </div>
+                <div className="space-y-1.5">
+                  <Label>
+                    {getCoacheeLabel("NCP 고객 분류")}{" "}
+                    <span className="text-xs text-muted-foreground font-normal">(선수 최소 5명 이상 필요)</span>
+                  </Label>
+                  <div className="flex gap-2">
+                    {(["athlete", "general"] as const).map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setNcpClientCategory(ncpClientCategory === cat ? "" : cat)}
+                        className={cn(
+                          "px-4 py-1.5 rounded-full text-xs border transition-colors cursor-pointer",
+                          ncpClientCategory === cat
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border text-muted-foreground hover:border-primary/50",
+                        )}
+                      >
+                        {cat === "athlete" ? "스포츠선수" : "일반인"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="coacheeField">종목/직군</Label>
-              <Input id="coacheeField" placeholder="예: 태권도, IT직군"
-                value={coacheeField} onChange={(e) => setCoacheeField(e.target.value)} />
-            </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="coacheeField">종목/직군</Label>
+                  <Input id="coacheeField" placeholder="예: 태권도, IT직군"
+                    value={coacheeField} onChange={(e) => setCoacheeField(e.target.value)} />
+                </div>
+              </>
+            )}
           </div>
         );
 
@@ -1015,16 +1023,18 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
               {submitted && !topic.trim() && <p className="text-xs text-destructive">코칭 주제를 입력해 주세요.</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label>핵심 문제 <span className="text-xs text-muted-foreground font-normal">(복수선택)</span></Label>
-              {Object.entries(CORE_ISSUES).map(([group, items]) => (
-                <div key={group}>
-                  <p className="text-xs font-medium text-muted-foreground mb-1.5">{group}</p>
-                  <CheckboxGroup options={items} selected={coreIssues}
-                    onToggle={toggleItem(coreIssues, setCoreIssues)} />
-                </div>
-              ))}
-            </div>
+            {coachingType !== "sv" && (
+              <div className="space-y-2">
+                <Label>핵심 문제 <span className="text-xs text-muted-foreground font-normal">(복수선택)</span></Label>
+                {Object.entries(CORE_ISSUES).map(([group, items]) => (
+                  <div key={group}>
+                    <p className="text-xs font-medium text-muted-foreground mb-1.5">{group}</p>
+                    <CheckboxGroup options={items} selected={coreIssues}
+                      onToggle={toggleItem(coreIssues, setCoreIssues)} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
 
@@ -1270,7 +1280,13 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-center gap-3">
             <DialogTitle>
-              {isDraft ? "임시저장 기록 이어 작성" : isEdit ? "코칭 기록 수정" : "코칭 실습 기록 추가"}
+              {coachingType === "sv"
+                ? "슈퍼비전 기록"
+                : isDraft
+                ? "임시저장 기록 이어 작성"
+                : isEdit
+                ? "코칭 기록 수정"
+                : "코칭 실습 기록 추가"}
             </DialogTitle>
             {(isDraft || currentDraftId) && (
               <Badge variant="secondary" className="text-xs font-normal">
@@ -1298,12 +1314,20 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
         )}
 
         {/* Step indicator */}
-        <div className="flex-shrink-0 pt-1 pb-2">
-          <StepIndicator currentStep={currentStep} steps={steps} />
-          <p className="text-sm font-semibold text-foreground">
-            {currentStep}단계: {stepTitle}
-          </p>
-        </div>
+        {coachingType !== "sv" ? (
+          <div className="flex-shrink-0 pt-1 pb-2">
+            <StepIndicator currentStep={currentStep} steps={steps} />
+            <p className="text-sm font-semibold text-foreground">
+              {currentStep}단계: {stepTitle}
+            </p>
+          </div>
+        ) : (
+          <div className="flex-shrink-0 pt-1 pb-2">
+            <p className="text-sm font-semibold text-foreground">
+              {currentStep === 1 ? "기본정보" : stepTitle}
+            </p>
+          </div>
+        )}
 
         {/* Scrollable step content */}
         <div className="flex-1 overflow-y-auto py-1 pr-1">
