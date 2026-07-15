@@ -12,8 +12,27 @@ const originalMutation = convex.mutation;
 (convex as any).mutation = function (mutation: any, ...args: any[]) {
   const isPreviewMode = localStorage.getItem("admin_preview_mode") === "true";
   
-  // Extract mutation path safely
-  const path = mutation?._path || mutation?.name || "";
+  // Extract path safely checking for primitive strings to avoid Convex API ProxyObjects
+  let path = "";
+  if (typeof mutation === "string") {
+    path = mutation;
+  } else if (mutation && typeof mutation === "object") {
+    if (typeof mutation._path === "string") {
+      path = mutation._path;
+    } else if (typeof mutation.name === "string") {
+      path = mutation.name;
+    } else if (typeof mutation.toString === "function") {
+      try {
+        const str = mutation.toString();
+        if (typeof str === "string") {
+          path = str;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+  
   const isBypass = path.includes("updateCurrentUser") || path.includes("setActiveMockUser");
 
   if (isPreviewMode && !isBypass) {
@@ -29,7 +48,26 @@ const originalAction = convex.action;
 (convex as any).action = function (action: any, ...args: any[]) {
   const isPreviewMode = localStorage.getItem("admin_preview_mode") === "true";
   
-  const path = action?._path || action?.name || "";
+  let path = "";
+  if (typeof action === "string") {
+    path = action;
+  } else if (action && typeof action === "object") {
+    if (typeof action._path === "string") {
+      path = action._path;
+    } else if (typeof action.name === "string") {
+      path = action.name;
+    } else if (typeof action.toString === "function") {
+      try {
+        const str = action.toString();
+        if (typeof str === "string") {
+          path = str;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+  
   const isBypass = path.includes("updateCurrentUser") || path.includes("setActiveMockUser");
 
   if (isPreviewMode && !isBypass) {
