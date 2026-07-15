@@ -15,8 +15,26 @@ export function useCurrentUser() {
   const user = isPreviewMode ? previewUser : normalUser;
 
   useEffect(() => {
-    if (normalUser && !localStorage.getItem("real_role")) {
-      localStorage.setItem("real_role", normalUser.role);
+    if (normalUser) {
+      if (!localStorage.getItem("real_role")) {
+        localStorage.setItem("real_role", normalUser.role);
+      }
+
+      if (normalUser.role === "admin") {
+        if (normalUser.activeMockRole) {
+          if (localStorage.getItem("admin_preview_mode") !== "true" || localStorage.getItem("preview_role") !== normalUser.activeMockRole) {
+            localStorage.setItem("admin_preview_mode", "true");
+            localStorage.setItem("preview_role", normalUser.activeMockRole);
+            window.location.reload();
+          }
+        } else {
+          if (localStorage.getItem("admin_preview_mode") === "true") {
+            localStorage.removeItem("admin_preview_mode");
+            localStorage.removeItem("preview_role");
+            window.location.reload();
+          }
+        }
+      }
     }
   }, [normalUser]);
 
