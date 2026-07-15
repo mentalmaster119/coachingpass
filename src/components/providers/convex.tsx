@@ -11,7 +11,12 @@ const convex = new ConvexReactClient(convexUrl);
 const originalMutation = convex.mutation;
 (convex as any).mutation = function (mutation: any, ...args: any[]) {
   const isPreviewMode = localStorage.getItem("admin_preview_mode") === "true";
-  if (isPreviewMode) {
+  
+  // Extract mutation path safely
+  const path = mutation?._path || mutation?.name || "";
+  const isBypass = path.includes("updateCurrentUser") || path.includes("setActiveMockUser");
+
+  if (isPreviewMode && !isBypass) {
     toast.error("미리보기 모드(Read-only)에서는 데이터를 수정할 수 없습니다.", {
       description: "관리자 모드로 복귀하거나 미리보기를 종료해 주세요.",
     });
@@ -23,7 +28,11 @@ const originalMutation = convex.mutation;
 const originalAction = convex.action;
 (convex as any).action = function (action: any, ...args: any[]) {
   const isPreviewMode = localStorage.getItem("admin_preview_mode") === "true";
-  if (isPreviewMode) {
+  
+  const path = action?._path || action?.name || "";
+  const isBypass = path.includes("updateCurrentUser") || path.includes("setActiveMockUser");
+
+  if (isPreviewMode && !isBypass) {
     toast.error("미리보기 모드(Read-only)에서는 액션을 실행할 수 없습니다.", {
       description: "관리자 모드로 복귀하거나 미리보기를 종료해 주세요.",
     });
