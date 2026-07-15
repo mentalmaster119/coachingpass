@@ -1188,7 +1188,11 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl w-full max-h-[92dvh] flex flex-col overflow-hidden">
+      <DialogContent 
+        className="max-w-2xl w-full max-h-[92dvh] flex flex-col overflow-hidden"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-center gap-3">
             <DialogTitle>

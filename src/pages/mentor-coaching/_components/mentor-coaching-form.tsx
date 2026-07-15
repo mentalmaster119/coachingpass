@@ -139,7 +139,11 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-lg max-h-[90vh] overflow-y-auto"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>{isEdit ? "슈퍼비전 기록 수정" : "슈퍼비전 기록 추가"}</DialogTitle>
           <DialogDescription>슈퍼비전 세션 정보를 입력하세요.</DialogDescription>
