@@ -494,6 +494,32 @@ export const setActiveMockUser = mutation({
 
         if (virtualTrainee) {
           activeMockTraineeId = virtualTrainee._id;
+
+          // Ensure they are in the 17th cohort
+          const cohort17 = await ctx.db
+            .query("cohorts")
+            .collect()
+            .then((list) => list.find((c) => c.number === 17 || c.name.includes("17")));
+
+          if (cohort17) {
+            // Check existing membership
+            const existingMember = await ctx.db
+              .query("cohortMembers")
+              .withIndex("by_user", (q) => q.eq("userId", virtualTrainee._id))
+              .first();
+
+            if (!existingMember || existingMember.cohortId !== cohort17._id) {
+              if (existingMember) {
+                await ctx.db.delete(existingMember._id);
+              }
+              await ctx.db.insert("cohortMembers", {
+                cohortId: cohort17._id,
+                userId: virtualTrainee._id,
+                joinedAt: new Date().toISOString(),
+                status: "active",
+              });
+            }
+          }
         }
       } else if (args.role === "senior_coach") {
         // Find or create virtual preview coach

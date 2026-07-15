@@ -1,6 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./mockAuth";
-import type { Doc } from "./_generated/dataModel.d.ts";
+import type { Doc, Id } from "./_generated/dataModel.d.ts";
 import { requireAdmin } from "./helpers";
 
 // ── Dashboard stats ──────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ export const getAdminStats = query({
 
 export const getAllUsers = query({
   args: {},
-  handler: async (ctx): Promise<(Doc<"users"> & { cohortName: string | null; cohortNumber: number | null })[]> => {
+  handler: async (ctx): Promise<(Doc<"users"> & { cohortId: Id<"cohorts"> | null; cohortName: string | null; cohortNumber: number | null })[]> => {
     await requireAdmin(ctx);
     const users = await ctx.db.query("users").collect();
     return await Promise.all(
@@ -48,9 +48,9 @@ export const getAllUsers = query({
           .query("cohortMembers")
           .withIndex("by_user", (q) => q.eq("userId", u._id))
           .first();
-        if (!member) return { ...u, cohortName: null, cohortNumber: null };
+        if (!member) return { ...u, cohortId: null, cohortName: null, cohortNumber: null };
         const cohort = await ctx.db.get(member.cohortId);
-        return { ...u, cohortName: cohort?.name ?? null, cohortNumber: cohort?.number ?? null };
+        return { ...u, cohortId: member.cohortId, cohortName: cohort?.name ?? null, cohortNumber: cohort?.number ?? null };
       }),
     );
   },

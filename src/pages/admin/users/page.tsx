@@ -46,7 +46,7 @@ import { useCurrentUser } from "@/hooks/use-current-user.ts";
 import { cn } from "@/lib/utils.ts";
 import IncompleteProfilesTab from "./_components/incomplete-profiles-tab.tsx";
 
-type User = Doc<"users"> & { cohortName?: string | null; cohortNumber?: number | null };
+type User = Doc<"users"> & { cohortId?: Id<"cohorts"> | null; cohortName?: string | null; cohortNumber?: number | null };
 
 const ROLE_LABELS: Record<string, string> = {
   trainee: "수강생",
@@ -246,7 +246,18 @@ function AllUsersTable({
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const updateRole = useMutation(api.admin.updateUserRole);
   const approveUser = useMutation(api.admin.approveUser);
+  const changeCohort = useMutation(api.cohorts.changeMemberCohort);
+  const cohorts = useQuery(api.cohorts.list, {});
   const { user: currentUser } = useCurrentUser();
+
+  const handleCohortChange = async (userId: Id<"users">, cohortId: string) => {
+    try {
+      await changeCohort({ userId, cohortId: cohortId as any });
+      toast.success("기수가 변경되었습니다.");
+    } catch {
+      toast.error("기수 변경 중 오류가 발생했습니다.");
+    }
+  };
 
   const filtered = users
     .filter(
@@ -339,16 +350,35 @@ function AllUsersTable({
                     <UserStatusBadge status={u.approvalStatus} />
 
                     {currentUser?._id !== u._id && (
-                      <Select defaultValue={u.role} onValueChange={(v) => handleRoleChange(u._id, v)}>
-                        <SelectTrigger className="h-7 text-xs w-28">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="trainee">수강생</SelectItem>
-                          <SelectItem value="senior_coach">상위코치</SelectItem>
-                          <SelectItem value="admin">관리자</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center gap-1.5">
+                        <Select value={u.role} onValueChange={(v) => handleRoleChange(u._id, v)}>
+                          <SelectTrigger className="h-7 text-xs w-24">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="trainee">수강생</SelectItem>
+                            <SelectItem value="senior_coach">상위코치</SelectItem>
+                            <SelectItem value="admin">관리자</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        {u.role === "trainee" && cohorts && (
+                          <Select
+                            value={u.cohortId || "none"}
+                            onValueChange={(v) => handleCohortChange(u._id, v)}
+                          >
+                            <SelectTrigger className="h-7 text-xs w-24 border-amber-300 bg-amber-500/5 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10">
+                              <SelectValue placeholder="기수 없음" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">기수 없음</SelectItem>
+                              {cohorts.map((c) => (
+                                <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
                     )}
 
                     {u.approvalStatus !== "approved" && currentUser?._id !== u._id && (

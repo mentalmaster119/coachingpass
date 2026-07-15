@@ -286,3 +286,35 @@ export const requestJoinCohort = mutation({
     });
   },
 });
+
+// Admin changes a user's cohort (admin only)
+export const changeMemberCohort = mutation({
+  args: {
+    userId: v.id("users"),
+    cohortId: v.union(v.id("cohorts"), v.literal("none")),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    
+    // Find all existing cohort memberships for this user
+    const existingMemberships = await ctx.db
+      .query("cohortMembers")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+      
+    // Delete all existing memberships
+    for (const membership of existingMemberships) {
+      await ctx.db.delete(membership._id);
+    }
+    
+    // Insert new cohort membership if it is not "none"
+    if (args.cohortId !== "none") {
+      await ctx.db.insert("cohortMembers", {
+        cohortId: args.cohortId,
+        userId: args.userId,
+        joinedAt: new Date().toISOString(),
+        status: "active",
+      });
+    }
+  },
+});
