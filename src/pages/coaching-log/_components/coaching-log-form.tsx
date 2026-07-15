@@ -341,6 +341,16 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
     editLog?.ncpClientCategory ?? "",
   );
   const [coacheeField, setCoacheeField] = useState(editLog?.coacheeField ?? "");
+
+  const getCoacheeLabel = (base: string) => {
+    const isMentorOrSv = coachingType === "mentor" || coachingType === "sv";
+    const replacement = coachingType === "mentor" ? "멘토코치" : "슈퍼바이저";
+    if (isMentorOrSv) {
+      return base.replace("코치이", replacement).replace("고객", replacement);
+    }
+    return base;
+  };
+
   const [hours, setHours] = useState<string>(
     editLog ? String(editLog.durationMinutes / 60) : "1",
   );
@@ -891,11 +901,11 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
             {/* 코치이 이름 + 코칭 시간 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="coacheeInfo">코치이 이름 <span className="text-destructive">*</span></Label>
+                <Label htmlFor="coacheeInfo">{getCoacheeLabel("코치이 이름")} <span className="text-destructive">*</span></Label>
                 <Input id="coacheeInfo" placeholder="예: 홍길동" value={coacheeInfo}
                   onChange={(e) => setCoacheeInfo(e.target.value)}
                   className={submitted && !coacheeInfo.trim() ? "border-destructive" : ""} />
-                {submitted && !coacheeInfo.trim() && <p className="text-xs text-destructive">코치이 이름을 입력해 주세요.</p>}
+                {submitted && !coacheeInfo.trim() && <p className="text-xs text-destructive">{getCoacheeLabel("코치이 이름을 입력해 주세요.")}</p>}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="hours">코칭 시간 (시간) <span className="text-destructive">*</span></Label>
@@ -907,7 +917,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
             {/* 코치이 성별 + 나이 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>코치이 성별</Label>
+                <Label>{getCoacheeLabel("코치이 성별")}</Label>
                 <Select value={coacheeGender} onValueChange={setCoacheeGender}>
                   <SelectTrigger><SelectValue placeholder="선택" /></SelectTrigger>
                   <SelectContent>
@@ -917,7 +927,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="coacheeAge">코치이 나이</Label>
+                <Label htmlFor="coacheeAge">{getCoacheeLabel("코치이 나이")}</Label>
                 <Input id="coacheeAge" type="number" min="1" max="120"
                   placeholder="예: 28" value={coacheeAge}
                   onChange={(e) => setCoacheeAge(e.target.value)} />
@@ -925,20 +935,20 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="coacheePersonality">고객 성격 특성</Label>
+              <Label htmlFor="coacheePersonality">{getCoacheeLabel("고객 성격 특성")}</Label>
               <Input id="coacheePersonality" placeholder="예: 내향적, 완벽주의 성향"
                 value={coacheePersonality} onChange={(e) => setCoacheePersonality(e.target.value)} />
             </div>
 
             <div className="space-y-1.5">
-              <Label>고객 유형</Label>
+              <Label>{getCoacheeLabel("고객 유형")}</Label>
               <CheckboxGroup options={COACHEE_TYPES} selected={coacheeType}
                 onToggle={toggleItem(coacheeType, setCoacheeType)} />
             </div>
 
             <div className="space-y-1.5">
               <Label>
-                NCP 고객 분류{" "}
+                {getCoacheeLabel("NCP 고객 분류")}{" "}
                 <span className="text-xs text-muted-foreground font-normal">(선수 최소 5명 이상 필요)</span>
               </Label>
               <div className="flex gap-2">
