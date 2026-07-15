@@ -139,7 +139,7 @@ export const signIn = mutation({
         // Seed coaching log (Buddy)
         await ctx.db.insert("coachingLogs", {
           userId,
-          sessionNumber: 1,
+          sessionNumber: "1",
           clientName: "이몽룡",
           sessionDate: "2026-07-12",
           sessionStartTime: "14:00",
@@ -157,7 +157,7 @@ export const signIn = mutation({
         // Seed coaching log (Supervision)
         await ctx.db.insert("coachingLogs", {
           userId,
-          sessionNumber: 1,
+          sessionNumber: "1",
           clientName: "성춘향",
           sessionDate: "2026-07-13",
           sessionStartTime: "10:00",
@@ -214,7 +214,7 @@ export const signIn = mutation({
           if (cohort17) {
             const existingMember = await ctx.db
               .query("cohortMembers")
-              .withIndex("by_user", (q) => q.eq("userId", user._id))
+              .withIndex("by_user", (q) => q.eq("userId", user!._id))
               .first();
 
             if (!existingMember || existingMember.cohortId !== cohort17._id) {
@@ -223,13 +223,13 @@ export const signIn = mutation({
               }
               await ctx.db.insert("cohortMembers", {
                 cohortId: cohort17._id,
-                userId: user._id,
+                userId: user!._id,
                 joinedAt: new Date().toISOString(),
                 status: "active",
               });
             }
           }
-          user = await ctx.db.get(user._id);
+          user = await ctx.db.get(user!._id);
         }
       }
     }
