@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Label } from "@/components/ui/label.tsx";
-import { Loader2, Mail, Lock, User, CheckCircle2 } from "lucide-react";
+import { Loader2, Mail, Lock, User, CheckCircle2, X } from "lucide-react";
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -161,9 +161,19 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-9 h-10 bg-background/50 border-border/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/80 rounded-xl"
+                  className="pl-9 pr-9 h-10 bg-background/50 border-border/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/80 rounded-xl"
                   required
                 />
+                {email && (
+                  <button
+                    type="button"
+                    onClick={() => setEmail("")}
+                    className="absolute right-3 top-3 h-4 w-4 text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer rounded-full hover:bg-muted/50 transition-colors"
+                    title="입력 지우기"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -226,9 +236,19 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-9 h-10 bg-background/50 border-border/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/80 rounded-xl"
+                  className="pl-9 pr-9 h-10 bg-background/50 border-border/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/80 rounded-xl"
                   required
                 />
+                {email && (
+                  <button
+                    type="button"
+                    onClick={() => setEmail("")}
+                    className="absolute right-3 top-3 h-4 w-4 text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer rounded-full hover:bg-muted/50 transition-colors"
+                    title="입력 지우기"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </div>
             </div>
 
