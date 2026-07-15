@@ -96,15 +96,18 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
             )}
 
             {/* Meta */}
-            <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-              <span>{resource.fileName}</span>
-              <span>·</span>
-              <span>{formatBytes(resource.fileSize)}</span>
-              <span>·</span>
-              <span className="flex items-center gap-0.5">
-                <Eye className="w-3 h-3" />
-                {resource.downloadCount}회 다운로드
-              </span>
+            <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
+              <div className="truncate font-medium text-foreground/80" title={resource.fileName}>
+                {resource.fileName}
+              </div>
+              <div className="flex items-center gap-2">
+                <span>{formatBytes(resource.fileSize)}</span>
+                <span>·</span>
+                <span className="flex items-center gap-0.5">
+                  <Download className="w-3 h-3" />
+                  {resource.downloadCount}회 다운로드
+                </span>
+              </div>
             </div>
           </div>
         </div>

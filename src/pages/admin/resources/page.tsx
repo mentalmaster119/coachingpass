@@ -282,7 +282,7 @@ function ResourceRow({ resource, onToggle, onDelete }: ResourceRowProps) {
                 <Badge variant="secondary" className="text-[10px] py-0">비공개</Badge>
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5 truncate" title={resource.fileName}>
               {resource.fileName} · {formatBytes(resource.fileSize)}
             </p>
           </div>
