@@ -848,12 +848,12 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="coachingStartTime">코칭 시작 시각</Label>
-                <Input id="coachingStartTime" type="time" value={coachingStartTime}
+                <Input id="coachingStartTime" type="time" value={coachingStartTime} step={600}
                   onChange={(e) => setCoachingStartTime(e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="coachingEndTime">코칭 종료 시각</Label>
-                <Input id="coachingEndTime" type="time" value={coachingEndTime}
+                <Input id="coachingEndTime" type="time" value={coachingEndTime} step={600}
                   onChange={(e) => setCoachingEndTime(e.target.value)} />
               </div>
             </div>
