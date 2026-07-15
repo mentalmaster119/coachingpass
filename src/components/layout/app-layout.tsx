@@ -27,6 +27,7 @@ import {
   FileSpreadsheet,
   GraduationCap,
   Smartphone,
+  Copy,
   ShieldCheck,
   Eye,
   ShieldAlert,
@@ -440,6 +441,30 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
             >
               {item.icon}
               <span className="flex-1">{item.label}</span>
+              {item.label === "앱 설치 안내" && (realRole === "admin" || realRole === "admin3") && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const origin = window.location.origin;
+                    const guideText = `[MCCI-SMPCC 코칭패스 가입 및 설치 안내]\n\n안녕하세요! MCCI-SMPCC 과정의 실습 관리를 위한 웹 앱(App) 가입 및 설치 링크를 공유해 드립니다.\n\n1. 가입 신청 및 로그인 주소:\n   ${origin}/\n\n2. 스마트폰 홈 화면 앱 설치 안내 (PWA):\n   ${origin}/install-guide\n\n※ 아이폰(Safari) 또는 안드로이드(Chrome) 브라우저를 통해 접속하시면 폰 홈 화면에 바로가기 앱 아이콘을 추가하여 더욱 편리하게 사용하실 수 있습니다.`;
+                    navigator.clipboard.writeText(guideText)
+                      .then(() => {
+                        toast.success("가입 및 설치 안내 문구가 복사되었습니다!", {
+                          description: "SNS나 카카오톡 등에 붙여넣어 공유하세요."
+                        });
+                      })
+                      .catch((err) => {
+                        console.error("Copy failed:", err);
+                        toast.error("안내 복사에 실패했습니다.");
+                      });
+                  }}
+                  className="p-1 rounded hover:bg-sidebar-border/50 text-amber-500 hover:text-amber-600 transition-colors flex items-center justify-center cursor-pointer"
+                  title="가입 및 설치 안내 복사"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              )}
               {item.comingSoon && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-sidebar-border/50 text-sidebar-foreground/50">
                   준비중
