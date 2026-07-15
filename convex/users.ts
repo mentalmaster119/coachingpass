@@ -365,7 +365,7 @@ export const getMockUserByRole = query({
           users.find(
             (user) =>
               user.role === "trainee" &&
-              (user.email === "preview_trainee@mcci.com" ||
+              (user.email === "mentalcoach119@naver.com" ||
                 user.name?.toLowerCase().includes("chul") ||
                 user.name?.toLowerCase().includes("park") ||
                 user.name?.includes("철수"))
@@ -412,18 +412,18 @@ export const setActiveMockUser = mutation({
         let virtualTrainee = await ctx.db
           .query("users")
           .collect()
-          .then((users) => users.find((u) => u.email === "preview_trainee@mcci.com"));
+          .then((users) => users.find((u) => u.email === "mentalcoach119@naver.com"));
 
         if (!virtualTrainee) {
           const traineeId = await ctx.db.insert("users", {
-            tokenIdentifier: "preview-trainee-token",
-            name: "홍길동(미리보기)",
-            email: "preview_trainee@mcci.com",
+            tokenIdentifier: "mentalcoach119-naver-token",
+            name: "교육생 테스터",
+            email: "mentalcoach119@naver.com",
             role: "trainee",
             approvalStatus: "approved",
             onboardingCompleted: true,
             phone: "010-0000-0000",
-            bio: "관리자 화면 미리보기용 가상 교육생 계정입니다.",
+            bio: "교육생 모드 미리보기용 테스터 계정입니다.",
             isMockActive: true,
           });
 
