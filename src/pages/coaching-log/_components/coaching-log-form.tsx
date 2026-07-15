@@ -123,6 +123,7 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editLog?: CoachingLog;
+  defaultCoachingType?: "individual" | "group" | "team" | "buddy" | "mentor" | "sv";
 };
 
 // ── Checkbox group ─────────────────────────────────────────────────────────
@@ -248,10 +249,10 @@ function DiagnosisPanel({
 }
 
 // ── Step progress bar ────────────────────────────────────────────────────────
-function StepIndicator({ currentStep }: { currentStep: number }) {
+function StepIndicator({ currentStep, steps }: { currentStep: number; steps: readonly { id: number; title: string; short: string }[] }) {
   return (
     <div className="flex items-center gap-0 mb-5">
-      {STEPS.map((step, idx) => {
+      {steps.map((step, idx) => {
         const isCompleted = currentStep > step.id;
         const isActive = currentStep === step.id;
         return (
@@ -278,7 +279,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
                 {step.short}
               </span>
             </div>
-            {idx < STEPS.length - 1 && (
+            {idx < steps.length - 1 && (
               <div
                 className={cn(
                   "flex-1 h-0.5 mx-1 transition-colors",
@@ -294,7 +295,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 }
 
 // ── Main form ──────────────────────────────────────────────────────────────
-export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) {
+export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCoachingType }: Props) {
   const isEdit = !!editLog;
   const isDraft = editLog?.approvalStatus === "draft";
 
@@ -327,8 +328,13 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
   const [coachingType, setCoachingType] = useState<
     "individual" | "group" | "team" | "buddy" | "mentor" | "sv"
   >(
-    (editLog?.coachingType as any) ?? "individual",
+    (editLog?.coachingType as any) ?? defaultCoachingType ?? "individual",
   );
+
+  // Supervision feedback fields
+  const [svSupervisorFeedback, setSvSupervisorFeedback] = useState(editLog?.svSupervisorFeedback ?? "");
+  const [svPeerFeedback, setSvPeerFeedback] = useState(editLog?.svPeerFeedback ?? "");
+  const [svReflectionLearning, setSvReflectionLearning] = useState(editLog?.svReflectionLearning ?? "");
   const [coachingPlace, setCoachingPlace] = useState(editLog?.coachingPlace ?? "");
   const [coachingPlaceOther, setCoachingPlaceOther] = useState(editLog?.coachingPlaceOther ?? "");
   const [sessionNumber, setSessionNumber] = useState(editLog?.sessionNumber ?? "");
@@ -536,6 +542,9 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
       if (parsed.clientQuote) setClientQuote(parsed.clientQuote);
       if (parsed.coachOverallFeedback) setCoachOverallFeedback(parsed.coachOverallFeedback);
       if (parsed.mcciDomain) setMcciDomain(parsed.mcciDomain);
+      if (parsed.svSupervisorFeedback) setSvSupervisorFeedback(parsed.svSupervisorFeedback);
+      if (parsed.svPeerFeedback) setSvPeerFeedback(parsed.svPeerFeedback);
+      if (parsed.svReflectionLearning) setSvReflectionLearning(parsed.svReflectionLearning);
 
       toast.success("임시저장된 내용이 복구되었습니다.");
       setHasAutosave(false);
@@ -570,6 +579,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
     setSummary(""); setReflection(""); setBestOfSession(""); setImprovementForNext("");
     setChangeKeywordsText(""); setMostEffectiveTechnique(""); setClientQuote("");
     setCoachOverallFeedback(""); setMcciDomain("");
+    setSvSupervisorFeedback(""); setSvPeerFeedback(""); setSvReflectionLearning("");
     setFile(null); setExistingEvidenceId(undefined);
     setCurrentDraftId(undefined);
     setSubmitted(false);
@@ -627,6 +637,9 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
       coachOverallFeedback: coachOverallFeedback.trim() || undefined,
       mcciDomain: (mcciDomain || undefined) as
         | "motivation" | "skill" | "performance" | "relationship" | undefined,
+      svSupervisorFeedback: svSupervisorFeedback.trim() || undefined,
+      svPeerFeedback: svPeerFeedback.trim() || undefined,
+      svReflectionLearning: svReflectionLearning.trim() || undefined,
     };
   }, [
     coachingDate, coachingStartTime, coachingEndTime, hours, coachingType, coachingPlace,
@@ -635,6 +648,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
     techniquesUsed, techniqueOther, clientInsight, coachPattern, goals, actionPlan,
     nextSessionPractice, summary, reflection, bestOfSession, improvementForNext,
     changeKeywordsText, mostEffectiveTechnique, clientQuote, coachOverallFeedback, mcciDomain,
+    svSupervisorFeedback, svPeerFeedback, svReflectionLearning,
   ]);
 
   const buildFullPayload = useCallback(() => {
@@ -683,6 +697,9 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
       coachOverallFeedback: coachOverallFeedback.trim() || undefined,
       mcciDomain: (mcciDomain || undefined) as
         | "motivation" | "skill" | "performance" | "relationship" | undefined,
+      svSupervisorFeedback: svSupervisorFeedback.trim() || undefined,
+      svPeerFeedback: svPeerFeedback.trim() || undefined,
+      svReflectionLearning: svReflectionLearning.trim() || undefined,
     };
   }, [
     coachingDate, coachingStartTime, coachingEndTime, hours, coachingType, coachingPlace,
@@ -691,6 +708,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
     techniquesUsed, techniqueOther, clientInsight, coachPattern, goals, actionPlan,
     nextSessionPractice, summary, reflection, bestOfSession, improvementForNext,
     changeKeywordsText, mostEffectiveTechnique, clientQuote, coachOverallFeedback, mcciDomain,
+    svSupervisorFeedback, svPeerFeedback, svReflectionLearning,
   ]);
 
   const uploadFileIfNeeded = async (): Promise<Id<"_storage"> | undefined> => {
@@ -742,12 +760,15 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
 
   const handleSubmit = async () => {
     setSubmitted(true);
-    if (!coachingDate || !coacheeInfo.trim() || !topic.trim() || !goals.trim() || !summary.trim()) {
-      toast.error("필수 항목(날짜, 코치이명, 코칭 주제, 목표, 내용 요약)을 모두 입력해 주세요.");
+    const isSv = coachingType === "sv";
+    const hasMissingSv = isSv && !svReflectionLearning.trim();
+    if (!coachingDate || !coacheeInfo.trim() || !topic.trim() || !goals.trim() || !summary.trim() || hasMissingSv) {
+      toast.error("필수 항목을 모두 입력해 주세요.");
       // Navigate to the step with the missing required field
       if (!coachingDate || !coacheeInfo.trim()) { setCurrentStep(1); return; }
       if (!topic.trim()) { setCurrentStep(2); return; }
       if (!goals.trim() || !summary.trim()) { setCurrentStep(5); return; }
+      if (hasMissingSv) { setCurrentStep(6); return; }
       return;
     }
     const hoursNum = parseFloat(hours);
@@ -804,7 +825,12 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
   };
 
   const isNewOrDraft = !isEdit || isDraft || !!currentDraftId;
-  const isLastStep = currentStep === STEPS.length;
+
+  const steps = coachingType === "sv"
+    ? [...STEPS, { id: 6, title: "피드백 & 성찰", short: "피드백" } as const]
+    : STEPS;
+
+  const isLastStep = currentStep === steps.length;
 
   // Validate step 1 required fields before advancing
   const canAdvanceStep1 = coachingDate.length > 0 && coacheeInfo.trim().length > 0;
@@ -813,7 +839,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
   const handleNext = () => {
     if (currentStep === 1 && !canAdvanceStep1) {
       setSubmitted(true);
-      toast.error("날짜와 코치이 이름은 필수 항목입니다.");
+      toast.error(`${getCoacheeLabel("날짜와 코치이 이름")}은 필수 항목입니다.`);
       return;
     }
     if (currentStep === 2 && !canAdvanceStep2) {
@@ -821,7 +847,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
       toast.error("코칭 주제를 입력해 주세요.");
       return;
     }
-    setCurrentStep((s) => Math.min(s + 1, STEPS.length));
+    setCurrentStep((s) => Math.min(s + 1, steps.length));
   };
 
   const handlePrev = () => setCurrentStep((s) => Math.max(s - 1, 1));
@@ -843,7 +869,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
               </div>
               <div className="space-y-1.5">
                 <Label>코칭 유형 <span className="text-destructive">*</span></Label>
-                <Select value={coachingType} onValueChange={(v) => setCoachingType(v as any)}>
+                <Select value={coachingType} onValueChange={(v) => setCoachingType(v as any)} disabled={!!defaultCoachingType}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {COACHING_TYPES.map((t) => (
@@ -1189,12 +1215,50 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
           </div>
         );
 
+      case 6:
+        return (
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="svSupervisorFeedback">슈퍼바이저 피드백</Label>
+              <Textarea
+                id="svSupervisorFeedback"
+                placeholder="슈퍼바이저(멘토코치)가 제공한 강점, 보완점, 향후 코칭 역량 개발 방향 피드백 내용을 입력해 주세요."
+                rows={4}
+                value={svSupervisorFeedback}
+                onChange={(e) => setSvSupervisorFeedback(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="svPeerFeedback">동료 피드백</Label>
+              <Textarea
+                id="svPeerFeedback"
+                placeholder="피코칭을 진행한 동료 교육생 또는 참관 동료들로부터 얻은 피드백 내용을 입력해 주세요."
+                rows={4}
+                value={svPeerFeedback}
+                onChange={(e) => setSvPeerFeedback(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="svReflectionLearning">피드백을 통한 성찰 및 배움 <span className="text-destructive">*</span></Label>
+              <Textarea
+                id="svReflectionLearning"
+                placeholder="위 피드백들을 통해 스스로 성찰한 점 및 향후 보완할 점을 구체적으로 입력해 주세요."
+                rows={4}
+                value={svReflectionLearning}
+                onChange={(e) => setSvReflectionLearning(e.target.value)}
+                className={submitted && !svReflectionLearning.trim() ? "border-destructive" : ""}
+              />
+              {submitted && !svReflectionLearning.trim() && <p className="text-xs text-destructive">성찰 및 배움을 입력해 주세요.</p>}
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
   };
 
-  const stepTitle = STEPS.find((s) => s.id === currentStep)?.title ?? "";
+  const stepTitle = steps.find((s) => s.id === currentStep)?.title ?? "";
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -1235,7 +1299,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog }: Props) 
 
         {/* Step indicator */}
         <div className="flex-shrink-0 pt-1 pb-2">
-          <StepIndicator currentStep={currentStep} />
+          <StepIndicator currentStep={currentStep} steps={steps} />
           <p className="text-sm font-semibold text-foreground">
             {currentStep}단계: {stepTitle}
           </p>

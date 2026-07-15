@@ -10,6 +10,7 @@ export default defineSchema({
       v.literal("trainee"),
       v.literal("senior_coach"),
       v.literal("admin"),
+      v.literal("admin3"),
     ),
     approvalStatus: v.union(
       v.literal("pending"),
@@ -37,6 +38,7 @@ export default defineSchema({
     coachingLogReminderEnabled: v.optional(v.boolean()), // 코칭 로그 초안 리마인더
     isMockActive: v.optional(v.boolean()), // 로컬 개발용 활성 모크 유저 플래그
     activeMockRole: v.optional(v.union(v.literal("trainee"), v.literal("senior_coach"))), // 어드민별 화면 프리뷰 역할 설정
+    activeMockTraineeId: v.optional(v.id("users")), // 프리뷰 대상이 될 실제 교육생 ID (가장 많은 기록 보유자 등)
     passwordHash: v.optional(v.string()), // 자체 로그인을 위한 비밀번호 해시
   })
     .index("by_token", ["tokenIdentifier"])
@@ -112,6 +114,10 @@ export default defineSchema({
       v.literal("motivation"), v.literal("skill"),
       v.literal("performance"), v.literal("relationship")
     )),
+    // ── Ⅷ. 슈퍼비전 추가 항목 ──
+    svSupervisorFeedback: v.optional(v.string()), // 슈퍼바이저 피드백
+    svPeerFeedback: v.optional(v.string()),       // 동료 피드백
+    svReflectionLearning: v.optional(v.string()), // 피드백을 통한 성찰 및 배움
     // ── 증빙 / 승인 ──
     evidenceStorageId: v.optional(v.id("_storage")),
     approvalStatus: v.union(
@@ -131,7 +137,7 @@ export default defineSchema({
     coachingLogId: v.id("coachingLogs"),
     userId: v.id("users"),
     userName: v.string(),
-    role: v.union(v.literal("admin"), v.literal("senior_coach"), v.literal("trainee")),
+    role: v.union(v.literal("admin"), v.literal("senior_coach"), v.literal("trainee"), v.literal("admin3")),
     content: v.string(),
     createdAt: v.number(),
   })
@@ -431,7 +437,7 @@ export default defineSchema({
     seminarId: v.id("seminars"),
     cohortId: v.optional(v.id("cohorts")),
     userId: v.id("users"),
-    date: v.string(), // YYYY-MM-DD
+    date: v.optional(v.string()), // YYYY-MM-DD
     status: v.union(
       v.literal("present"),   // 출석
       v.literal("absent"),    // 결석
@@ -651,6 +657,8 @@ export default defineSchema({
   bcpLogs: defineTable({
     userId: v.id("users"),             // 교육생 (기록 작성자)
     sessionDate: v.string(),           // ISO 8601 date
+    sessionStartTime: v.optional(v.string()), // 시작 시간
+    sessionEndTime: v.optional(v.string()),   // 종료 시간
     buddyId1: v.id("users"),           // 버디 파트너 1 (필수)
     buddyId2: v.optional(v.id("users")), // 버디 파트너 2 (선택)
     myRole: v.union(v.literal("coach"), v.literal("coachee")), // 내 역할
@@ -659,6 +667,14 @@ export default defineSchema({
     topic: v.string(),                 // 코칭 주제
     content: v.string(),               // 세션 내용 요약
     reflection: v.optional(v.string()), // 성찰
+    // ── 추가 필드 (사용기법 / 핵심발견 / 실행 및 성장) ──
+    techniquesUsed: v.optional(v.array(v.string())), // 사용 기법 (복수)
+    techniqueOther: v.optional(v.string()),          // 사용 기법 기타
+    clientInsight: v.optional(v.string()),           // 고객의 핵심 통찰 (핵심발견)
+    coachPattern: v.optional(v.string()),            // 코치가 발견한 핵심 패턴 (핵심발견)
+    actionPlan: v.optional(v.string()),              // 실행계획 (실행)
+    bestOfSession: v.optional(v.string()),           // 잘한 점 (성장)
+    improvementForNext: v.optional(v.string()),      // 개선할 점 (성장)
     evidenceStorageId: v.optional(v.id("_storage")),
     approvalStatus: v.union(
       v.literal("pending"),

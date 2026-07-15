@@ -205,7 +205,7 @@ export default function PostDetailDialog({ postId, open, onOpenChange, onDeleted
   };
 
   const isAuthor = me && post && me._id === post.authorId;
-  const isAdmin = me?.role === "admin" || me?.role === "senior_coach";
+  const isAdmin = me?.role === "admin" || me?.role === "admin3" || me?.role === "senior_coach";
   const cfg = post ? CATEGORY_CONFIG[post.category] : null;
 
   // Organise comments: top-level + replies

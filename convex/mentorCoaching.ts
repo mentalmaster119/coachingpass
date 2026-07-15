@@ -146,7 +146,7 @@ export const getMySummary = query({
 export const getPendingLogs = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin", "senior_coach"]);
+    await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
     const logs = await ctx.db
       .query("mentorCoachingLogs")
       .withIndex("by_approval_status", (q) => q.eq("approvalStatus", "pending"))
@@ -172,7 +172,7 @@ export const getPendingLogs = query({
 export const getAllLogsForUser = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin", "senior_coach"]);
+    await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
     const logs = await ctx.db
       .query("mentorCoachingLogs")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
@@ -193,7 +193,7 @@ export const getAllLogsForUser = query({
 export const approve = mutation({
   args: { logId: v.id("mentorCoachingLogs") },
   handler: async (ctx, args) => {
-    const reviewer = await requireRole(ctx, ["admin", "senior_coach"]);
+    const reviewer = await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
     const log = await ctx.db.get(args.logId);
     if (!log) throw new ConvexError({ message: "Record not found", code: "NOT_FOUND" });
 
@@ -220,7 +220,7 @@ export const reject = mutation({
     reason: v.string(),
   },
   handler: async (ctx, args) => {
-    const reviewer = await requireRole(ctx, ["admin", "senior_coach"]);
+    const reviewer = await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
     const log = await ctx.db.get(args.logId);
     if (!log) throw new ConvexError({ message: "Record not found", code: "NOT_FOUND" });
 

@@ -73,9 +73,9 @@ export default function MentorCoachingPage() {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-bold text-foreground">슈퍼비전</h1>
+          <h1 className="text-2xl font-bold text-foreground">멘토코칭 실습 기록</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            슈퍼비전 세션을 기록하고 승인을 받으세요.
+            멘토코칭 세션을 기록하고 승인을 받으세요.
           </p>
         </div>
         <Button onClick={() => setAddOpen(true)} className="self-start sm:self-center">
@@ -105,12 +105,12 @@ export default function MentorCoachingPage() {
             />
             <StatCard
               icon={<Star className="w-4.5 h-4.5" />}
-              label="개인 슈퍼비전"
+              label="개인 멘토코칭"
               value={`${summary.mentorCoachingCount}회`}
             />
             <StatCard
               icon={<MessageSquare className="w-4.5 h-4.5" />}
-              label="그룹 슈퍼비전"
+              label="그룹 코더코"
               value={`${summary.coderCoCount}회`}
             />
             <StatCard
@@ -138,8 +138,8 @@ export default function MentorCoachingPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4 flex-wrap h-auto gap-1">
             <TabsTrigger value="all">전체</TabsTrigger>
-            <TabsTrigger value="mentor_coaching">개인 슈퍼비전</TabsTrigger>
-            <TabsTrigger value="coder_co">그룹 슈퍼비전</TabsTrigger>
+            <TabsTrigger value="mentor_coaching">개인 멘토코칭</TabsTrigger>
+            <TabsTrigger value="coder_co">그룹 코더코</TabsTrigger>
             <TabsTrigger value="pending">검토중</TabsTrigger>
             <TabsTrigger value="approved">승인됨</TabsTrigger>
           </TabsList>
@@ -158,11 +158,11 @@ export default function MentorCoachingPage() {
                     <MessageSquare />
                   </EmptyMedia>
                   <EmptyTitle>
-                    {activeTab === "all" ? "슈퍼비전 기록이 없습니다" : "해당하는 기록이 없습니다"}
+                    {activeTab === "all" ? "멘토코칭 기록이 없습니다" : "해당하는 기록이 없습니다"}
                   </EmptyTitle>
                   <EmptyDescription>
                     {activeTab === "all"
-                      ? "슈퍼비전 세션을 기록해 보세요."
+                      ? "멘토코칭 세션을 기록해 보세요."
                       : "다른 탭에서 확인해 보세요."}
                   </EmptyDescription>
                 </EmptyHeader>

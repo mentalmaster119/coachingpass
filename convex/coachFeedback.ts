@@ -26,7 +26,7 @@ export const create = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const coach = await requireRole(ctx, ["senior_coach", "admin"]);
+    const coach = await requireRole(ctx, ["senior_coach", "admin", "admin3"]);
 
     // Verify the trainee exists and is assigned to this coach (or user is admin)
     const trainee = await ctx.db.get(args.traineeId);
@@ -80,7 +80,7 @@ export const update = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const user = await requireRole(ctx, ["senior_coach", "admin"]);
+    const user = await requireRole(ctx, ["senior_coach", "admin", "admin3"]);
     const feedback = await ctx.db.get(args.feedbackId);
     if (!feedback) throw new ConvexError({ message: "피드백을 찾을 수 없습니다", code: "NOT_FOUND" });
     if (user.role === "senior_coach" && feedback.coachId.toString() !== user._id.toString()) {
@@ -98,7 +98,7 @@ export const update = mutation({
 export const remove = mutation({
   args: { feedbackId: v.id("coachFeedbacks") },
   handler: async (ctx, args) => {
-    const user = await requireRole(ctx, ["senior_coach", "admin"]);
+    const user = await requireRole(ctx, ["senior_coach", "admin", "admin3"]);
     const feedback = await ctx.db.get(args.feedbackId);
     if (!feedback) throw new ConvexError({ message: "피드백을 찾을 수 없습니다", code: "NOT_FOUND" });
     if (user.role === "senior_coach" && feedback.coachId.toString() !== user._id.toString()) {
@@ -168,7 +168,7 @@ export const listMyFeedbacks = query({
 export const listFeedbackForTrainee = query({
   args: { traineeId: v.id("users") },
   handler: async (ctx, args): Promise<FeedbackWithUsers[]> => {
-    await requireRole(ctx, ["senior_coach", "admin"]);
+    await requireRole(ctx, ["senior_coach", "admin", "admin3"]);
     const feedbacks = await ctx.db
       .query("coachFeedbacks")
       .withIndex("by_trainee", (q) => q.eq("traineeId", args.traineeId))
@@ -193,7 +193,7 @@ export const listFeedbackForTrainee = query({
 export const listMyWrittenFeedbacks = query({
   args: {},
   handler: async (ctx): Promise<FeedbackWithUsers[]> => {
-    const user = await requireRole(ctx, ["senior_coach", "admin"]);
+    const user = await requireRole(ctx, ["senior_coach", "admin", "admin3"]);
     const feedbacks = await ctx.db
       .query("coachFeedbacks")
       .withIndex("by_coach", (q) => q.eq("coachId", user._id))
@@ -218,7 +218,7 @@ export const listMyWrittenFeedbacks = query({
 export const listAll = query({
   args: {},
   handler: async (ctx): Promise<FeedbackWithUsers[]> => {
-    await requireRole(ctx, ["admin"]);
+    await requireRole(ctx, ["admin", "admin3"]);
     const feedbacks = await ctx.db.query("coachFeedbacks").order("desc").collect();
     return await Promise.all(
       feedbacks.map(async (fb) => {

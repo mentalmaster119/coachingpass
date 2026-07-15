@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select.tsx";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils.ts";
 
 type BcpLog = Doc<"bcpLogs"> & {
   buddy1Name: string;
@@ -38,27 +39,110 @@ interface Props {
 
 interface FormState {
   sessionDate: string;
+  sessionStartTime: string;
+  sessionEndTime: string;
   buddyId1: string;
-  buddyId2: string;
   myRole: "coach" | "coachee";
   durationMinutes: string;
   location: string;
   topic: string;
   content: string;
   reflection: string;
+  techniquesUsed: string[];
+  techniqueOther: string;
+  clientInsight: string;
+  coachPattern: string;
+  actionPlan: string;
+  bestOfSession: string;
+  improvementForNext: string;
+}
+
+// Checkbox selection group component
+function CheckboxGroup({
+  options,
+  selected,
+  onToggle,
+}: {
+  options: string[];
+  selected: string[];
+  onToggle: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => (
+        <button
+          key={opt}
+          type="button"
+          onClick={() => onToggle(opt)}
+          className={cn(
+            "px-3 py-1.5 rounded-full text-xs border transition-colors cursor-pointer",
+            selected.includes(opt)
+              ? "bg-primary text-primary-foreground border-primary"
+              : "border-border text-muted-foreground hover:border-primary/50"
+          )}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Techniques list
+const TECHNIQUES = [
+  "히어로인터뷰",
+  "포스트잇",
+  "타임라인",
+  "HPPC",
+  "VAK",
+  "루틴",
+  "의자기법",
+  "3F",
+  "3x5 질문법",
+];
+
+// Generate time options with 10-minute intervals (00:00 to 23:50)
+const TIME_OPTIONS: string[] = [];
+for (let hour = 0; hour < 24; hour++) {
+  for (let min = 0; min < 60; min += 10) {
+    const hStr = String(hour).padStart(2, "0");
+    const mStr = String(min).padStart(2, "0");
+    TIME_OPTIONS.push(`${hStr}:${mStr}`);
+  }
+}
+
+// Helper to calculate duration in minutes between start and end times
+function calculateMinutes(start: string, end: string): number {
+  if (!start || !end) return 0;
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  const startTotal = sh * 60 + sm;
+  let endTotal = eh * 60 + em;
+  if (endTotal < startTotal) {
+    endTotal += 24 * 60; // Wrap around to next day
+  }
+  return endTotal - startTotal;
 }
 
 function getDefaultValues(editLog?: BcpLog): FormState {
   return {
     sessionDate: editLog?.sessionDate ?? new Date().toISOString().slice(0, 10),
+    sessionStartTime: editLog?.sessionStartTime ?? "09:00",
+    sessionEndTime: editLog?.sessionEndTime ?? "10:00",
     buddyId1: editLog?.buddyId1 ?? "",
-    buddyId2: editLog?.buddyId2 ?? "",
-    myRole: editLog?.myRole ?? "coach",
+    myRole: "coach",
     durationMinutes: String(editLog?.durationMinutes ?? 60),
     location: editLog?.location ?? "",
     topic: editLog?.topic ?? "",
     content: editLog?.content ?? "",
     reflection: editLog?.reflection ?? "",
+    techniquesUsed: editLog?.techniquesUsed ?? [],
+    techniqueOther: editLog?.techniqueOther ?? "",
+    clientInsight: editLog?.clientInsight ?? "",
+    coachPattern: editLog?.coachPattern ?? "",
+    actionPlan: editLog?.actionPlan ?? "",
+    bestOfSession: editLog?.bestOfSession ?? "",
+    improvementForNext: editLog?.improvementForNext ?? "",
   };
 }
 
@@ -75,6 +159,24 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
   const set = <K extends keyof FormState>(key: K) =>
     (val: FormState[K]) => setValues((prev) => ({ ...prev, [key]: val }));
 
+  const handleStartTimeChange = (start: string) => {
+    const dur = calculateMinutes(start, values.sessionEndTime);
+    setValues((prev) => ({
+      ...prev,
+      sessionStartTime: start,
+      durationMinutes: String(dur),
+    }));
+  };
+
+  const handleEndTimeChange = (end: string) => {
+    const dur = calculateMinutes(values.sessionStartTime, end);
+    setValues((prev) => ({
+      ...prev,
+      sessionEndTime: end,
+      durationMinutes: String(dur),
+    }));
+  };
+
   const handleOpenChange = (v: boolean) => {
     if (!v) setValues(getDefaultValues(editLog));
     onOpenChange(v);
@@ -84,26 +186,35 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
     e.preventDefault();
 
     const buddyId1 = values.buddyId1 as Id<"users">;
-    const buddyId2 = values.buddyId2 ? (values.buddyId2 as Id<"users">) : undefined;
 
     if (!values.sessionDate) return toast.error("날짜를 선택하세요.");
-    if (!values.buddyId1) return toast.error("버디 파트너 1을 선택하세요.");
-    if (buddyId2 && buddyId2 === buddyId1) return toast.error("버디 파트너 1과 2는 달라야 합니다.");
-    const dur = parseInt(values.durationMinutes, 10);
+    if (!values.sessionStartTime) return toast.error("시작 시간을 선택하세요.");
+    if (!values.sessionEndTime) return toast.error("종료 시간을 선택하세요.");
+    if (!values.buddyId1) return toast.error("버디 파트너를 선택하세요.");
+    
+    const dur = calculateMinutes(values.sessionStartTime, values.sessionEndTime);
     if (isNaN(dur) || dur < 30) return toast.error("세션 시간은 최소 30분이어야 합니다.");
     if (!values.topic.trim()) return toast.error("코칭 주제를 입력하세요.");
     if (values.content.trim().length < 10) return toast.error("세션 내용을 더 자세히 입력하세요.");
 
     const payload = {
       sessionDate: values.sessionDate,
+      sessionStartTime: values.sessionStartTime,
+      sessionEndTime: values.sessionEndTime,
       buddyId1,
-      buddyId2,
-      myRole: values.myRole,
+      myRole: "coach" as const, // Automatically assigned as coach role
       durationMinutes: dur,
       location: values.location.trim() || undefined,
       topic: values.topic.trim(),
       content: values.content.trim(),
       reflection: values.reflection.trim() || undefined,
+      techniquesUsed: values.techniquesUsed.length > 0 ? values.techniquesUsed : undefined,
+      techniqueOther: values.techniqueOther.trim() || undefined,
+      clientInsight: values.clientInsight.trim() || undefined,
+      coachPattern: values.coachPattern.trim() || undefined,
+      actionPlan: values.actionPlan.trim() || undefined,
+      bestOfSession: values.bestOfSession.trim() || undefined,
+      improvementForNext: values.improvementForNext.trim() || undefined,
     };
 
     setLoading(true);
@@ -113,7 +224,7 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
         toast.success("기록이 수정되었습니다.");
       } else {
         await createLog(payload);
-        toast.success("BCP 기록이 추가되었습니다. 검토 후 승인됩니다.");
+        toast.success("버디코칭 기록이 추가되었습니다. 검토 후 승인됩니다.");
       }
       handleOpenChange(false);
     } catch {
@@ -123,51 +234,65 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
     }
   };
 
-  // Filter buddy list to exclude already selected buddy
-  const availableBuddy2 = buddies?.filter((b) => b._id !== values.buddyId1) ?? [];
-
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "BCP 기록 수정" : "BCP 버디코칭 기록 추가"}</DialogTitle>
+          <DialogTitle>{isEdit ? "버디코칭 실습 기록 수정" : "버디코칭 실습 기록 추가"}</DialogTitle>
           <DialogDescription>
-            버디코칭 실습(BCP) 정보를 입력하세요. 동일 버디 2명과의 실습은 총 1건으로 인정됩니다.
+            버디코칭 실습 정보를 입력하세요.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Date + Role */}
+          {/* Date */}
+          <div className="space-y-1.5">
+            <Label>실습 날짜 *</Label>
+            <Input
+              type="date"
+              value={values.sessionDate}
+              onChange={(e) => set("sessionDate")(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
+            />
+          </div>
+
+          {/* Time Picker */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>실습 날짜 *</Label>
-              <Input
-                type="date"
-                value={values.sessionDate}
-                onChange={(e) => set("sessionDate")(e.target.value)}
-                max={new Date().toISOString().slice(0, 10)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>나의 역할 *</Label>
-              <Select
-                value={values.myRole}
-                onValueChange={(v) => set("myRole")(v as "coach" | "coachee")}
-              >
+              <Label>시작 시간 *</Label>
+              <Select value={values.sessionStartTime} onValueChange={handleStartTimeChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="coach">코치 역할</SelectItem>
-                  <SelectItem value="coachee">고객(코치이) 역할</SelectItem>
+                <SelectContent className="max-h-[200px] overflow-y-auto">
+                  {TIME_OPTIONS.map((time) => (
+                    <SelectItem key={time} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>종료 시간 *</Label>
+              <Select value={values.sessionEndTime} onValueChange={handleEndTimeChange}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px] overflow-y-auto">
+                  {TIME_OPTIONS.map((time) => (
+                    <SelectItem key={time} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Buddy 1 */}
+          {/* Buddy Partner */}
           <div className="space-y-1.5">
-            <Label>버디 파트너 1 *</Label>
+            <Label>버디 파트너 *</Label>
             {buddies === undefined ? (
               <div className="h-9 bg-muted rounded-md animate-pulse" />
             ) : buddies.length === 0 ? (
@@ -177,7 +302,7 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
             ) : (
               <Select value={values.buddyId1} onValueChange={set("buddyId1")}>
                 <SelectTrigger>
-                  <SelectValue placeholder="동기생 선택" />
+                  <SelectValue placeholder="버디 파트너 선택" />
                 </SelectTrigger>
                 <SelectContent>
                   {buddies.map((b) => (
@@ -190,41 +315,16 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
             )}
           </div>
 
-          {/* Buddy 2 (optional) */}
-          <div className="space-y-1.5">
-            <Label>버디 파트너 2 (선택)</Label>
-            <Select
-              value={values.buddyId2 || "none"}
-              onValueChange={(v) => set("buddyId2")(v === "none" ? "" : v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="두 번째 버디 (선택)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">선택 안 함</SelectItem>
-                {availableBuddy2.map((b) => (
-                  <SelectItem key={b._id} value={b._id}>
-                    {b.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-[11px] text-muted-foreground">
-              * 동일 버디 조합(2명)의 실습은 총 1건만 인정됩니다.
-            </p>
-          </div>
-
           {/* Duration + Location */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>세션 시간 (분) *</Label>
+              <Label>세션 시간 (자동 계산)</Label>
               <Input
-                type="number"
-                min={30}
-                step={30}
-                placeholder="60"
-                value={values.durationMinutes}
-                onChange={(e) => set("durationMinutes")(e.target.value)}
+                type="text"
+                readOnly
+                disabled
+                value={`${values.durationMinutes}분`}
+                className="bg-muted cursor-not-allowed text-muted-foreground font-medium"
               />
             </div>
             <div className="space-y-1.5">
@@ -251,18 +351,97 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
           <div className="space-y-1.5">
             <Label>세션 내용 요약 *</Label>
             <Textarea
-              placeholder="버디코칭에서 다룬 내용, 서로의 역할, 진행 방식 등을 기록하세요"
+              placeholder="버디코칭에서 다룬 내용, 진행 방식 등을 기록하세요"
               rows={4}
               value={values.content}
               onChange={(e) => set("content")(e.target.value)}
             />
           </div>
 
+          {/* ── 사용 기법 ── */}
+          <div className="space-y-2.5 pt-3 border-t border-border">
+            <Label className="text-sm font-semibold text-foreground">사용 기법 (선택)</Label>
+            <CheckboxGroup
+              options={TECHNIQUES}
+              selected={values.techniquesUsed}
+              onToggle={(opt) => {
+                const isSel = values.techniquesUsed.includes(opt);
+                const next = isSel
+                  ? values.techniquesUsed.filter((x) => x !== opt)
+                  : [...values.techniquesUsed, opt];
+                set("techniquesUsed")(next);
+              }}
+            />
+            <div className="space-y-1.5 mt-1.5">
+              <Label className="text-xs text-muted-foreground">기타 기법 (직접 입력)</Label>
+              <Input
+                placeholder="예: 경청, 질문 기법 등 기타 기법 입력"
+                value={values.techniqueOther}
+                onChange={(e) => set("techniqueOther")(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* ── 핵심 발견 ── */}
+          <div className="space-y-3 pt-3 border-t border-border">
+            <Label className="text-sm font-semibold text-foreground">핵심 발견</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">고객의 핵심 통찰 (선택)</Label>
+              <Textarea
+                placeholder="고객이 새롭게 깨닫거나 알게 된 통찰을 기록하세요"
+                rows={2}
+                value={values.clientInsight}
+                onChange={(e) => set("clientInsight")(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">코치가 발견한 핵심 패턴 (선택)</Label>
+              <Textarea
+                placeholder="코치로서 대화 과정 중 발견한 고객의 행동/언어적 패턴을 기록하세요"
+                rows={2}
+                value={values.coachPattern}
+                onChange={(e) => set("coachPattern")(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* ── 실행 및 성장 ── */}
+          <div className="space-y-3 pt-3 border-t border-border">
+            <Label className="text-sm font-semibold text-foreground">실행 및 성장</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">고객의 실행계획 (선택)</Label>
+              <Textarea
+                placeholder="세션 종료 후 고객이 실천하기로 약속한 실행계획을 기록하세요"
+                rows={2}
+                value={values.actionPlan}
+                onChange={(e) => set("actionPlan")(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">이번 세션에서 가장 잘한 점 (선택)</Label>
+              <Textarea
+                placeholder="코치로서 스스로 만족스러웠던 경청이나 질문 등 잘한 점을 적어보세요"
+                rows={2}
+                value={values.bestOfSession}
+                onChange={(e) => set("bestOfSession")(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">다음 세션에서 개선할 점 (선택)</Label>
+              <Textarea
+                placeholder="다음 코칭 실습 시 더 보완하고 싶은 아쉬웠던 점을 성찰해보세요"
+                rows={2}
+                value={values.improvementForNext}
+                onChange={(e) => set("improvementForNext")(e.target.value)}
+              />
+            </div>
+          </div>
+
           {/* Reflection */}
-          <div className="space-y-1.5">
-            <Label>성찰 (선택)</Label>
+          <div className="space-y-1.5 pt-3 border-t border-border">
+            <Label>종합 성찰 (선택)</Label>
             <Textarea
-              placeholder="세션 후 느낀 점, 배운 점, 개선할 점 등"
+              placeholder="세션 후 느낀 점, 배운 점 등 종합적인 성찰 요약"
               rows={3}
               value={values.reflection}
               onChange={(e) => set("reflection")(e.target.value)}

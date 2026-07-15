@@ -135,17 +135,14 @@ export default function BcpLogCard({ log, isAdmin = false, onApprove, onReject }
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <StatusBadge status={log.approvalStatus} />
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-[11px]",
-                    log.myRole === "coach"
-                      ? "bg-blue-50 text-blue-700 border-blue-200"
-                      : "bg-purple-50 text-purple-700 border-purple-200"
-                  )}
-                >
-                  {log.myRole === "coach" ? "코치 역할" : "고객 역할"}
-                </Badge>
+                {log.myRole === "coachee" && (
+                  <Badge
+                    variant="outline"
+                    className="text-[11px] bg-purple-50 text-purple-700 border-purple-200"
+                  >
+                    고객 역할
+                  </Badge>
+                )}
               </div>
               <p className="font-semibold text-foreground mt-1.5 line-clamp-1">{log.topic}</p>
               <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
@@ -153,9 +150,10 @@ export default function BcpLogCard({ log, isAdmin = false, onApprove, onReject }
                   <CalendarDays className="w-3 h-3" />
                   {dateStr}
                 </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
+                <span className="flex items-center gap-1 font-semibold text-foreground">
+                  <Clock className="w-3 h-3 text-primary" />
                   {log.durationMinutes}분
+                  {log.sessionStartTime && log.sessionEndTime && ` (${log.sessionStartTime} ~ ${log.sessionEndTime})`}
                 </span>
                 <span className="flex items-center gap-1">
                   <Users className="w-3 h-3" />
@@ -225,7 +223,7 @@ export default function BcpLogCard({ log, isAdmin = false, onApprove, onReject }
 
           {/* Expanded content */}
           {expanded && (
-            <div className="mt-3 pt-3 border-t space-y-2 text-sm">
+            <div className="mt-3 pt-3 border-t space-y-3 text-sm">
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-0.5">세션 내용</p>
                 <p className="text-foreground whitespace-pre-wrap">{log.content}</p>
@@ -236,6 +234,68 @@ export default function BcpLogCard({ log, isAdmin = false, onApprove, onReject }
                   <p className="text-foreground whitespace-pre-wrap">{log.reflection}</p>
                 </div>
               )}
+
+              {/* Techniques used */}
+              {((log.techniquesUsed && log.techniquesUsed.length > 0) || log.techniqueOther) && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-0.5">사용 기법</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {log.techniquesUsed?.map((t) => (
+                      <span key={t} className="text-[11px] bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">
+                        {t}
+                      </span>
+                    ))}
+                    {log.techniqueOther && (
+                      <span className="text-[11px] bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">
+                        기타: {log.techniqueOther}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Core discoveries */}
+              {(log.clientInsight || log.coachPattern) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-muted/30 p-2.5 rounded-md border border-border">
+                  {log.clientInsight && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-0.5">고객의 핵심 통찰</p>
+                      <p className="text-xs text-foreground whitespace-pre-wrap">{log.clientInsight}</p>
+                    </div>
+                  )}
+                  {log.coachPattern && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-0.5">코치가 발견한 핵심 패턴</p>
+                      <p className="text-xs text-foreground whitespace-pre-wrap">{log.coachPattern}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Execution and growth */}
+              {(log.actionPlan || log.bestOfSession || log.improvementForNext) && (
+                <div className="space-y-2 border-t pt-2 mt-1">
+                  {log.actionPlan && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-0.5">고객의 실행계획</p>
+                      <p className="text-xs text-foreground whitespace-pre-wrap">{log.actionPlan}</p>
+                    </div>
+                  )}
+                  {log.bestOfSession && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-0.5">가장 잘한 점</p>
+                      <p className="text-xs text-foreground whitespace-pre-wrap">{log.bestOfSession}</p>
+                    </div>
+                  )}
+                  {log.improvementForNext && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-0.5">개선할 점</p>
+                      <p className="text-xs text-foreground whitespace-pre-wrap">{log.improvementForNext}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {log.approvalStatus === "rejected" && log.rejectionReason && (
                 <div className="bg-red-50 rounded-md p-2.5">
                   <p className="text-xs font-medium text-red-600 mb-0.5">반려 사유</p>

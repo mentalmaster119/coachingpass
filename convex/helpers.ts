@@ -1,7 +1,7 @@
 import { ConvexError } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./mockAuth";
 
-type UserRole = "trainee" | "senior_coach" | "admin";
+type UserRole = "trainee" | "senior_coach" | "admin" | "admin3";
 
 export async function getAuthenticatedUser(ctx: QueryCtx | MutationCtx) {
   const identity = await ctx.auth.getUserIdentity();

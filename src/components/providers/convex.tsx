@@ -16,7 +16,7 @@ const originalMutation = convex.mutation;
   let path = "";
   if (typeof mutation === "string") {
     path = mutation;
-  } else if (mutation && typeof mutation === "object") {
+  } else if (mutation && (typeof mutation === "object" || typeof mutation === "function")) {
     if (typeof mutation._path === "string") {
       path = mutation._path;
     } else if (typeof mutation.name === "string") {
@@ -51,7 +51,7 @@ const originalAction = convex.action;
   let path = "";
   if (typeof action === "string") {
     path = action;
-  } else if (action && typeof action === "object") {
+  } else if (action && (typeof action === "object" || typeof action === "function")) {
     if (typeof action._path === "string") {
       path = action._path;
     } else if (typeof action.name === "string") {

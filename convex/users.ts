@@ -48,6 +48,50 @@ export const updateCurrentUser = mutation({
         name: identity.name?.trim() || user.name,
         email: identity.email?.trim() || user.email,
       });
+
+      // Clean up any test records mentioning "홍길동" for Sunju Park
+      if (user.name?.includes("선주") || user.name?.includes("Sunju")) {
+        const cLogs = await ctx.db
+          .query("coachingLogs")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .collect();
+        for (const log of cLogs) {
+          if (
+            log.coacheeInfo?.includes("홍길동") ||
+            log.topic?.includes("홍길동") ||
+            log.summary?.includes("홍길동")
+          ) {
+            await ctx.db.delete(log._id);
+          }
+        }
+
+        const bLogs = await ctx.db
+          .query("bcpLogs")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .collect();
+        for (const log of bLogs) {
+          if (
+            log.topic?.includes("홍길동") ||
+            log.content?.includes("홍길동")
+          ) {
+            await ctx.db.delete(log._id);
+          }
+        }
+
+        const mLogs = await ctx.db
+          .query("mentorCoachingLogs")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .collect();
+        for (const log of mLogs) {
+          if (
+            log.topic?.includes("홍길동") ||
+            log.content?.includes("홍길동")
+          ) {
+            await ctx.db.delete(log._id);
+          }
+        }
+      }
+
       return user._id;
     }
 
@@ -348,19 +392,109 @@ export const getMockUserByRole = query({
 });
 
 export const setActiveMockUser = mutation({
-  args: { role: v.union(v.literal("admin"), v.literal("senior_coach"), v.literal("trainee")) },
+  args: { role: v.union(v.literal("admin"), v.literal("admin3"), v.literal("senior_coach"), v.literal("trainee")) },
   handler: async (ctx, args) => {
     (ctx as any).skipMockAuth = true;
     const realUser = await getAuthenticatedUser(ctx);
 
-    if (realUser.role !== "admin") {
+    if (realUser.role !== "admin" && realUser.role !== "admin3") {
       throw new ConvexError({ message: "Only admins can change preview role", code: "FORBIDDEN" });
     }
 
-    if (args.role === "admin") {
-      await ctx.db.patch(realUser._id, { activeMockRole: undefined });
+    if (args.role === "admin" || args.role === "admin3") {
+      await ctx.db.patch(realUser._id, { activeMockRole: undefined, activeMockTraineeId: undefined });
     } else {
-      await ctx.db.patch(realUser._id, { activeMockRole: args.role });
+      let activeMockTraineeId: any = undefined;
+      if (args.role === "trainee") {
+        // Find or create virtual preview trainee
+        let virtualTrainee = await ctx.db
+          .query("users")
+          .collect()
+          .then((users) => users.find((u) => u.email === "preview_trainee@mcci.com"));
+
+        if (!virtualTrainee) {
+          const traineeId = await ctx.db.insert("users", {
+            tokenIdentifier: "preview-trainee-token",
+            name: "홍길동(미리보기)",
+            email: "preview_trainee@mcci.com",
+            role: "trainee",
+            approvalStatus: "approved",
+            onboardingCompleted: true,
+            phone: "010-0000-0000",
+            bio: "관리자 화면 미리보기용 가상 교육생 계정입니다.",
+            isMockActive: true,
+          });
+
+          // Find another trainee to act as buddyId1 fallback
+          const otherTrainees = await ctx.db
+            .query("users")
+            .withIndex("by_role", (q) => q.eq("role", "trainee"))
+            .collect();
+          const otherTraine = otherTrainees.find((u) => u._id !== traineeId);
+          const partnerId = otherTraine ? otherTraine._id : realUser._id;
+
+          // Seed coaching logs
+          await ctx.db.insert("coachingLogs", {
+            userId: traineeId,
+            coachingDate: "2026-07-10",
+            coachingStartTime: "10:00",
+            coachingEndTime: "11:00",
+            durationMinutes: 60,
+            coachingType: "individual",
+            coacheeInfo: "이철수 선수",
+            topic: "경기 불안감 극복 및 마인드셋 셋업",
+            goals: "경기 전 불안감 조절 기법 습득",
+            summary: "경기 전 루틴을 수립하여 불안감을 조절하는 방법을 훈련하고 명료화함.",
+            techniquesUsed: ["경청", "강점 피드백", "목표 설정"],
+            clientInsight: "경기 전 루틴을 수립하여 불안감을 조절하는 방법을 깨달음",
+            actionPlan: "경기 전 15분 루틴 실행 및 셀프 토크 일지 작성",
+            approvalStatus: "approved",
+          });
+
+          await ctx.db.insert("coachingLogs", {
+            userId: traineeId,
+            coachingDate: "2026-07-12",
+            coachingStartTime: "14:00",
+            coachingEndTime: "15:00",
+            durationMinutes: 60,
+            coachingType: "sv",
+            coacheeInfo: "김민재 선수",
+            topic: "슈퍼비전 코칭 실습: 목표 설정 단계 피드백",
+            goals: "GROW 모델을 적용한 코칭 프로세스 확립",
+            summary: "GROW 모델에 기반하여 고객의 강점을 탐색하고 현실 파악을 구체화하는 훈련을 시행함.",
+            techniquesUsed: ["GROW 모델", "인지 재구성"],
+            clientInsight: "GROW 모델 중 '현실(Reality)' 파악 단계에서 강점 기반의 탐색이 부족했음을 성찰함",
+            actionPlan: "다음 코칭 시 고객의 성공 경험을 먼저 탐색하여 현실 파악을 공고히 할 것",
+            svSupervisorFeedback: "GROW 모델의 흐름이 매끄럽습니다. 현실 탐색 시 질문의 개방성을 더 넓혀보세요.",
+            svPeerFeedback: "경청 태도가 훌륭하여 편안하게 대화할 수 있었습니다.",
+            svReflectionLearning: "질문을 미리 준비해 가기보다는 고객의 대답에서 키워드를 찾아 질문하는 노력이 필요합니다.",
+            approvalStatus: "approved",
+          });
+
+          await ctx.db.insert("bcpLogs", {
+            userId: traineeId,
+            buddyId1: partnerId,
+            myRole: "coach",
+            sessionDate: "2026-07-11",
+            sessionStartTime: "16:00",
+            sessionEndTime: "17:00",
+            durationMinutes: 60,
+            topic: "코칭 대화 모델 훈련 및 경청 실습",
+            content: "경청 중심의 코칭 훈련 진행",
+            techniquesUsed: ["적극적 경청", "요약 및 명료화"],
+            clientInsight: "질문을 쏟아내기보다 적절한 멈춤(Silence)을 활용하는 법을 배움",
+            actionPlan: "버디 코칭 시 1회 이상 의도적 침묵을 유지해 보기",
+            approvalStatus: "approved",
+          });
+
+          virtualTrainee = (await ctx.db.get(traineeId)) || undefined;
+        }
+
+        if (virtualTrainee) {
+          activeMockTraineeId = virtualTrainee._id;
+        }
+      }
+      await ctx.db.patch(realUser._id, { activeMockRole: args.role, activeMockTraineeId });
     }
     return realUser._id;
   },

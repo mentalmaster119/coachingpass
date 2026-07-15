@@ -288,7 +288,9 @@ function DetailDialog({
 
             <div className="border-t pt-2 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
               <div>
-                <span className="text-xs text-muted-foreground">코치이</span>
+                <span className="text-xs text-muted-foreground">
+                  {log.coachingType === "mentor" ? "멘토코치" : log.coachingType === "sv" ? "슈퍼바이저" : "코치이"}
+                </span>
                 <p className="font-medium">{log.coacheeInfo}</p>
               </div>
               {log.coacheeGender && (
@@ -400,6 +402,16 @@ function DetailDialog({
               </div>
             )}
           </div>
+
+          {/* Supervision Feedback */}
+          {log.coachingType === "sv" && (log.svSupervisorFeedback || log.svPeerFeedback || log.svReflectionLearning) && (
+            <div className="rounded-lg border p-3 space-y-2 bg-primary/5 border-primary/10">
+              <p className="text-xs font-semibold text-primary uppercase tracking-wide">슈퍼비전 피드백 & 성찰</p>
+              {renderField("슈퍼바이저 피드백", log.svSupervisorFeedback)}
+              {renderField("동료 피드백", log.svPeerFeedback)}
+              {renderField("피드백을 통한 성찰 및 배움", log.svReflectionLearning)}
+            </div>
+          )}
         </div>
 
         <DialogFooter className="gap-2 pt-2">

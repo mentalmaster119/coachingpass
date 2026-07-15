@@ -43,6 +43,7 @@ import AdminCompletionPage from "./pages/admin/completion/page.tsx";
 import AdminReportPage from "./pages/admin/report/page.tsx";
 import TrainingHistoryPage from "./pages/training-history/page.tsx";
 import TraineeAttendancePage from "./pages/attendance/page.tsx";
+import SupervisionPage from "./pages/supervision/page.tsx";
 import AdminSmpccPage from "./pages/admin/smpcc/page.tsx";
 import MentalForumPage from "./pages/mental-forum/page.tsx";
 import DailyCheckInPage from "./pages/daily-checkin/page.tsx";
@@ -116,6 +117,7 @@ export default function App() {
             <Route path="/recognition-status" element={<RecognitionStatusPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/classroom-booking" element={<ClassroomBookingPage />} />
+            <Route path="/supervision" element={<SupervisionPage />} />
           </Route>
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

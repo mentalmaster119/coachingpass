@@ -113,6 +113,9 @@ const coachingLogFields = {
     v.literal("performance"), v.literal("relationship")
   )),
   evidenceStorageId: v.optional(v.id("_storage")),
+  svSupervisorFeedback: v.optional(v.string()),
+  svPeerFeedback: v.optional(v.string()),
+  svReflectionLearning: v.optional(v.string()),
 };
 
 // Draft fields – all required fields become optional for saving mid-progress
@@ -172,6 +175,9 @@ const coachingDraftFields = {
     v.literal("performance"), v.literal("relationship")
   )),
   evidenceStorageId: v.optional(v.id("_storage")),
+  svSupervisorFeedback: v.optional(v.string()),
+  svPeerFeedback: v.optional(v.string()),
+  svReflectionLearning: v.optional(v.string()),
 };
 
 export const saveDraft = mutation({
@@ -394,7 +400,7 @@ export const getMySummary = query({
 export const getPendingLogs = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin", "senior_coach"]);
+    await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
     const logs = await ctx.db
       .query("coachingLogs")
       .withIndex("by_approval_status", (q) => q.eq("approvalStatus", "pending"))
@@ -433,7 +439,7 @@ export const getAllLogs = query({
     )),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin", "senior_coach"]);
+    await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
 
     let logs;
     if (args.status) {
@@ -471,7 +477,7 @@ export const getAllLogs = query({
 export const getAllLogsForUser = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin", "senior_coach"]);
+    await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
     const logs = await ctx.db
       .query("coachingLogs")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
@@ -595,7 +601,7 @@ export const getMyStats = query({
 export const approve = mutation({
   args: { logId: v.id("coachingLogs") },
   handler: async (ctx, args) => {
-    const reviewer = await requireRole(ctx, ["admin", "senior_coach"]);
+    const reviewer = await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
     const log = await ctx.db.get(args.logId);
     if (!log) {
       throw new ConvexError({ message: "Record not found", code: "NOT_FOUND" });
@@ -622,7 +628,7 @@ export const reject = mutation({
     reason: v.string(),
   },
   handler: async (ctx, args) => {
-    const reviewer = await requireRole(ctx, ["admin", "senior_coach"]);
+    const reviewer = await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
     const log = await ctx.db.get(args.logId);
     if (!log) {
       throw new ConvexError({ message: "Record not found", code: "NOT_FOUND" });

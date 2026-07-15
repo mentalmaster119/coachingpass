@@ -159,7 +159,10 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
 
           {/* Coachee info */}
           <p className="text-xs text-muted-foreground mb-2">
-            <span className="font-medium text-foreground/70">코치이:</span> {log.coacheeInfo}
+            <span className="font-medium text-foreground/70">
+              {log.coachingType === "mentor" ? "멘토코치:" : log.coachingType === "sv" ? "슈퍼바이저:" : "코치이:"}
+            </span>{" "}
+            {log.coacheeInfo}
           </p>
 
           {/* Rejection reason */}
@@ -211,7 +214,10 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
                   {log.sessionNumber && <span className="mr-3">회차: {log.sessionNumber}회차</span>}
                   {log.coachingPlace && <span className="mr-3">장소: {{ zoom: "Zoom", study_room: "공부방", center: "센터", home: "가정집", hanyang: "한양대 올림픽체육관", other: log.coachingPlaceOther ?? "기타" }[log.coachingPlace]}</span>}
                   {(log.coacheeGender || log.coacheeAge) && (
-                    <span className="mr-3">코치이: {log.coacheeGender === "male" ? "남" : log.coacheeGender === "female" ? "여" : ""}{log.coacheeAge ? ` ${log.coacheeAge}세` : ""}</span>
+                    <span className="mr-3">
+                      {log.coachingType === "mentor" ? "멘토코치:" : log.coachingType === "sv" ? "슈퍼바이저:" : "코치이:"}{" "}
+                      {log.coacheeGender === "male" ? "남" : log.coacheeGender === "female" ? "여" : ""}{log.coacheeAge ? ` ${log.coacheeAge}세` : ""}
+                    </span>
                   )}
                   {log.coacheeType && log.coacheeType.length > 0 && <span className="mr-3">유형: {log.coacheeType.join(", ")}</span>}
                   {log.coacheeField && <span className="mr-3">종목/직군: {log.coacheeField}</span>}
@@ -347,6 +353,32 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
                   <p className="text-sm text-foreground whitespace-pre-wrap">{log.reflection}</p>
                 </div>
               )}
+
+              {/* Supervision specific feedback display */}
+              {log.coachingType === "sv" && (
+                <div className="border-t border-border pt-3 mt-3 space-y-3">
+                  <p className="text-xs font-semibold text-foreground/80">슈퍼비전 피드백 & 성찰</p>
+                  {log.svSupervisorFeedback && (
+                    <div className="bg-muted/30 p-2.5 rounded-md">
+                      <p className="text-xs font-medium text-foreground/70 mb-1">슈퍼바이저 피드백</p>
+                      <p className="text-xs text-foreground whitespace-pre-wrap">{log.svSupervisorFeedback}</p>
+                    </div>
+                  )}
+                  {log.svPeerFeedback && (
+                    <div className="bg-muted/30 p-2.5 rounded-md">
+                      <p className="text-xs font-medium text-foreground/70 mb-1">동료 피드백</p>
+                      <p className="text-xs text-foreground whitespace-pre-wrap">{log.svPeerFeedback}</p>
+                    </div>
+                  )}
+                  {log.svReflectionLearning && (
+                    <div className="bg-primary/5 border border-primary/10 p-2.5 rounded-md">
+                      <p className="text-xs font-medium text-primary mb-1">피드백을 통한 성찰 및 배움</p>
+                      <p className="text-xs text-foreground whitespace-pre-wrap font-medium">{log.svReflectionLearning}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {log.evidenceUrl && (
                 <a
                   href={log.evidenceUrl}
@@ -367,6 +399,7 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
         open={editOpen}
         onOpenChange={setEditOpen}
         editLog={log}
+        defaultCoachingType={log.coachingType}
       />
 
       <CoachingLogCommentsDrawer

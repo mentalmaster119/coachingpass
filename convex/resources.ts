@@ -22,7 +22,7 @@ export const generateUploadUrl = mutation({
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
       .unique();
     if (!user) throw new ConvexError({ message: "사용자를 찾을 수 없습니다", code: "NOT_FOUND" });
-    if (user.role !== "admin" && user.role !== "senior_coach") {
+    if (user.role !== "admin" && user.role !== "senior_coach" && user.role !== "admin3") {
       throw new ConvexError({ message: "권한이 없습니다", code: "FORBIDDEN" });
     }
     return await ctx.storage.generateUploadUrl();
@@ -57,7 +57,7 @@ export const create = mutation({
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
       .unique();
     if (!user) throw new ConvexError({ message: "사용자를 찾을 수 없습니다", code: "NOT_FOUND" });
-    if (user.role !== "admin" && user.role !== "senior_coach") {
+    if (user.role !== "admin" && user.role !== "senior_coach" && user.role !== "admin3") {
       throw new ConvexError({ message: "권한이 없습니다", code: "FORBIDDEN" });
     }
     return await ctx.db.insert("resources", {
@@ -92,7 +92,7 @@ export const update = mutation({
       .query("users")
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
       .unique();
-    if (!user || (user.role !== "admin" && user.role !== "senior_coach")) {
+    if (!user || (user.role !== "admin" && user.role !== "senior_coach" && user.role !== "admin3")) {
       throw new ConvexError({ message: "권한이 없습니다", code: "FORBIDDEN" });
     }
     const { resourceId, ...fields } = args;
@@ -113,7 +113,7 @@ export const remove = mutation({
       .query("users")
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
       .unique();
-    if (!user || user.role !== "admin") {
+    if (!user || (user.role !== "admin" && user.role !== "admin3")) {
       throw new ConvexError({ message: "권한이 없습니다", code: "FORBIDDEN" });
     }
     const resource = await ctx.db.get(args.resourceId);
@@ -132,7 +132,7 @@ export const togglePublish = mutation({
       .query("users")
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
       .unique();
-    if (!user || (user.role !== "admin" && user.role !== "senior_coach")) {
+    if (!user || (user.role !== "admin" && user.role !== "senior_coach" && user.role !== "admin3")) {
       throw new ConvexError({ message: "권한이 없습니다", code: "FORBIDDEN" });
     }
     const resource = await ctx.db.get(args.resourceId);
@@ -220,7 +220,7 @@ export const listAll = query({
       .query("users")
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
       .unique();
-    if (!user || (user.role !== "admin" && user.role !== "senior_coach")) {
+    if (!user || (user.role !== "admin" && user.role !== "senior_coach" && user.role !== "admin3")) {
       throw new ConvexError({ message: "권한이 없습니다", code: "FORBIDDEN" });
     }
     const resources = await ctx.db.query("resources").collect();

@@ -20,7 +20,7 @@ export function useCurrentUser() {
         localStorage.setItem("real_role", normalUser.role);
       }
 
-      if (normalUser.role === "admin") {
+      if (normalUser.role === "admin" || normalUser.role === "admin3") {
         if (normalUser.activeMockRole) {
           if (localStorage.getItem("admin_preview_mode") !== "true" || localStorage.getItem("preview_role") !== normalUser.activeMockRole) {
             localStorage.setItem("admin_preview_mode", "true");
@@ -34,6 +34,12 @@ export function useCurrentUser() {
             window.location.reload();
           }
         }
+      } else {
+        if (localStorage.getItem("admin_preview_mode") === "true") {
+          localStorage.removeItem("admin_preview_mode");
+          localStorage.removeItem("preview_role");
+          window.location.reload();
+        }
       }
     }
   }, [normalUser]);
@@ -44,7 +50,7 @@ export function useCurrentUser() {
     isLoading: authUser !== undefined && (
       normalUser === undefined || (isPreviewMode && previewUser === undefined)
     ),
-    isAdmin: user?.role === "admin",
+    isAdmin: user?.role === "admin" || user?.role === "admin3",
     isSeniorCoach: user?.role === "senior_coach",
     isTrainee: user?.role === "trainee",
     isPending: user?.approvalStatus === "pending",

@@ -37,8 +37,8 @@ type PendingLog = Doc<"mentorCoachingLogs"> & {
 };
 
 const SESSION_TYPE_CONFIG = {
-  mentor_coaching: { label: "개인 슈퍼비전", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
-  coder_co: { label: "그룹 슈퍼비전", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" },
+  mentor_coaching: { label: "개인 멘토코칭", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+  coder_co: { label: "그룹 코더코", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" },
 };
 
 function formatDuration(minutes: number) {
@@ -292,9 +292,9 @@ export default function AdminMentorCoachingPage() {
           <MessageSquare className="w-5 h-5 text-primary-foreground" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-foreground">슈퍼비전 기록 검토</h1>
+          <h1 className="text-xl font-bold text-foreground">멘토코칭 기록 검토</h1>
           <p className="text-sm text-muted-foreground">
-            교육생이 제출한 슈퍼비전 기록을 검토하고 승인/반려하세요.
+            교육생이 제출한 멘토코칭 기록을 검토하고 승인/반려하세요.
           </p>
         </div>
         {!isLoading && logs.length > 0 && (
@@ -317,7 +317,7 @@ export default function AdminMentorCoachingPage() {
             <EmptyHeader>
               <EmptyMedia variant="icon"><Star /></EmptyMedia>
               <EmptyTitle>검토 대기 기록이 없습니다</EmptyTitle>
-              <EmptyDescription>모든 슈퍼비전 기록이 처리되었습니다.</EmptyDescription>
+              <EmptyDescription>모든 멘토코칭 기록이 처리되었습니다.</EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : (

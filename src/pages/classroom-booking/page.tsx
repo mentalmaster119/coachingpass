@@ -215,7 +215,7 @@ export default function ClassroomBookingPage() {
                           {(["10:00-12:00", "13:00-15:00", "16:00-18:00"] as TimeSlot[]).map((slotKey) => {
                             const b = bookings.find((bk) => bk.date === dayStr && bk.timeSlot === slotKey);
                             const isMine = b && user && b.userId === user._id;
-                            const isAdmin = user?.role === "admin";
+                            const isAdmin = user?.role === "admin" || user?.role === "admin3";
 
                             return (
                               <div

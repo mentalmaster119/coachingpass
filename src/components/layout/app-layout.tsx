@@ -1,4 +1,4 @@
-import { useState, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Authenticated, useQuery, useMutation } from "convex/react";
 import {
@@ -14,6 +14,7 @@ import {
   LogOut,
   Menu,
   ChevronRight,
+  ChevronDown,
   TrendingUp,
   Settings,
   Award,
@@ -70,11 +71,12 @@ type NavItem = {
   href: string;
   icon: React.ReactNode;
   comingSoon?: boolean;
+  items?: { label: string; href: string }[];
 };
 
 function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
-  // Admin or senior_coach in preview mode sees the trainee nav
-  if ((role === "admin" || role === "senior_coach") && isPreviewMode) {
+  // Admin or admin3 in preview mode sees the trainee nav
+  if ((role === "admin" || role === "admin3") && isPreviewMode) {
     return [
       { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
       { label: "매일 자기 체크인", href: "/daily-checkin", icon: <Heart className="w-4 h-4" /> },
@@ -82,9 +84,17 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
       { label: "교육 이수 기록", href: "/education", icon: <BookOpen className="w-4 h-4" /> },
       { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
-      { label: "코칭 실습 기록", href: "/coaching-log", icon: <ClipboardList className="w-4 h-4" /> },
-      { label: "BCP 버디코칭 실습", href: "/bcp", icon: <Users className="w-4 h-4" /> },
-      { label: "슈퍼비전", href: "/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
+      {
+        label: "실습 및 슈퍼비전 기록",
+        href: "/practice-group",
+        icon: <ClipboardList className="w-4 h-4" />,
+        items: [
+          { label: "일반 코칭실습 기록", href: "/coaching-log" },
+          { label: "버디코칭 실습 기록", href: "/bcp" },
+          { label: "멘토코칭 실습 기록", href: "/mentor-coaching" },
+          { label: "슈퍼비전 기록", href: "/supervision" },
+        ]
+      },
       { label: "인정 기준 달성 현황", href: "/recognition-status", icon: <ShieldCheck className="w-4 h-4" /> },
       { label: "멘탈 포럼", href: "/mental-forum", icon: <Award className="w-4 h-4" /> },
       { label: "인증 신청", href: "/certification", icon: <Award className="w-4 h-4" /> },
@@ -123,10 +133,25 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "교육 기록 검토", href: "/admin/education", icon: <BookOpen className="w-4 h-4" /> },
       { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
       { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
-      { label: "슈퍼비전 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
+      { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
       { label: "데이터 내보내기", href: "/admin/export", icon: <FileSpreadsheet className="w-4 h-4" /> },
       { label: "내 프로필", href: "/profile", icon: <UserCircle className="w-4 h-4" /> },
       { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
+      { label: "설정", href: "/settings", icon: <Settings className="w-4 h-4" /> },
+      { label: "앱 설치 안내", href: "/install-guide", icon: <Smartphone className="w-4 h-4" /> },
+    ];
+  }
+  if (role === "admin3") {
+    return [
+      { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
+      { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
+      { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
+      { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
+      { label: "교육장 예약 관리", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },
+      { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
+      { label: "자료실 관리", href: "/admin/resources", icon: <FolderOpen className="w-4 h-4" /> },
+      { label: "피드백 현황", href: "/admin/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
+      { label: "내 프로필", href: "/profile", icon: <UserCircle className="w-4 h-4" /> },
       { label: "설정", href: "/settings", icon: <Settings className="w-4 h-4" /> },
       { label: "앱 설치 안내", href: "/install-guide", icon: <Smartphone className="w-4 h-4" /> },
     ];
@@ -138,7 +163,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "교육 기록 검토", href: "/admin/education", icon: <BookOpen className="w-4 h-4" /> },
       { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
       { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
-      { label: "슈퍼비전 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
+      { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
       { label: "인증 신청 관리", href: "/admin/certification", icon: <Award className="w-4 h-4" /> },
       { label: "담당 교육생", href: "/coach/trainees", icon: <UserCheck className="w-4 h-4" /> },
       { label: "피드백 관리", href: "/coach/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
@@ -160,9 +185,17 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
     { label: "진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
     { label: "교육 이수 기록", href: "/education", icon: <BookOpen className="w-4 h-4" /> },
     { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
-    { label: "코칭 실습 기록", href: "/coaching-log", icon: <ClipboardList className="w-4 h-4" /> },
-    { label: "BCP 버디코칭 실습", href: "/bcp", icon: <Users className="w-4 h-4" /> },
-    { label: "슈퍼비전", href: "/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
+    {
+      label: "실습 및 슈퍼비전 기록",
+      href: "/practice-group",
+      icon: <ClipboardList className="w-4 h-4" />,
+      items: [
+        { label: "일반 코칭실습 기록", href: "/coaching-log" },
+        { label: "버디코칭 실습 기록", href: "/bcp" },
+        { label: "멘토코칭 실습 기록", href: "/mentor-coaching" },
+        { label: "슈퍼비전 기록", href: "/supervision" },
+      ]
+    },
     { label: "인정 기준 달성 현황", href: "/recognition-status", icon: <ShieldCheck className="w-4 h-4" /> },
     { label: "멘탈 포럼", href: "/mental-forum", icon: <Award className="w-4 h-4" /> },
     { label: "인증 신청", href: "/certification", icon: <Award className="w-4 h-4" /> },
@@ -185,6 +218,7 @@ function RoleLabel({ role }: { role: string }) {
     admin: "관리자",
     senior_coach: "슈퍼바이저",
     trainee: "교육생",
+    admin3: "관리자3(실습)",
   };
   return <span>{map[role] ?? role}</span>;
 }
@@ -203,11 +237,27 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const realRole = realUser?.role || localStorage.getItem("real_role");
   const navItems = user ? getNavItems(user.role, isPreviewMode) : [];
 
+  const [practiceOpen, setPracticeOpen] = useState(() => {
+    const practiceRoutes = ["/coaching-log", "/bcp", "/mentor-coaching", "/supervision"];
+    return practiceRoutes.some((route) => location.pathname === route);
+  });
+
+  useEffect(() => {
+    const practiceRoutes = ["/coaching-log", "/bcp", "/mentor-coaching", "/supervision"];
+    if (practiceRoutes.some((route) => location.pathname === route)) {
+      setPracticeOpen(true);
+    }
+  }, [location.pathname]);
+
   const handleNavClick = (item: NavItem) => {
     if (item.comingSoon) {
       toast.info("준비 중인 기능입니다", {
         description: "다음 업데이트에서 제공될 예정입니다.",
       });
+      return;
+    }
+    if (item.items) {
+      setPracticeOpen(!practiceOpen);
       return;
     }
     navigate(item.href);
@@ -270,14 +320,14 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
   const handleRoleSwitch = async (targetRole: "admin" | "senior_coach" | "trainee") => {
     try {
-      if (targetRole === realRole) {
+      const isAdminType = realRole === "admin" || realRole === "admin3";
+      if (targetRole === realRole || (targetRole === "admin" && isAdminType)) {
         await setPreviewMode(false);
-        navigate(realRole === "admin" ? "/admin" : "/dashboard");
+        window.location.href = isAdminType ? "/admin/coaching" : "/dashboard";
       } else {
         await setPreviewMode(true, targetRole === "senior_coach" ? "senior_coach" : "trainee");
-        navigate("/dashboard");
+        window.location.href = "/dashboard";
       }
-      window.location.reload();
     } catch (err) {
       console.error("Failed to switch role:", err);
       toast.error("화면 전환에 실패했습니다.");
@@ -323,10 +373,63 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.href;
+          const isActive = location.pathname === item.href || (item.items && item.items.some(sub => location.pathname === sub.href));
+          
+          if (item.items) {
+            return (
+              <div key={item.href} className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => setPracticeOpen(!practiceOpen)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors text-left",
+                    isActive && !practiceOpen
+                      ? "bg-sidebar-primary/10 text-sidebar-primary font-semibold"
+                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  {item.icon}
+                  <span className="flex-1">{item.label}</span>
+                  {practiceOpen ? (
+                    <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                  ) : (
+                    <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+                  )}
+                </button>
+                {practiceOpen && (
+                  <div className="pl-4 mt-0.5 space-y-1 border-l border-sidebar-border ml-4.5">
+                    {item.items.map((subItem) => {
+                      const isSubActive = location.pathname === subItem.href;
+                      return (
+                        <button
+                          key={subItem.href}
+                          type="button"
+                          onClick={() => {
+                            navigate(subItem.href);
+                            onClose?.();
+                          }}
+                          className={cn(
+                            "w-full flex items-center gap-2 px-3 py-2 rounded-md text-[12px] font-medium transition-colors text-left",
+                            isSubActive
+                              ? "bg-sidebar-primary/10 text-sidebar-primary font-semibold border-l-2 border-sidebar-primary"
+                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                          )}
+                        >
+                          <span className="flex-1 truncate">{subItem.label}</span>
+                          {isSubActive && <ChevronRight className="w-3 h-3 opacity-60" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
           return (
             <button
               key={item.href}
+              type="button"
               onClick={() => handleNavClick(item)}
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors text-left",
@@ -373,7 +476,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         )}
 
         {/* Role switcher for Admin */}
-        {realRole === "admin" && (
+        {(realRole === "admin" || realRole === "admin3") && (
           <div className="space-y-1">
             <p className="text-[10px] font-semibold text-sidebar-foreground/45 px-3 uppercase tracking-wider">
               화면 모드 전환 (관리자)
@@ -560,8 +663,7 @@ function PreviewModeBanner() {
 
   const handleRoleChange = async (role: "trainee" | "senior_coach") => {
     await setPreviewMode(true, role);
-    navigate("/dashboard");
-    window.location.reload();
+    window.location.href = "/dashboard";
   };
 
   return (
@@ -592,10 +694,15 @@ function PreviewModeBanner() {
       </div>
       <button
         onClick={async () => {
-          const realRole = localStorage.getItem("real_role");
+          const realRole = localStorage.getItem("real_role") || "admin";
           await setPreviewMode(false);
-          navigate(realRole === "admin" ? "/admin" : "/dashboard");
-          window.location.reload();
+          if (realRole === "admin") {
+            window.location.href = "/admin";
+          } else if (realRole === "admin3") {
+            window.location.href = "/admin/coaching";
+          } else {
+            window.location.href = "/dashboard";
+          }
         }}
         className="text-xs text-amber-700 dark:text-amber-300 font-bold hover:underline cursor-pointer"
       >
@@ -629,8 +736,22 @@ function AppLayoutInner() {
       navigate("/dashboard", { replace: true });
     }
     // Admin in preview mode should not be on admin pages
-    if (user.role === "admin" && isPreviewMode && window.location.pathname.startsWith("/admin")) {
+    if ((user.role === "admin" || user.role === "admin3") && isPreviewMode && window.location.pathname.startsWith("/admin")) {
       navigate("/dashboard", { replace: true });
+    }
+    // Admin3 restricted path checks
+    if (user.role === "admin3") {
+      const allowedAdminPaths = [
+        "/admin/coaching",
+        "/admin/bcp",
+        "/admin/mentor-coaching",
+        "/admin/resources",
+        "/admin/feedback"
+      ];
+      const isPathAllowed = allowedAdminPaths.some((p) => window.location.pathname.startsWith(p));
+      if (window.location.pathname.startsWith("/admin") && !isPathAllowed) {
+        navigate("/admin/coaching", { replace: true });
+      }
     }
   }, [user, isLoading, navigate, isPreviewMode]);
 
@@ -745,7 +866,7 @@ export default function AppLayout() {
   const mockLogin = useMutation(api.users.setActiveMockUser);
 
   const setPreviewMode = async (enabled: boolean, role: "trainee" | "senior_coach" = "trainee") => {
-    const realRole = (localStorage.getItem("real_role") as "admin" | "senior_coach" | "trainee") || "admin";
+    const realRole = (localStorage.getItem("real_role") as "admin" | "admin3" | "senior_coach" | "trainee") || "admin";
     try {
       if (enabled) {
         await mockLogin({ role });
@@ -754,7 +875,8 @@ export default function AppLayout() {
         setIsPreviewModeState(true);
         setPreviewRoleState(role);
       } else {
-        await mockLogin({ role: realRole });
+        const clearRole = (realRole === "admin" || realRole === "admin3") ? realRole : "admin";
+        await mockLogin({ role: clearRole as any });
         localStorage.removeItem("admin_preview_mode");
         localStorage.removeItem("preview_role");
         setIsPreviewModeState(false);

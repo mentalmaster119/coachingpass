@@ -17,6 +17,8 @@ export const generateUploadUrl = mutation({
 
 const bcpFields = {
   sessionDate: v.string(),
+  sessionStartTime: v.optional(v.string()),
+  sessionEndTime: v.optional(v.string()),
   buddyId1: v.id("users"),
   buddyId2: v.optional(v.id("users")),
   myRole: v.union(v.literal("coach"), v.literal("coachee")),
@@ -25,6 +27,13 @@ const bcpFields = {
   topic: v.string(),
   content: v.string(),
   reflection: v.optional(v.string()),
+  techniquesUsed: v.optional(v.array(v.string())),
+  techniqueOther: v.optional(v.string()),
+  clientInsight: v.optional(v.string()),
+  coachPattern: v.optional(v.string()),
+  actionPlan: v.optional(v.string()),
+  bestOfSession: v.optional(v.string()),
+  improvementForNext: v.optional(v.string()),
   evidenceStorageId: v.optional(v.id("_storage")),
 };
 
@@ -153,7 +162,7 @@ export const getMySummary = query({
 export const getPendingLogs = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin", "senior_coach"]);
+    await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
     const logs = await ctx.db
       .query("bcpLogs")
       .withIndex("by_approval_status", (q) => q.eq("approvalStatus", "pending"))
@@ -187,7 +196,7 @@ export const getAllLogs = query({
     )),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin", "senior_coach"]);
+    await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
     let logs;
     if (args.status) {
       logs = await ctx.db
@@ -224,7 +233,7 @@ export const getAllLogs = query({
 export const approve = mutation({
   args: { logId: v.id("bcpLogs") },
   handler: async (ctx, args) => {
-    const reviewer = await requireRole(ctx, ["admin", "senior_coach"]);
+    const reviewer = await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
     const log = await ctx.db.get(args.logId);
     if (!log) throw new ConvexError({ message: "Record not found", code: "NOT_FOUND" });
     await ctx.db.patch(args.logId, {
@@ -248,7 +257,7 @@ export const reject = mutation({
     reason: v.string(),
   },
   handler: async (ctx, args) => {
-    const reviewer = await requireRole(ctx, ["admin", "senior_coach"]);
+    const reviewer = await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
     const log = await ctx.db.get(args.logId);
     if (!log) throw new ConvexError({ message: "Record not found", code: "NOT_FOUND" });
     await ctx.db.patch(args.logId, {

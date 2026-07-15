@@ -31,8 +31,8 @@ const STATUS_CONFIG = {
 };
 
 const SESSION_TYPE_CONFIG = {
-  mentor_coaching: { label: "개인 슈퍼비전", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
-  coder_co:        { label: "그룹 슈퍼비전",   color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" },
+  mentor_coaching: { label: "개인 멘토코칭", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+  coder_co:        { label: "그룹 코더코",   color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" },
 };
 
 function formatDuration(minutes: number) {

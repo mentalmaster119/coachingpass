@@ -23,8 +23,11 @@ export default function DashboardPage() {
     );
   }
 
-  // Show trainee view when in preview mode (admin or senior_coach)
+  // Show trainee view when in preview mode, unless previewing senior_coach role
   if (isPreviewMode) {
+    if (user.role === "senior_coach") {
+      return <SeniorCoachDashboard user={user} />;
+    }
     return <TraineeDashboard user={user} />;
   }
 

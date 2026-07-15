@@ -124,7 +124,7 @@ export default function CoachingLogCommentsDrawer({
           ) : (
             comments.map((comment: any) => {
               const isMe = user && comment.userId === user._id;
-              const isAdminOrCoach = comment.role === "admin" || comment.role === "senior_coach";
+              const isAdminOrCoach = comment.role === "admin" || comment.role === "admin3" || comment.role === "senior_coach";
 
               return (
                 <div

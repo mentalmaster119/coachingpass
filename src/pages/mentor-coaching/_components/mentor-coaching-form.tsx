@@ -103,7 +103,7 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
     };
 
     if (!trimmed.sessionDate) return toast.error("날짜를 선택하세요.");
-    if (!trimmed.coachName) return toast.error("코치명을 입력하세요.");
+    if (!trimmed.coachName) return toast.error("멘토코치명을 입력하세요.");
     if (isNaN(trimmed.durationMinutes) || trimmed.durationMinutes < 30)
       return toast.error("세션 시간은 최소 30분이어야 합니다.");
     if (!trimmed.topic) return toast.error("주제를 입력하세요.");
@@ -145,8 +145,8 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>{isEdit ? "슈퍼비전 기록 수정" : "슈퍼비전 기록 추가"}</DialogTitle>
-          <DialogDescription>슈퍼비전 세션 정보를 입력하세요.</DialogDescription>
+          <DialogTitle>{isEdit ? "멘토코칭 기록 수정" : "멘토코칭 기록 추가"}</DialogTitle>
+          <DialogDescription>멘토코칭 세션 정보를 입력하세요.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -159,8 +159,8 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
                   <SelectValue placeholder="유형 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mentor_coaching">개인 슈퍼비전</SelectItem>
-                  <SelectItem value="coder_co">그룹 슈퍼비전</SelectItem>
+                  <SelectItem value="mentor_coaching">개인 멘토코칭</SelectItem>
+                  <SelectItem value="coder_co">그룹 코더코</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -178,7 +178,7 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
           {/* Coach + duration */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>담당 슈퍼바이저명 *</Label>
+              <Label>담당 멘토코치명 *</Label>
               <Input
                 placeholder="예: 홍길동 코치"
                 value={values.coachName}
