@@ -92,6 +92,12 @@ export default function MentorLogCard({ log }: { log: MentorLog }) {
                   <Clock className="w-3 h-3 text-primary" />
                   {formatDuration(log.durationMinutes)}
                 </span>
+                {log.location && (
+                  <span className="flex items-center gap-1">
+                    <span className="text-primary font-bold">@</span>
+                    {log.location}
+                  </span>
+                )}
               </div>
 
               {/* Rejection reason */}
@@ -111,16 +117,57 @@ export default function MentorLogCard({ log }: { log: MentorLog }) {
               </button>
 
               {expanded && (
-                <div className="space-y-2 border-t border-border pt-2 mt-1">
-                  <div>
-                    <p className="text-xs font-medium text-foreground/70 mb-0.5">세션 내용</p>
-                    <p className="text-sm whitespace-pre-wrap">{log.content}</p>
-                  </div>
-                  {log.reflection && (
-                    <div>
-                      <p className="text-xs font-medium text-foreground/70 mb-0.5">성찰</p>
-                      <p className="text-sm whitespace-pre-wrap">{log.reflection}</p>
+                <div className="space-y-3 border-t border-border pt-3 mt-2">
+                  {log.sessionType === "mentor_coaching" ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      {log.coacheeGoal && (
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-semibold text-muted-foreground">기대 결과 (목표)</p>
+                          <p className="text-foreground whitespace-pre-wrap">{log.coacheeGoal}</p>
+                        </div>
+                      )}
+                      {log.coachingTool && (
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-semibold text-muted-foreground">대표적인 코칭 도구</p>
+                          <p className="text-foreground whitespace-pre-wrap">{log.coachingTool}</p>
+                        </div>
+                      )}
+                      {log.powerfulQuestion && (
+                        <div className="space-y-0.5 md:col-span-2">
+                          <p className="text-xs font-semibold text-muted-foreground text-amber-600">가장 강력했던 질문</p>
+                          <p className="text-foreground whitespace-pre-wrap font-medium bg-amber-50 dark:bg-amber-950/20 p-2 rounded-md border border-amber-100 dark:border-amber-900/40">{log.powerfulQuestion}</p>
+                        </div>
+                      )}
+                      {log.learnedAsCoach && (
+                        <div className="space-y-0.5 md:col-span-2">
+                          <p className="text-xs font-semibold text-muted-foreground">코치로서 배운 점</p>
+                          <p className="text-foreground whitespace-pre-wrap">{log.learnedAsCoach}</p>
+                        </div>
+                      )}
+                      {log.actionPlan && (
+                        <div className="space-y-0.5 md:col-span-2">
+                          <p className="text-xs font-semibold text-muted-foreground">향후 실행 과제 (Action Item)</p>
+                          <p className="text-foreground whitespace-pre-wrap bg-muted p-2 rounded-md">{log.actionPlan}</p>
+                        </div>
+                      )}
+                      <div className="space-y-0.5 md:col-span-2">
+                        <p className="text-xs font-semibold text-muted-foreground">피코칭 소감</p>
+                        <p className="text-foreground whitespace-pre-wrap">{log.content}</p>
+                      </div>
                     </div>
+                  ) : (
+                    <>
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground mb-0.5">세션 내용</p>
+                        <p className="text-sm whitespace-pre-wrap">{log.content}</p>
+                      </div>
+                      {log.reflection && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-0.5">성찰</p>
+                          <p className="text-sm whitespace-pre-wrap">{log.reflection}</p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}

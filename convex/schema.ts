@@ -224,9 +224,15 @@ export default defineSchema({
     ),
     coachName: v.string(),   // name of the mentor/senior coach
     durationMinutes: v.number(),
-    topic: v.string(),
-    content: v.string(),     // summary of session
-    reflection: v.optional(v.string()),
+    location: v.optional(v.string()),            // 코칭 장소
+    topic: v.string(),       // 피코칭 주제 (이슈)
+    content: v.string(),     // 피코칭 소감 / 세션 내용 요약
+    reflection: v.optional(v.string()),          // 성찰
+    coacheeGoal: v.optional(v.string()),         // 기대 결과 (목표)
+    coachingTool: v.optional(v.string()),        // 사용된 대표적인 코칭 도구 (TL, HI, HPPC, 9F 등)
+    powerfulQuestion: v.optional(v.string()),    // 가장 강력했던 질문
+    learnedAsCoach: v.optional(v.string()),      // 코치로서 배운 점
+    actionPlan: v.optional(v.string()),          // 향후 실행 과제
     evidenceStorageId: v.optional(v.id("_storage")),
     approvalStatus: v.union(
       v.literal("pending"),

@@ -32,9 +32,15 @@ interface FormState {
   sessionType: SessionType;
   coachName: string;
   durationMinutes: string;
+  location: string;
   topic: string;
   content: string;
   reflection: string;
+  coacheeGoal: string;
+  coachingTool: string;
+  powerfulQuestion: string;
+  learnedAsCoach: string;
+  actionPlan: string;
 }
 
 interface Props {
@@ -49,9 +55,15 @@ function getDefaultValues(editLog?: MentorLog): FormState {
     sessionType: editLog?.sessionType ?? "mentor_coaching",
     coachName: editLog?.coachName ?? "",
     durationMinutes: String(editLog?.durationMinutes ?? 60),
+    location: editLog?.location ?? "",
     topic: editLog?.topic ?? "",
     content: editLog?.content ?? "",
     reflection: editLog?.reflection ?? "",
+    coacheeGoal: editLog?.coacheeGoal ?? "",
+    coachingTool: editLog?.coachingTool ?? "",
+    powerfulQuestion: editLog?.powerfulQuestion ?? "",
+    learnedAsCoach: editLog?.learnedAsCoach ?? "",
+    actionPlan: editLog?.actionPlan ?? "",
   };
 }
 
@@ -79,9 +91,15 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
       sessionType: values.sessionType,
       coachName: values.coachName.trim(),
       durationMinutes: parseInt(values.durationMinutes, 10),
+      location: values.sessionType === "mentor_coaching" ? values.location.trim() : undefined,
       topic: values.topic.trim(),
       content: values.content.trim(),
-      reflection: values.reflection.trim() || undefined,
+      reflection: values.sessionType === "coder_co" ? (values.reflection.trim() || undefined) : undefined,
+      coacheeGoal: values.sessionType === "mentor_coaching" ? values.coacheeGoal.trim() : undefined,
+      coachingTool: values.sessionType === "mentor_coaching" ? values.coachingTool.trim() : undefined,
+      powerfulQuestion: values.sessionType === "mentor_coaching" ? values.powerfulQuestion.trim() : undefined,
+      learnedAsCoach: values.sessionType === "mentor_coaching" ? values.learnedAsCoach.trim() : undefined,
+      actionPlan: values.sessionType === "mentor_coaching" ? values.actionPlan.trim() : undefined,
     };
 
     if (!trimmed.sessionDate) return toast.error("날짜를 선택하세요.");
@@ -89,7 +107,18 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
     if (isNaN(trimmed.durationMinutes) || trimmed.durationMinutes < 30)
       return toast.error("세션 시간은 최소 30분이어야 합니다.");
     if (!trimmed.topic) return toast.error("주제를 입력하세요.");
-    if (trimmed.content.length < 10) return toast.error("세션 내용을 더 자세히 입력하세요.");
+
+    if (values.sessionType === "mentor_coaching") {
+      if (!trimmed.location) return toast.error("장소를 입력하세요.");
+      if (!trimmed.coacheeGoal) return toast.error("기대 결과를 입력하세요.");
+      if (!trimmed.coachingTool) return toast.error("대표적인 코칭 도구를 입력하세요.");
+      if (!trimmed.powerfulQuestion) return toast.error("가장 강력했던 질문을 입력하세요.");
+      if (!trimmed.learnedAsCoach) return toast.error("코치로서 배운 점을 입력하세요.");
+      if (!trimmed.actionPlan) return toast.error("실행 과제를 입력하세요.");
+      if (trimmed.content.length < 5) return toast.error("피코칭 소감을 입력하세요.");
+    } else {
+      if (trimmed.content.length < 10) return toast.error("세션 내용을 더 자세히 입력하세요.");
+    }
 
     setLoading(true);
     try {
@@ -167,35 +196,116 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
 
           {/* Topic */}
           <div className="space-y-1.5">
-            <Label>세션 주제 *</Label>
+            <Label>{values.sessionType === "mentor_coaching" ? "피코칭 주제 (이슈) *" : "세션 주제 *"}</Label>
             <Input
-              placeholder="예: ICF 핵심역량 피드백, 코칭 스킬 심화"
+              placeholder={values.sessionType === "mentor_coaching" ? "예: 대화 집중도 저하 및 진로 고민 코칭" : "예: ICF 핵심역량 피드백, 코칭 스킬 심화"}
               value={values.topic}
               onChange={(e) => set("topic")(e.target.value)}
             />
           </div>
 
-          {/* Content */}
-          <div className="space-y-1.5">
-            <Label>세션 내용 요약 *</Label>
-            <Textarea
-              placeholder="세션에서 다룬 내용, 피드백, 개선점 등을 기록하세요"
-              rows={4}
-              value={values.content}
-              onChange={(e) => set("content")(e.target.value)}
-            />
-          </div>
+          {values.sessionType === "mentor_coaching" ? (
+            <>
+              {/* Place (Location) */}
+              <div className="space-y-1.5">
+                <Label>코칭 장소 *</Label>
+                <Input
+                  placeholder="예: Zoom, 대면, 오프라인 카페 등"
+                  value={values.location}
+                  onChange={(e) => set("location")(e.target.value)}
+                />
+              </div>
 
-          {/* Reflection */}
-          <div className="space-y-1.5">
-            <Label>성찰 (선택)</Label>
-            <Textarea
-              placeholder="세션 후 느낀 점, 앞으로의 개선 방향 등"
-              rows={3}
-              value={values.reflection}
-              onChange={(e) => set("reflection")(e.target.value)}
-            />
-          </div>
+              {/* Goal */}
+              <div className="space-y-1.5">
+                <Label>기대 결과 (목표) *</Label>
+                <Textarea
+                  placeholder="이번 세션을 통해 어떤 해결책이나 목표를 얻고 싶었나요?"
+                  rows={2}
+                  value={values.coacheeGoal}
+                  onChange={(e) => set("coacheeGoal")(e.target.value)}
+                />
+              </div>
+
+              {/* Coaching Tools */}
+              <div className="space-y-1.5">
+                <Label>대표적인 코칭 도구 (TL, HI, HPPC, 9F, PI, VAK, CT 등) *</Label>
+                <Input
+                  placeholder="예: TL, HI, HPPC, 9F, PI, VAK, CT 등 사용된 도구 입력"
+                  value={values.coachingTool}
+                  onChange={(e) => set("coachingTool")(e.target.value)}
+                />
+              </div>
+
+              {/* Powerful Question */}
+              <div className="space-y-1.5">
+                <Label>가장 강력했던 질문 *</Label>
+                <Textarea
+                  placeholder="멘토코치가 던진 질문 중 나를 가장 성찰하게 만든 질문과 그 이유는 무엇인가요?"
+                  rows={3}
+                  value={values.powerfulQuestion}
+                  onChange={(e) => set("powerfulQuestion")(e.target.value)}
+                />
+              </div>
+
+              {/* Learned As Coach */}
+              <div className="space-y-1.5">
+                <Label>코치로서 배운 점 *</Label>
+                <Textarea
+                  placeholder="피코칭 경험을 통해 나의 향후 코칭에 적용하고 싶은 멘토코치의 스킬이나 태도는 무엇인가요?"
+                  rows={3}
+                  value={values.learnedAsCoach}
+                  onChange={(e) => set("learnedAsCoach")(e.target.value)}
+                />
+              </div>
+
+              {/* Action Plan */}
+              <div className="space-y-1.5">
+                <Label>향후 실행 과제 (Action Item) *</Label>
+                <Textarea
+                  placeholder="세션을 마친 후 멘토코치와 약속한 나의 구체적인 실천 계획은 무엇인가요?"
+                  rows={2}
+                  value={values.actionPlan}
+                  onChange={(e) => set("actionPlan")(e.target.value)}
+                />
+              </div>
+
+              {/* Content (mapped to 소감) */}
+              <div className="space-y-1.5">
+                <Label>피코칭 소감 *</Label>
+                <Textarea
+                  placeholder="멘토코칭을 받고 난 최종 소감 및 깨달음을 남겨주세요"
+                  rows={3}
+                  value={values.content}
+                  onChange={(e) => set("content")(e.target.value)}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Content */}
+              <div className="space-y-1.5">
+                <Label>세션 내용 요약 *</Label>
+                <Textarea
+                  placeholder="세션에서 다룬 내용, 피드백, 개선점 등을 기록하세요"
+                  rows={4}
+                  value={values.content}
+                  onChange={(e) => set("content")(e.target.value)}
+                />
+              </div>
+
+              {/* Reflection */}
+              <div className="space-y-1.5">
+                <Label>성찰 (선택)</Label>
+                <Textarea
+                  placeholder="세션 후 느낀 점, 앞으로의 개선 방향 등"
+                  rows={3}
+                  value={values.reflection}
+                  onChange={(e) => set("reflection")(e.target.value)}
+                />
+              </div>
+            </>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
