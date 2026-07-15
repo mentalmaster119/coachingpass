@@ -15,6 +15,16 @@ export function useCurrentUser() {
   const user = isPreviewMode ? previewUser : normalUser;
 
   useEffect(() => {
+    if (authUser === null) {
+      if (localStorage.getItem("admin_preview_mode") === "true") {
+        localStorage.removeItem("admin_preview_mode");
+        localStorage.removeItem("preview_role");
+        window.location.reload();
+      }
+    }
+  }, [authUser]);
+
+  useEffect(() => {
     if (normalUser) {
       if (!localStorage.getItem("real_role")) {
         localStorage.setItem("real_role", normalUser.role);
