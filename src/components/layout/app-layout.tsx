@@ -459,7 +459,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                         toast.error("안내 복사에 실패했습니다.");
                       });
                   }}
-                  className="p-1 rounded hover:bg-sidebar-border/50 text-amber-500 hover:text-amber-600 transition-colors flex items-center justify-center cursor-pointer"
+                  className="p-1.5 rounded bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white dark:hover:text-sidebar transition-all flex items-center justify-center cursor-pointer border border-amber-500/20"
                   title="가입 및 설치 안내 복사"
                 >
                   <Copy className="w-3.5 h-3.5" />
