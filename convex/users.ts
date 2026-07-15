@@ -371,7 +371,7 @@ export const getMockUserByRole = query({
           )
         );
       if (u) return u;
-    } else if (args.role === "senior_coach") {
+    } else    if (args.role === "senior_coach") {
       const u = await ctx.db
         .query("users")
         .collect()
@@ -379,7 +379,8 @@ export const getMockUserByRole = query({
           users.find(
             (user) =>
               user.role === "senior_coach" &&
-              user.email?.toLowerCase().includes("mentalcoach119")
+              (user.email === "preview_coach@mcci.com" ||
+                user.email?.toLowerCase().includes("mentalcoach119"))
           )
         );
       if (u) return u;
@@ -493,9 +494,41 @@ export const setActiveMockUser = mutation({
         if (virtualTrainee) {
           activeMockTraineeId = virtualTrainee._id;
         }
+      } else if (args.role === "senior_coach") {
+        // Find or create virtual preview coach
+        let virtualCoach = await ctx.db
+          .query("users")
+          .collect()
+          .then((users) => users.find((u) => u.email === "preview_coach@mcci.com"));
+
+        if (!virtualCoach) {
+          await ctx.db.insert("users", {
+            tokenIdentifier: "preview-coach-token",
+            name: "김동식(미리보기)",
+            email: "preview_coach@mcci.com",
+            role: "senior_coach",
+            approvalStatus: "approved",
+            onboardingCompleted: true,
+            phone: "010-1111-1111",
+            bio: "관리자 화면 미리보기용 가상 멘토코치 계정입니다.",
+            isMockActive: true,
+          });
+        }
       }
       await ctx.db.patch(realUser._id, { activeMockRole: args.role, activeMockTraineeId });
     }
     return realUser._id;
+  },
+});
+
+export const forceClearMockRoles = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const users = await ctx.db.query("users").collect();
+    for (const u of users) {
+      if (u.role === "admin" || u.role === "admin3") {
+        await ctx.db.patch(u._id, { activeMockRole: undefined, activeMockTraineeId: undefined });
+      }
+    }
   },
 });
