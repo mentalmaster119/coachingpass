@@ -60,7 +60,7 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
 
   return (
     <Card className="h-full flex flex-col hover:shadow-md transition-shadow">
-      <CardContent className="p-5 flex flex-col flex-1">
+      <CardContent className="p-5 pb-3 flex flex-col flex-1">
         <div className="flex items-start gap-4">
           {/* File icon */}
           <div className="w-11 h-11 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
@@ -117,7 +117,7 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
           onClick={handleDownload}
           disabled={!resource.fileUrl}
           size="sm"
-          className="w-full mt-4 mt-auto"
+          className="w-full mt-6 mt-auto"
         >
           <Download className="w-4 h-4 mr-2" />
           다운로드
