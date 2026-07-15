@@ -44,7 +44,6 @@ import { useCurrentUser } from "@/hooks/use-current-user.ts";
 import { cn } from "@/lib/utils.ts";
 import { PageTransition } from "./page-transition.tsx";
 import { toast } from "sonner";
-import { useEffect } from "react";
 import NotificationBell from "@/components/notifications/notification-bell.tsx";
 import { api } from "@/convex/_generated/api.js";
 import { usePushNotifications } from "@/hooks/use-push-notifications.ts";
