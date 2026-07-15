@@ -365,7 +365,8 @@ export const getMockUserByRole = query({
           users.find(
             (user) =>
               user.role === "trainee" &&
-              (user.name?.toLowerCase().includes("chul") ||
+              (user.email === "preview_trainee@mcci.com" ||
+                user.name?.toLowerCase().includes("chul") ||
                 user.name?.toLowerCase().includes("park") ||
                 user.name?.includes("철수"))
           )
