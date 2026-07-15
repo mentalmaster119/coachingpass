@@ -45,7 +45,7 @@ export default function AdminOverview({ user }: { user: User }) {
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-8">
       {/* 이름 미설정 배너 */}
-      {!user.name && <SetNameBanner />}
+      {!user?.name && <SetNameBanner />}
 
       {/* ── Header ── */}
       <motion.div
