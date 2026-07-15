@@ -118,6 +118,7 @@ export const updateUserRole = mutation({
       v.literal("trainee"),
       v.literal("senior_coach"),
       v.literal("admin"),
+      v.literal("admin3"),
     ),
   },
   handler: async (ctx, args) => {

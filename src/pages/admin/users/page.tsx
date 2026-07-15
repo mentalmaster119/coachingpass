@@ -52,6 +52,7 @@ const ROLE_LABELS: Record<string, string> = {
   trainee: "수강생",
   senior_coach: "상위코치",
   admin: "관리자",
+  admin3: "관리자3",
 };
 
 function UserStatusBadge({ status }: { status: string }) {
@@ -275,7 +276,7 @@ function AllUsersTable({
 
   const handleRoleChange = async (userId: Id<"users">, role: string) => {
     try {
-      await updateRole({ userId, role: role as "trainee" | "senior_coach" | "admin" });
+      await updateRole({ userId, role: role as "trainee" | "senior_coach" | "admin" | "admin3" });
       toast.success("역할이 변경되었습니다.");
     } catch {
       toast.error("역할 변경 중 오류가 발생했습니다.");
@@ -359,6 +360,7 @@ function AllUsersTable({
                             <SelectItem value="trainee">수강생</SelectItem>
                             <SelectItem value="senior_coach">상위코치</SelectItem>
                             <SelectItem value="admin">관리자</SelectItem>
+                            <SelectItem value="admin3">관리자3</SelectItem>
                           </SelectContent>
                         </Select>
 
