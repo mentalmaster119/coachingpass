@@ -33,7 +33,8 @@ const originalMutation = convex.mutation;
     }
   }
   
-  const isBypass = path.includes("updateCurrentUser") || path.includes("setActiveMockUser");
+  const isSetActiveMockUser = args && args[0] && typeof args[0] === "object" && ("role" in args[0]);
+  const isBypass = path.includes("updateCurrentUser") || path.includes("setActiveMockUser") || isSetActiveMockUser;
 
   if (isPreviewMode && !isBypass) {
     toast.error("미리보기 모드(Read-only)에서는 데이터를 수정할 수 없습니다.", {
