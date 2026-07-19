@@ -43,10 +43,10 @@ export const updateCurrentUser = mutation({
 
     if (user !== null) {
       // Update name/email in case they changed.
-      // Use || instead of ?? to avoid overwriting with empty string from some OAuth providers.
+      // Prioritize the existing database name/email if set, to prevent OAuth name from overriding custom name updates.
       await ctx.db.patch(user._id, {
-        name: identity.name?.trim() || user.name,
-        email: identity.email?.trim() || user.email,
+        name: user.name || identity.name?.trim(),
+        email: user.email || identity.email?.trim(),
       });
 
       // Clean up any test records mentioning "홍길동" for Sunju Park

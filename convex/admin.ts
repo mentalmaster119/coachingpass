@@ -667,3 +667,18 @@ export const sendProfileIncompleteNotification = mutation({
     return { sent };
   },
 });
+
+export const tempFixName = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("email"), "9arden.c@gmail.com"))
+      .first();
+    if (user) {
+      await ctx.db.patch(user._id, { name: "최정원" });
+      return { success: true, message: "이름을 '최정원'으로 변경했습니다." };
+    }
+    return { success: false, message: "사용자를 찾을 수 없습니다." };
+  },
+});
