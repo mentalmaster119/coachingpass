@@ -667,3 +667,10 @@ export const sendProfileIncompleteNotification = mutation({
     return { sent };
   },
 });
+
+export const tempGetUsers = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("users").collect();
+  },
+});
