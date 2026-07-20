@@ -81,10 +81,12 @@ export default function MentorCoachingPage() {
             멘토코칭 세션을 기록하고 승인을 받으세요.
           </p>
         </div>
-        <Button onClick={() => setAddOpen(true)} className="self-start sm:self-center">
-          <Plus className="w-4 h-4 mr-2" />
-          기록 추가
-        </Button>
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <Button onClick={() => setAddOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            기록 추가
+          </Button>
+        </div>
       </motion.div>
 
       {/* Stats */}

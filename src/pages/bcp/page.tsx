@@ -74,7 +74,7 @@ export default function BcpPage() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="flex flex-col sm:flex-row sm:items-start justify-between gap-4"
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div>
           <h1 className="text-2xl font-bold text-foreground">BCP 버디코칭 실습</h1>
@@ -87,10 +87,12 @@ export default function BcpPage() {
             <p>• 동일 버디 2명 조합의 실습은 총 <strong>1건</strong>만 인정</p>
           </div>
         </div>
-        <Button onClick={() => setAddOpen(true)} className="self-start sm:self-center flex-shrink-0">
-          <Plus className="w-4 h-4 mr-2" />
-          기록 추가
-        </Button>
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <Button onClick={() => setAddOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            기록 추가
+          </Button>
+        </div>
       </motion.div>
 
       {/* Stats */}
