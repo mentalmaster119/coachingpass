@@ -206,6 +206,7 @@ export const getAllLogs = query({
         .collect();
     } else {
       logs = await ctx.db.query("bcpLogs").order("desc").collect();
+      logs = logs.filter((log) => log.approvalStatus !== "draft");
     }
 
     return await Promise.all(
@@ -310,5 +311,82 @@ export const getCohortBuddies = query({
     );
 
     return buddies.filter((b): b is { _id: typeof user._id; name: string; email: string } => b !== null);
+  },
+});
+
+const bcpDraftFields = {
+  sessionDate: v.optional(v.string()),
+  sessionStartTime: v.optional(v.string()),
+  sessionEndTime: v.optional(v.string()),
+  buddyId1: v.optional(v.id("users")),
+  buddyId2: v.optional(v.id("users")),
+  myRole: v.optional(v.union(v.literal("coach"), v.literal("coachee"))),
+  durationMinutes: v.optional(v.number()),
+  location: v.optional(v.string()),
+  topic: v.optional(v.string()),
+  content: v.optional(v.string()),
+  reflection: v.optional(v.string()),
+  techniquesUsed: v.optional(v.array(v.string())),
+  techniqueOther: v.optional(v.string()),
+  clientInsight: v.optional(v.string()),
+  coachPattern: v.optional(v.string()),
+  actionPlan: v.optional(v.string()),
+  bestOfSession: v.optional(v.string()),
+  improvementForNext: v.optional(v.string()),
+  evidenceStorageId: v.optional(v.id("_storage")),
+};
+
+export const saveDraft = mutation({
+  args: {
+    logId: v.optional(v.id("bcpLogs")),
+    ...bcpDraftFields,
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+    if (user.role !== "trainee") {
+      throw new ConvexError({ message: "교육생만 임시저장할 수 있습니다.", code: "FORBIDDEN" });
+    }
+    const { logId, ...fields } = args;
+
+    if (logId) {
+      const log = await ctx.db.get(logId);
+      if (!log) throw new ConvexError({ message: "Record not found", code: "NOT_FOUND" });
+      if (log.userId !== user._id) throw new ConvexError({ message: "Forbidden", code: "FORBIDDEN" });
+      if (log.approvalStatus !== "draft") {
+        throw new ConvexError({ message: "임시저장 상태의 기록만 수정할 수 있습니다", code: "BAD_REQUEST" });
+      }
+      await ctx.db.patch(logId, fields);
+      return logId;
+    } else {
+      return await ctx.db.insert("bcpLogs", {
+        ...fields,
+        sessionDate: fields.sessionDate ?? new Date().toISOString().slice(0, 10),
+        durationMinutes: fields.durationMinutes ?? 0,
+        myRole: fields.myRole ?? "coach",
+        buddyId1: fields.buddyId1 ?? user._id,
+        topic: fields.topic ?? "",
+        content: fields.content ?? "",
+        userId: user._id,
+        approvalStatus: "draft",
+      });
+    }
+  },
+});
+
+export const submitDraft = mutation({
+  args: {
+    logId: v.id("bcpLogs"),
+    ...bcpFields,
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+    const log = await ctx.db.get(args.logId);
+    if (!log) throw new ConvexError({ message: "Record not found", code: "NOT_FOUND" });
+    if (log.userId !== user._id) throw new ConvexError({ message: "Forbidden", code: "FORBIDDEN" });
+    if (log.approvalStatus !== "draft") {
+      throw new ConvexError({ message: "임시저장 상태의 기록만 제출할 수 있습니다", code: "BAD_REQUEST" });
+    }
+    const { logId, ...fields } = args;
+    await ctx.db.patch(logId, { ...fields, approvalStatus: "pending" });
   },
 });

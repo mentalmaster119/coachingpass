@@ -25,6 +25,7 @@ import type { Doc } from "@/convex/_generated/dataModel.d.ts";
 type MentorLog = Doc<"mentorCoachingLogs"> & { evidenceUrl?: string | null };
 
 const STATUS_CONFIG = {
+  draft:    { label: "임시저장",  variant: "outline"   as const },
   pending:  { label: "검토중",  variant: "secondary" as const },
   approved: { label: "승인됨",  variant: "default"   as const },
   rejected: { label: "반려됨",  variant: "destructive" as const },
@@ -72,7 +73,12 @@ export default function MentorLogCard({ log }: { log: MentorLog }) {
                 <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", typeCfg.color)}>
                   {typeCfg.label}
                 </span>
-                <Badge variant={statusCfg.variant} className="text-xs">{statusCfg.label}</Badge>
+                <Badge
+                  variant={statusCfg.variant}
+                  className={cn("text-xs", log.approvalStatus === "draft" && "border-amber-400 text-amber-600 dark:text-amber-400")}
+                >
+                  {statusCfg.label}
+                </Badge>
               </div>
 
               {/* Topic */}
@@ -188,14 +194,25 @@ export default function MentorLogCard({ log }: { log: MentorLog }) {
               )}
               {canEdit && (
                 <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-muted-foreground"
-                    onClick={() => setEditOpen(true)}
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
+                  {log.approvalStatus === "draft" ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700"
+                      onClick={() => setEditOpen(true)}
+                    >
+                      이어 작성
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-muted-foreground"
+                      onClick={() => setEditOpen(true)}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"

@@ -53,11 +53,14 @@ export default function MentorCoachingPage() {
   const logs = useQuery(api.mentorCoaching.getMyLogs);
   const summary = useQuery(api.mentorCoaching.getMySummary);
 
+  const draftCount = logs?.filter((log) => log.approvalStatus === "draft").length ?? 0;
+
   const filteredLogs =
     logs?.filter((log) => {
       if (activeTab === "all") return true;
-      if (activeTab === "mentor_coaching") return log.sessionType === "mentor_coaching";
-      if (activeTab === "coder_co") return log.sessionType === "coder_co";
+      if (activeTab === "draft") return log.approvalStatus === "draft";
+      if (activeTab === "mentor_coaching") return log.sessionType === "mentor_coaching" && log.approvalStatus !== "draft";
+      if (activeTab === "coder_co") return log.sessionType === "coder_co" && log.approvalStatus !== "draft";
       if (activeTab === "pending") return log.approvalStatus === "pending";
       if (activeTab === "approved") return log.approvalStatus === "approved";
       return true;
@@ -138,6 +141,14 @@ export default function MentorCoachingPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4 flex-wrap h-auto gap-1">
             <TabsTrigger value="all">전체</TabsTrigger>
+            <TabsTrigger value="draft" className="gap-1.5">
+              임시저장
+              {draftCount > 0 && (
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-medium text-white">
+                  {draftCount}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="mentor_coaching">개인 멘토코칭</TabsTrigger>
             <TabsTrigger value="coder_co">그룹 코더코</TabsTrigger>
             <TabsTrigger value="pending">검토중</TabsTrigger>

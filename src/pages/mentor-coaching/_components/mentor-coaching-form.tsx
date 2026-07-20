@@ -72,6 +72,8 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
   const [loading, setLoading] = useState(false);
   const createLog = useMutation(api.mentorCoaching.create);
   const updateLog = useMutation(api.mentorCoaching.update);
+  const saveDraft = useMutation(api.mentorCoaching.saveDraft);
+  const submitDraft = useMutation(api.mentorCoaching.submitDraft);
 
   const isEdit = !!editLog;
 
@@ -81,6 +83,40 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
   const handleOpenChange = (v: boolean) => {
     if (!v) setValues(getDefaultValues(editLog));
     onOpenChange(v);
+  };
+
+  const handleSaveDraft = async () => {
+    const dur = parseInt(values.durationMinutes, 10);
+    const payload = {
+      sessionDate: values.sessionDate.trim() || undefined,
+      sessionType: values.sessionType as "mentor_coaching" | "coder_co",
+      coachName: values.coachName.trim() || undefined,
+      durationMinutes: isNaN(dur) ? undefined : dur,
+      location: values.location.trim() || undefined,
+      topic: values.topic.trim() || undefined,
+      content: values.content.trim() || undefined,
+      reflection: values.reflection.trim() || undefined,
+      coacheeGoal: values.coacheeGoal.trim() || undefined,
+      coachingTool: values.coachingTool.trim() || undefined,
+      powerfulQuestion: values.powerfulQuestion.trim() || undefined,
+      learnedAsCoach: values.learnedAsCoach.trim() || undefined,
+      actionPlan: values.actionPlan.trim() || undefined,
+    };
+
+    setLoading(true);
+    try {
+      if (isEdit && editLog) {
+        await saveDraft({ logId: editLog._id, ...payload });
+      } else {
+        await saveDraft(payload);
+      }
+      toast.success("임시저장되었습니다.");
+      handleOpenChange(false);
+    } catch {
+      toast.error("임시저장에 실패했습니다. 다시 시도해 주세요.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,8 +159,13 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
     setLoading(true);
     try {
       if (isEdit && editLog) {
-        await updateLog({ logId: editLog._id, ...trimmed });
-        toast.success("기록이 수정되었습니다.");
+        if (editLog.approvalStatus === "draft") {
+          await submitDraft({ logId: editLog._id, ...trimmed });
+          toast.success("기록이 제출되었습니다. 검토 후 승인됩니다.");
+        } else {
+          await updateLog({ logId: editLog._id, ...trimmed });
+          toast.success("기록이 수정되었습니다.");
+        }
       } else {
         await createLog(trimmed);
         toast.success("기록이 추가되었습니다. 검토 후 승인됩니다.");
@@ -315,8 +356,13 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
             <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
               취소
             </Button>
+            {(!isEdit || editLog?.approvalStatus === "draft") && (
+              <Button type="button" variant="secondary" onClick={handleSaveDraft} disabled={loading}>
+                임시저장
+              </Button>
+            )}
             <Button type="submit" disabled={loading}>
-              {loading ? "저장 중..." : isEdit ? "수정하기" : "추가하기"}
+              {loading ? "저장 중..." : isEdit && editLog?.approvalStatus !== "draft" ? "수정하기" : "제출하기"}
             </Button>
           </DialogFooter>
         </form>

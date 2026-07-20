@@ -54,11 +54,14 @@ export default function BcpPage() {
   const logs = useQuery(api.bcp.getMyLogs);
   const summary = useQuery(api.bcp.getMySummary);
 
+  const draftBcpCount = logs?.filter((log) => log.approvalStatus === "draft").length ?? 0;
+
   const filteredLogs =
     logs?.filter((log) => {
       if (activeTab === "all") return true;
-      if (activeTab === "coach") return log.myRole === "coach";
-      if (activeTab === "coachee") return log.myRole === "coachee";
+      if (activeTab === "draft") return log.approvalStatus === "draft";
+      if (activeTab === "coach") return log.myRole === "coach" && log.approvalStatus !== "draft";
+      if (activeTab === "coachee") return log.myRole === "coachee" && log.approvalStatus !== "draft";
       if (activeTab === "pending") return log.approvalStatus === "pending";
       if (activeTab === "approved") return log.approvalStatus === "approved";
       return true;
@@ -144,6 +147,14 @@ export default function BcpPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4 flex-wrap h-auto gap-1">
             <TabsTrigger value="all">전체</TabsTrigger>
+            <TabsTrigger value="draft" className="gap-1.5">
+              임시저장
+              {draftBcpCount > 0 && (
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-medium text-white">
+                  {draftBcpCount}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="coach">코치 역할</TabsTrigger>
             <TabsTrigger value="coachee">고객 역할</TabsTrigger>
             <TabsTrigger value="pending">검토중</TabsTrigger>

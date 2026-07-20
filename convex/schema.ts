@@ -241,6 +241,7 @@ export default defineSchema({
     actionPlan: v.optional(v.string()),          // 향후 실행 과제
     evidenceStorageId: v.optional(v.id("_storage")),
     approvalStatus: v.union(
+      v.literal("draft"),
       v.literal("pending"),
       v.literal("approved"),
       v.literal("rejected"),
@@ -677,6 +678,7 @@ export default defineSchema({
     improvementForNext: v.optional(v.string()),      // 개선할 점 (성장)
     evidenceStorageId: v.optional(v.id("_storage")),
     approvalStatus: v.union(
+      v.literal("draft"),
       v.literal("pending"),
       v.literal("approved"),
       v.literal("rejected"),

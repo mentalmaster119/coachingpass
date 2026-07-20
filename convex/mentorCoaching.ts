@@ -179,8 +179,10 @@ export const getAllLogsForUser = query({
       .order("desc")
       .collect();
 
+    const filteredLogs = logs.filter((log) => log.approvalStatus !== "draft");
+
     return await Promise.all(
-      logs.map(async (log) => ({
+      filteredLogs.map(async (log) => ({
         ...log,
         evidenceUrl: log.evidenceStorageId
           ? await ctx.storage.getUrl(log.evidenceStorageId)
@@ -238,5 +240,90 @@ export const reject = mutation({
       message: `"${log.topic}" ${typeLabel} 기록이 반려되었습니다. 사유: ${args.reason}`,
       relatedId: args.logId,
     });
+  },
+});
+
+const mentorCoachingDraftFields = {
+  sessionDate: v.optional(v.string()),
+  sessionType: v.optional(v.union(v.literal("mentor_coaching"), v.literal("coder_co"))),
+  coachName: v.optional(v.string()),
+  durationMinutes: v.optional(v.number()),
+  location: v.optional(v.string()),
+  topic: v.optional(v.string()),
+  content: v.optional(v.string()),
+  reflection: v.optional(v.string()),
+  coacheeGoal: v.optional(v.string()),
+  coachingTool: v.optional(v.string()),
+  powerfulQuestion: v.optional(v.string()),
+  learnedAsCoach: v.optional(v.string()),
+  actionPlan: v.optional(v.string()),
+  evidenceStorageId: v.optional(v.id("_storage")),
+};
+
+export const saveDraft = mutation({
+  args: {
+    logId: v.optional(v.id("mentorCoachingLogs")),
+    ...mentorCoachingDraftFields,
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+    if (user.role !== "trainee") {
+      throw new ConvexError({ message: "교육생만 임시저장할 수 있습니다.", code: "FORBIDDEN" });
+    }
+    const { logId, ...fields } = args;
+
+    if (logId) {
+      const log = await ctx.db.get(logId);
+      if (!log) throw new ConvexError({ message: "Record not found", code: "NOT_FOUND" });
+      if (log.userId !== user._id) throw new ConvexError({ message: "Forbidden", code: "FORBIDDEN" });
+      if (log.approvalStatus !== "draft") {
+        throw new ConvexError({ message: "임시저장 상태의 기록만 수정할 수 있습니다", code: "BAD_REQUEST" });
+      }
+      await ctx.db.patch(logId, fields);
+      return logId;
+    } else {
+      return await ctx.db.insert("mentorCoachingLogs", {
+        ...fields,
+        sessionDate: fields.sessionDate ?? new Date().toISOString().slice(0, 10),
+        sessionType: fields.sessionType ?? "mentor_coaching",
+        coachName: fields.coachName ?? "",
+        durationMinutes: fields.durationMinutes ?? 0,
+        topic: fields.topic ?? "",
+        content: fields.content ?? "",
+        userId: user._id,
+        approvalStatus: "draft",
+      });
+    }
+  },
+});
+
+export const submitDraft = mutation({
+  args: {
+    logId: v.id("mentorCoachingLogs"),
+    sessionDate: v.string(),
+    sessionType: v.union(v.literal("mentor_coaching"), v.literal("coder_co")),
+    coachName: v.string(),
+    durationMinutes: v.number(),
+    location: v.optional(v.string()),
+    topic: v.string(),
+    content: v.string(),
+    reflection: v.optional(v.string()),
+    coacheeGoal: v.optional(v.string()),
+    coachingTool: v.optional(v.string()),
+    powerfulQuestion: v.optional(v.string()),
+    learnedAsCoach: v.optional(v.string()),
+    actionPlan: v.optional(v.string()),
+    evidenceStorageId: v.optional(v.id("_storage")),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+    const log = await ctx.db.get(args.logId);
+    if (!log) throw new ConvexError({ message: "Record not found", code: "NOT_FOUND" });
+    if (log.userId !== user._id) throw new ConvexError({ message: "Forbidden", code: "FORBIDDEN" });
+    if (log.approvalStatus !== "draft") {
+      throw new ConvexError({ message: "임시저장 상태의 기록만 제출할 수 있습니다", code: "BAD_REQUEST" });
+    }
+    const { logId, ...fields } = args;
+    await ctx.db.patch(logId, { ...fields, approvalStatus: "pending" });
   },
 });

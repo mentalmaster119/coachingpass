@@ -192,14 +192,25 @@ export default function BcpLogCard({ log, isAdmin = false, onApprove, onReject }
               )}
               {!isAdmin && log.approvalStatus !== "approved" && (
                 <>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8"
-                    onClick={() => setEditOpen(true)}
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
+                  {log.approvalStatus === "draft" ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700"
+                      onClick={() => setEditOpen(true)}
+                    >
+                      이어 작성
+                    </Button>
+                  ) : (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      onClick={() => setEditOpen(true)}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
                   <Button
                     size="icon"
                     variant="ghost"
