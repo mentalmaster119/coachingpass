@@ -399,11 +399,15 @@ export const setActiveMockUser = mutation({
     (ctx as any).skipMockAuth = true;
     const realUser = await getAuthenticatedUser(ctx);
 
-    if (realUser.role !== "admin" && realUser.role !== "admin3") {
-      throw new ConvexError({ message: "Only admins can change preview role", code: "FORBIDDEN" });
+    if (realUser.role !== "admin" && realUser.role !== "admin3" && realUser.role !== "senior_coach") {
+      throw new ConvexError({ message: "Only authorized roles can change preview role", code: "FORBIDDEN" });
     }
 
-    if (args.role === "admin" || args.role === "admin3") {
+    if (realUser.role === "senior_coach" && (args.role === "admin" || args.role === "admin3")) {
+      throw new ConvexError({ message: "Senior coaches cannot switch to admin roles", code: "FORBIDDEN" });
+    }
+
+    if (args.role === "admin" || args.role === "admin3" || args.role === "senior_coach") {
       await ctx.db.patch(realUser._id, { activeMockRole: undefined, activeMockTraineeId: undefined });
     } else {
       let activeMockTraineeId: any = undefined;

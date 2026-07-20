@@ -26,7 +26,7 @@ export function useCurrentUser() {
 
   useEffect(() => {
     if (normalUser) {
-      if (!localStorage.getItem("real_role")) {
+      if (localStorage.getItem("real_role") !== normalUser.role) {
         localStorage.setItem("real_role", normalUser.role);
       }
 
