@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation, useQuery } from "convex/react";
+import { Paperclip, X } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
 import type { Id } from "@/convex/_generated/dataModel.d.ts";
 import type { Doc } from "@/convex/_generated/dataModel.d.ts";
@@ -158,6 +159,14 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
 
   const isEdit = !!editLog;
 
+  const [file, setFile] = useState<File | null>(null);
+  const [existingEvidenceId, setExistingEvidenceId] = useState<Id<"_storage"> | undefined>(
+    editLog?.evidenceStorageId
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const generateUploadUrl = useMutation(api.bcp.generateUploadUrl);
+
   const set = <K extends keyof FormState>(key: K) =>
     (val: FormState[K]) => setValues((prev) => ({ ...prev, [key]: val }));
 
@@ -180,36 +189,74 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
   };
 
   const handleOpenChange = (v: boolean) => {
-    if (!v) setValues(getDefaultValues(editLog));
+    if (!v) {
+      setValues(getDefaultValues(editLog));
+      setFile(null);
+      setExistingEvidenceId(editLog?.evidenceStorageId);
+    }
     onOpenChange(v);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (selected) {
+      if (selected.size > 10 * 1024 * 1024) {
+        toast.error("파일 크기는 10MB 이하만 가능합니다.");
+        return;
+      }
+      setFile(selected);
+    }
+  };
+
+  const removeFile = () => {
+    setFile(null);
+    setExistingEvidenceId(undefined);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const uploadFileIfNeeded = async (): Promise<Id<"_storage"> | undefined> => {
+    if (file) {
+      const postUrl = await generateUploadUrl();
+      const resp = await fetch(postUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!resp.ok) throw new Error("파일 업로드에 실패했습니다.");
+      const { storageId } = (await resp.json()) as { storageId: string };
+      return storageId as Id<"_storage">;
+    }
+    return existingEvidenceId;
   };
 
   const handleSaveDraft = async () => {
     const buddyId1 = values.buddyId1 ? (values.buddyId1 as Id<"users">) : undefined;
     const dur = calculateMinutes(values.sessionStartTime, values.sessionEndTime);
 
-    const payload = {
-      sessionDate: values.sessionDate || undefined,
-      sessionStartTime: values.sessionStartTime || undefined,
-      sessionEndTime: values.sessionEndTime || undefined,
-      buddyId1,
-      myRole: "coach" as const,
-      durationMinutes: isNaN(dur) ? undefined : dur,
-      location: values.location.trim() || undefined,
-      topic: values.topic.trim() || undefined,
-      content: values.content.trim() || undefined,
-      reflection: values.reflection.trim() || undefined,
-      techniquesUsed: values.techniquesUsed.length > 0 ? values.techniquesUsed : undefined,
-      techniqueOther: values.techniqueOther.trim() || undefined,
-      clientInsight: values.clientInsight.trim() || undefined,
-      coachPattern: values.coachPattern.trim() || undefined,
-      actionPlan: values.actionPlan.trim() || undefined,
-      bestOfSession: values.bestOfSession.trim() || undefined,
-      improvementForNext: values.improvementForNext.trim() || undefined,
-    };
-
     setLoading(true);
     try {
+      const evidenceStorageId = await uploadFileIfNeeded();
+      const payload = {
+        sessionDate: values.sessionDate || undefined,
+        sessionStartTime: values.sessionStartTime || undefined,
+        sessionEndTime: values.sessionEndTime || undefined,
+        buddyId1,
+        myRole: "coach" as const,
+        durationMinutes: isNaN(dur) ? undefined : dur,
+        location: values.location.trim() || undefined,
+        topic: values.topic.trim() || undefined,
+        content: values.content.trim() || undefined,
+        reflection: values.reflection.trim() || undefined,
+        techniquesUsed: values.techniquesUsed.length > 0 ? values.techniquesUsed : undefined,
+        techniqueOther: values.techniqueOther.trim() || undefined,
+        clientInsight: values.clientInsight.trim() || undefined,
+        coachPattern: values.coachPattern.trim() || undefined,
+        actionPlan: values.actionPlan.trim() || undefined,
+        bestOfSession: values.bestOfSession.trim() || undefined,
+        improvementForNext: values.improvementForNext.trim() || undefined,
+        evidenceStorageId,
+      };
+
       if (isEdit && editLog) {
         await saveDraft({ logId: editLog._id, ...payload });
       } else {
@@ -217,8 +264,8 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
       }
       toast.success("임시저장되었습니다.");
       handleOpenChange(false);
-    } catch {
-      toast.error("임시저장에 실패했습니다. 다시 시도해 주세요.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "임시저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setLoading(false);
     }
@@ -239,28 +286,30 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
     if (!values.topic.trim()) return toast.error("코칭 주제를 입력하세요.");
     if (values.content.trim().length < 10) return toast.error("세션 내용을 더 자세히 입력하세요.");
 
-    const payload = {
-      sessionDate: values.sessionDate,
-      sessionStartTime: values.sessionStartTime,
-      sessionEndTime: values.sessionEndTime,
-      buddyId1,
-      myRole: "coach" as const,
-      durationMinutes: dur,
-      location: values.location.trim() || undefined,
-      topic: values.topic.trim(),
-      content: values.content.trim(),
-      reflection: values.reflection.trim() || undefined,
-      techniquesUsed: values.techniquesUsed.length > 0 ? values.techniquesUsed : undefined,
-      techniqueOther: values.techniqueOther.trim() || undefined,
-      clientInsight: values.clientInsight.trim() || undefined,
-      coachPattern: values.coachPattern.trim() || undefined,
-      actionPlan: values.actionPlan.trim() || undefined,
-      bestOfSession: values.bestOfSession.trim() || undefined,
-      improvementForNext: values.improvementForNext.trim() || undefined,
-    };
-
     setLoading(true);
     try {
+      const evidenceStorageId = await uploadFileIfNeeded();
+      const payload = {
+        sessionDate: values.sessionDate,
+        sessionStartTime: values.sessionStartTime,
+        sessionEndTime: values.sessionEndTime,
+        buddyId1,
+        myRole: "coach" as const,
+        durationMinutes: dur,
+        location: values.location.trim() || undefined,
+        topic: values.topic.trim(),
+        content: values.content.trim(),
+        reflection: values.reflection.trim() || undefined,
+        techniquesUsed: values.techniquesUsed.length > 0 ? values.techniquesUsed : undefined,
+        techniqueOther: values.techniqueOther.trim() || undefined,
+        clientInsight: values.clientInsight.trim() || undefined,
+        coachPattern: values.coachPattern.trim() || undefined,
+        actionPlan: values.actionPlan.trim() || undefined,
+        bestOfSession: values.bestOfSession.trim() || undefined,
+        improvementForNext: values.improvementForNext.trim() || undefined,
+        evidenceStorageId,
+      };
+
       if (isEdit && editLog) {
         if (editLog.approvalStatus === "draft") {
           await submitDraft({ logId: editLog._id, ...payload });
@@ -274,8 +323,8 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
         toast.success("버디코칭 기록이 추가되었습니다. 검토 후 승인됩니다.");
       }
       handleOpenChange(false);
-    } catch {
-      toast.error("저장에 실패했습니다. 다시 시도해 주세요.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setLoading(false);
     }
@@ -493,6 +542,40 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
               value={values.reflection}
               onChange={(e) => set("reflection")(e.target.value)}
             />
+          </div>
+
+          {/* 증빙 자료 첨부 */}
+          <div className="space-y-1.5 pt-3 border-t border-border">
+            <Label>증빙 자료 <span className="text-xs text-muted-foreground font-normal">(사진, PDF 등 선택)</span></Label>
+            {file ?? existingEvidenceId ? (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-secondary text-sm">
+                <Paperclip className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <span className="flex-1 truncate text-muted-foreground">
+                  {file ? file.name : "기존 첨부 파일"}
+                </span>
+                <button type="button" onClick={removeFile} className="text-muted-foreground hover:text-destructive transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="bcp-evidence-file"
+                />
+                <label
+                  htmlFor="bcp-evidence-file"
+                  className="flex items-center gap-2 px-3 py-2 rounded-md border border-dashed border-border text-sm text-muted-foreground cursor-pointer hover:border-primary/50 hover:text-foreground transition-colors"
+                >
+                  <Paperclip className="w-4 h-4" />
+                  PDF, JPG, PNG 파일 첨부
+                </label>
+              </div>
+            )}
           </div>
 
           <DialogFooter>

@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation } from "convex/react";
+import { Paperclip, X } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
+import type { Id } from "@/convex/_generated/dataModel.d.ts";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
@@ -77,34 +79,81 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
 
   const isEdit = !!editLog;
 
+  const [file, setFile] = useState<File | null>(null);
+  const [existingEvidenceId, setExistingEvidenceId] = useState<Id<"_storage"> | undefined>(
+    editLog?.evidenceStorageId
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const generateUploadUrl = useMutation(api.mentorCoaching.generateUploadUrl);
+
   const set = (key: keyof FormState) => (val: string) =>
     setValues((prev) => ({ ...prev, [key]: val }));
 
   const handleOpenChange = (v: boolean) => {
-    if (!v) setValues(getDefaultValues(editLog));
+    if (!v) {
+      setValues(getDefaultValues(editLog));
+      setFile(null);
+      setExistingEvidenceId(editLog?.evidenceStorageId);
+    }
     onOpenChange(v);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (selected) {
+      if (selected.size > 10 * 1024 * 1024) {
+        toast.error("파일 크기는 10MB 이하만 가능합니다.");
+        return;
+      }
+      setFile(selected);
+    }
+  };
+
+  const removeFile = () => {
+    setFile(null);
+    setExistingEvidenceId(undefined);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const uploadFileIfNeeded = async (): Promise<Id<"_storage"> | undefined> => {
+    if (file) {
+      const postUrl = await generateUploadUrl();
+      const resp = await fetch(postUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!resp.ok) throw new Error("파일 업로드에 실패했습니다.");
+      const { storageId } = (await resp.json()) as { storageId: string };
+      return storageId as Id<"_storage">;
+    }
+    return existingEvidenceId;
   };
 
   const handleSaveDraft = async () => {
     const dur = parseInt(values.durationMinutes, 10);
-    const payload = {
-      sessionDate: values.sessionDate.trim() || undefined,
-      sessionType: values.sessionType as "mentor_coaching" | "coder_co",
-      coachName: values.coachName.trim() || undefined,
-      durationMinutes: isNaN(dur) ? undefined : dur,
-      location: values.location.trim() || undefined,
-      topic: values.topic.trim() || undefined,
-      content: values.content.trim() || undefined,
-      reflection: values.reflection.trim() || undefined,
-      coacheeGoal: values.coacheeGoal.trim() || undefined,
-      coachingTool: values.coachingTool.trim() || undefined,
-      powerfulQuestion: values.powerfulQuestion.trim() || undefined,
-      learnedAsCoach: values.learnedAsCoach.trim() || undefined,
-      actionPlan: values.actionPlan.trim() || undefined,
-    };
 
     setLoading(true);
     try {
+      const evidenceStorageId = await uploadFileIfNeeded();
+      const payload = {
+        sessionDate: values.sessionDate.trim() || undefined,
+        sessionType: values.sessionType as "mentor_coaching" | "coder_co",
+        coachName: values.coachName.trim() || undefined,
+        durationMinutes: isNaN(dur) ? undefined : dur,
+        location: values.location.trim() || undefined,
+        topic: values.topic.trim() || undefined,
+        content: values.content.trim() || undefined,
+        reflection: values.reflection.trim() || undefined,
+        coacheeGoal: values.coacheeGoal.trim() || undefined,
+        coachingTool: values.coachingTool.trim() || undefined,
+        powerfulQuestion: values.powerfulQuestion.trim() || undefined,
+        learnedAsCoach: values.learnedAsCoach.trim() || undefined,
+        actionPlan: values.actionPlan.trim() || undefined,
+        evidenceStorageId,
+      };
+
       if (isEdit && editLog) {
         await saveDraft({ logId: editLog._id, ...payload });
       } else {
@@ -112,8 +161,8 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
       }
       toast.success("임시저장되었습니다.");
       handleOpenChange(false);
-    } catch {
-      toast.error("임시저장에 실패했습니다. 다시 시도해 주세요.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "임시저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setLoading(false);
     }
@@ -158,21 +207,24 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
 
     setLoading(true);
     try {
+      const evidenceStorageId = await uploadFileIfNeeded();
+      const payload = { ...trimmed, evidenceStorageId };
+
       if (isEdit && editLog) {
         if (editLog.approvalStatus === "draft") {
-          await submitDraft({ logId: editLog._id, ...trimmed });
+          await submitDraft({ logId: editLog._id, ...payload });
           toast.success("기록이 제출되었습니다. 검토 후 승인됩니다.");
         } else {
-          await updateLog({ logId: editLog._id, ...trimmed });
+          await updateLog({ logId: editLog._id, ...payload });
           toast.success("기록이 수정되었습니다.");
         }
       } else {
-        await createLog(trimmed);
+        await createLog(payload);
         toast.success("기록이 추가되었습니다. 검토 후 승인됩니다.");
       }
       handleOpenChange(false);
-    } catch {
-      toast.error("저장에 실패했습니다. 다시 시도해 주세요.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setLoading(false);
     }
@@ -351,6 +403,40 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
               </div>
             </>
           )}
+
+          {/* 증빙 자료 첨부 */}
+          <div className="space-y-1.5 pt-3 border-t border-border">
+            <Label>증빙 자료 <span className="text-xs text-muted-foreground font-normal">(사진, PDF 등 선택)</span></Label>
+            {file ?? existingEvidenceId ? (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-secondary text-sm">
+                <Paperclip className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <span className="flex-1 truncate text-muted-foreground">
+                  {file ? file.name : "기존 첨부 파일"}
+                </span>
+                <button type="button" onClick={removeFile} className="text-muted-foreground hover:text-destructive transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="mentor-evidence-file"
+                />
+                <label
+                  htmlFor="mentor-evidence-file"
+                  className="flex items-center gap-2 px-3 py-2 rounded-md border border-dashed border-border text-sm text-muted-foreground cursor-pointer hover:border-primary/50 hover:text-foreground transition-colors"
+                >
+                  <Paperclip className="w-4 h-4" />
+                  PDF, JPG, PNG 파일 첨부
+                </label>
+              </div>
+            )}
+          </div>
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
