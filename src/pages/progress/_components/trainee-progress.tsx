@@ -384,7 +384,7 @@ export default function TraineeProgressPage({ user }: { user: User }) {
                     }}
                     formatter={(value: number, name: string) => [
                       `${value}시간`,
-                      name === "educationHours" ? "교육 이수" : "코칭 실습",
+                      name,
                     ]}
                   />
                   <Bar

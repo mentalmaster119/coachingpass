@@ -198,13 +198,22 @@ export const signIn = mutation({
       } else {
         // Ensure name, role, approval, and password are correct
         const isPasswordValid = await verifyPassword("M12345", user.passwordHash || "");
-        if (!isPasswordValid || user.name !== "홍길동(미리보기)" || user.role !== "trainee" || user.approvalStatus !== "approved") {
+        const issuer = process.env.CONVEX_SITE_URL || DEFAULT_ISSUER;
+        const expectedTokenIdentifier = `${issuer}|${user._id}`;
+        if (
+          !isPasswordValid ||
+          user.name !== "홍길동(미리보기)" ||
+          user.role !== "trainee" ||
+          user.approvalStatus !== "approved" ||
+          user.tokenIdentifier !== expectedTokenIdentifier
+        ) {
           await ctx.db.patch(user._id, {
             name: "홍길동(미리보기)",
             role: "trainee",
             approvalStatus: "approved",
             onboardingCompleted: true,
             passwordHash: targetHash,
+            tokenIdentifier: expectedTokenIdentifier,
           });
 
           // Ensure assigned to the 17th cohort
@@ -254,13 +263,22 @@ export const signIn = mutation({
         user = await ctx.db.get(userId);
       } else {
         const isPasswordValid = await verifyPassword("M12345", user.passwordHash || "");
-        if (!isPasswordValid || user.name !== "김동식(미리보기)" || user.role !== "senior_coach" || user.approvalStatus !== "approved") {
+        const issuer = process.env.CONVEX_SITE_URL || DEFAULT_ISSUER;
+        const expectedTokenIdentifier = `${issuer}|${user._id}`;
+        if (
+          !isPasswordValid ||
+          user.name !== "김동식(미리보기)" ||
+          user.role !== "senior_coach" ||
+          user.approvalStatus !== "approved" ||
+          user.tokenIdentifier !== expectedTokenIdentifier
+        ) {
           await ctx.db.patch(user._id, {
             name: "김동식(미리보기)",
             role: "senior_coach",
             approvalStatus: "approved",
             onboardingCompleted: true,
             passwordHash: targetHash,
+            tokenIdentifier: expectedTokenIdentifier,
           });
           user = await ctx.db.get(user._id);
         }

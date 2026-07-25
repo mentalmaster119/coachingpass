@@ -251,7 +251,7 @@ export default function TraineeDetailPage() {
           {[
             {
               key: "education",
-              label: "교육 이수 시간",
+              label: "교육 이수",
               icon: <BookOpen className="w-5 h-5" />,
               current: detail.approvedEducationHours,
               target: detail.educationTarget,
@@ -260,7 +260,7 @@ export default function TraineeDetailPage() {
             },
             {
               key: "coaching",
-              label: "코칭 실습 시간",
+              label: "코칭 실습",
               icon: <ClipboardList className="w-5 h-5" />,
               current: detail.approvedCoachingHours,
               target: detail.coachingTarget,
@@ -324,7 +324,7 @@ export default function TraineeDetailPage() {
                   <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
-                    formatter={(value: number, name: string) => [`${value}시간`, name === "educationHours" ? "교육 이수" : "코칭 실습"]}
+                    formatter={(value: number, name: string) => [`${value}시간`, name]}
                   />
                   <Bar dataKey="educationHours" name="교육 이수" fill="hsl(var(--chart-3))" radius={[3, 3, 0, 0]} />
                   <Bar dataKey="coachingHours" name="코칭 실습" fill="hsl(var(--chart-1))" radius={[3, 3, 0, 0]} />
