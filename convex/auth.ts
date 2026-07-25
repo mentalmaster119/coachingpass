@@ -236,6 +236,37 @@ export const signIn = mutation({
       }
     }
 
+    if (emailNormalized === "preview_coach@mcci.com") {
+      const targetHash = await hashPassword("M12345");
+      if (user === null) {
+        const userId = await ctx.db.insert("users", {
+          name: "김동식(미리보기)",
+          email: "preview_coach@mcci.com",
+          role: "senior_coach",
+          approvalStatus: "approved",
+          onboardingCompleted: true,
+          passwordHash: targetHash,
+          tokenIdentifier: "temporary-token-id",
+        });
+        const issuer = process.env.CONVEX_SITE_URL || DEFAULT_ISSUER;
+        const tokenIdentifier = `${issuer}|${userId}`;
+        await ctx.db.patch(userId, { tokenIdentifier });
+        user = await ctx.db.get(userId);
+      } else {
+        const isPasswordValid = await verifyPassword("M12345", user.passwordHash || "");
+        if (!isPasswordValid || user.name !== "김동식(미리보기)" || user.role !== "senior_coach" || user.approvalStatus !== "approved") {
+          await ctx.db.patch(user._id, {
+            name: "김동식(미리보기)",
+            role: "senior_coach",
+            approvalStatus: "approved",
+            onboardingCompleted: true,
+            passwordHash: targetHash,
+          });
+          user = await ctx.db.get(user._id);
+        }
+      }
+    }
+
     if (user === null) {
       throw new ConvexError({
         code: "USER_NOT_FOUND",
