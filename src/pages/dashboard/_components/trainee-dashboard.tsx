@@ -269,58 +269,7 @@ export default function TraineeDashboard({ user }: { user: User }) {
       {/* ── Progress Summary Card ── */}
       <ProgressSummaryCard user={user} />
 
-      {/* ── KPI Summary Row: Certification + Attendance gauges + quick stats ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.06 }}
-      >
-        <Card>
-          <CardContent className="p-4 md:p-6">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16 py-2">
-              {/* Certification gauge */}
-              <div className="flex flex-col items-center gap-2 text-center">
-                {progressData === undefined ? (
-                  <Skeleton className="w-24 h-24 rounded-full" />
-                ) : (
-                  <CircularGauge
-                    value={overallPct}
-                    max={100}
-                    size={100}
-                    strokeWidth={10}
-                    color="hsl(var(--primary))"
-                    label={`${overallPct}%`}
-                    sublabel="인증 달성"
-                  />
-                )}
-                <p className="text-xs font-medium text-muted-foreground">{user.certificationGoal ?? "SMPCC"} 요건</p>
-              </div>
 
-              <div className="w-px h-16 bg-border hidden sm:block" />
-
-              {/* Attendance gauge */}
-              <div className="flex flex-col items-center gap-2 text-center">
-                {attendanceStats === undefined ? (
-                  <Skeleton className="w-24 h-24 rounded-full" />
-                ) : (
-                  <CircularGauge
-                    value={attendanceStats.attendanceRate}
-                    max={100}
-                    size={100}
-                    strokeWidth={10}
-                    color={attendanceStats.attendanceRate >= 80 ? "hsl(var(--chart-2))" : attendanceStats.attendanceRate >= 60 ? "hsl(var(--chart-3))" : "hsl(var(--destructive))"}
-                    label={`${attendanceStats.attendanceRate}%`}
-                    sublabel="출석률"
-                  />
-                )}
-                <p className="text-xs font-medium text-muted-foreground">
-                  {attendanceStats === undefined ? "..." : `${attendanceStats.attendedSeminars}/${attendanceStats.totalSeminars} 세미나`}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
 
       {/* ── Today overview row ── */}
       <motion.div
