@@ -425,5 +425,45 @@ export const changePassword = mutation({
   },
 });
 
+/**
+ * Self-service password reset verifying name and email
+ */
+export const selfResetPassword = mutation({
+  args: {
+    name: v.string(),
+    email: v.string(),
+    newPassword: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("name"), args.name.trim()),
+          q.eq(q.field("email"), args.email.trim())
+        )
+      )
+      .first();
+
+    if (!user) {
+      throw new ConvexError({
+        message: "입력하신 이름과 이메일 정보가 일치하는 사용자를 찾을 수 없습니다.",
+        code: "NOT_FOUND",
+      });
+    }
+
+    if (args.newPassword.length < 4) {
+      throw new ConvexError({
+        message: "비밀번호는 최소 4자리 이상이어야 합니다.",
+        code: "BAD_REQUEST",
+      });
+    }
+
+    const passwordHash = await hashPassword(args.newPassword);
+    await ctx.db.patch(user._id, { passwordHash });
+    return { success: true };
+  },
+});
+
 
 
