@@ -82,7 +82,6 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "매일 자기 체크인", href: "/daily-checkin", icon: <Heart className="w-4 h-4" /> },
       { label: "출석 체크", href: "/attendance", icon: <CalendarDays className="w-4 h-4" /> },
       { label: "진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
-      { label: "교육 이수 기록", href: "/education", icon: <BookOpen className="w-4 h-4" /> },
       { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
       {
         label: "실습 및 슈퍼비전 기록",
@@ -183,7 +182,6 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
     { label: "매일 자기 체크인", href: "/daily-checkin", icon: <Heart className="w-4 h-4" /> },
     { label: "출석 체크", href: "/attendance", icon: <CalendarDays className="w-4 h-4" /> },
     { label: "진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
-    { label: "교육 이수 기록", href: "/education", icon: <BookOpen className="w-4 h-4" /> },
     { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
     {
       label: "실습 및 슈퍼비전 기록",

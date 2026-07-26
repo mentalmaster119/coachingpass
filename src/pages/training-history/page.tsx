@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api.js";
 import type { Id } from "@/convex/_generated/dataModel.d.ts";
@@ -6,6 +7,7 @@ import { toast } from "sonner";
 import { ConvexError } from "convex/values";
 import { format, parseISO } from "date-fns";
 import { ko } from "date-fns/locale";
+import EducationPage from "../education/page.tsx";
 import {
   Plus,
   BookOpen,
@@ -544,6 +546,13 @@ export default function TrainingHistoryPage() {
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "current-education";
+
+  const handleTabChange = (val: string) => {
+    setSearchParams({ tab: val });
+  };
+
   const centerTrainings = (trainings ?? []).filter((t) => t.courseType === "center");
   const externalTrainings = (trainings ?? []).filter((t) => t.courseType === "external");
   const activeCount = (licenses ?? []).filter((l) => l.isActive).length;
@@ -557,15 +566,19 @@ export default function TrainingHistoryPage() {
             <BookOpen className="w-5 h-5" />
             교육이력 및 자격증
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">과정 이수 이력과 보유 자격증을 관리하세요</p>
+          <p className="text-sm text-muted-foreground mt-1">현재 과정의 이수 기록, 이전 교육 이력 및 보유 자격증을 한곳에서 관리하세요</p>
         </div>
       </div>
 
-      <Tabs defaultValue="training">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="w-full">
+          <TabsTrigger value="current-education" className="flex-1">
+            <BookOpen className="w-3.5 h-3.5 mr-1.5" />
+            교육 이수 기록 (현재 과정)
+          </TabsTrigger>
           <TabsTrigger value="training" className="flex-1">
             <GraduationCap className="w-3.5 h-3.5 mr-1.5" />
-            과정 이수 이력
+            이전 교육 이력
             {trainings !== undefined && <Badge variant="secondary" className="ml-1.5 text-xs">{trainings.length}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="licenses" className="flex-1">
@@ -576,6 +589,11 @@ export default function TrainingHistoryPage() {
             )}
           </TabsTrigger>
         </TabsList>
+
+        {/* ── Current Education Tab ── */}
+        <TabsContent value="current-education" className="space-y-4 mt-4">
+          <EducationPage isTab />
+        </TabsContent>
 
         {/* ── Training History Tab ── */}
         <TabsContent value="training" className="space-y-4 mt-4">

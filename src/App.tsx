@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { DefaultProviders } from "./components/providers/default.tsx";
 import { useServiceWorker } from "@/hooks/use-service-worker.ts";
 import AppLayout from "./components/layout/app-layout.tsx";
@@ -71,7 +71,7 @@ export default function App() {
           {/* Protected routes with sidebar layout */}
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/education" element={<EducationPage />} />
+            <Route path="/education" element={<Navigate to="/training-history" replace />} />
             <Route path="/coaching-log" element={<CoachingLogPage />} />
             <Route path="/mentor-coaching" element={<MentorCoachingPage />} />
             <Route path="/progress" element={<ProgressPage />} />

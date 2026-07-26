@@ -15,7 +15,7 @@ import { useCurrentUser } from "@/hooks/use-current-user.ts";
 const KAC_TARGET = 60;
 const KPC_TARGET = 125;
 
-export default function EducationPage() {
+export default function EducationPage({ isTab = false }: { isTab?: boolean }) {
   const [showForm, setShowForm] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const records = useQuery(api.education.getMyRecords);
@@ -32,36 +32,55 @@ export default function EducationPage() {
   const rejectedRecords = allRecords.filter((r) => r.approvalStatus === "rejected");
 
   return (
-    <div className="p-6 md:p-8 max-w-3xl mx-auto space-y-6">
+    <div className={isTab ? "space-y-6" : "p-6 md:p-8 max-w-3xl mx-auto space-y-6"}>
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-      >
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">교육 이수 기록</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            코칭 교육 이수 내역을 기록하고 관리하세요
-          </p>
-        </div>
-        <div className="flex items-center gap-2 self-start sm:self-center">
+      {!isTab ? (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        >
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">교육 이수 기록</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              코칭 교육 이수 내역을 기록하고 관리하세요
+            </p>
+          </div>
+          <div className="flex items-center gap-2 self-start sm:self-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setReportOpen(true)}
+              disabled={!records || records.length === 0}
+            >
+              <FileDown className="w-4 h-4 mr-1.5" />
+              PDF 저장
+            </Button>
+            <Button onClick={() => setShowForm(true)} className="flex-shrink-0">
+              <Plus className="w-4 h-4 mr-1.5" />
+              기록 추가
+            </Button>
+          </div>
+        </motion.div>
+      ) : (
+        <div className="flex items-center justify-end gap-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setReportOpen(true)}
             disabled={!records || records.length === 0}
+            className="cursor-pointer"
           >
             <FileDown className="w-4 h-4 mr-1.5" />
             PDF 저장
           </Button>
-          <Button onClick={() => setShowForm(true)} className="flex-shrink-0">
+          <Button size="sm" onClick={() => setShowForm(true)} className="flex-shrink-0 cursor-pointer">
             <Plus className="w-4 h-4 mr-1.5" />
             기록 추가
           </Button>
         </div>
-      </motion.div>
+      )}
 
       {/* Summary cards */}
       <motion.div
