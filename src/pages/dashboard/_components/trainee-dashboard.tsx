@@ -30,18 +30,48 @@ import ProgressSummaryCard from "@/pages/progress/_components/progress-summary-c
 
 type User = Doc<"users">;
 
-const KAC_REQUIREMENTS = {
-  education: { label: "교육 이수", target: 60, unit: "시간", href: "/education" },
-  coaching: { label: "코칭 실습", target: 100, unit: "시간", href: "/coaching-log" },
-  mentoring: { label: "멘토코칭", target: 10, unit: "회", href: "/mentor-coaching" },
-  coderc: { label: "코더코", target: 3, unit: "회", href: "/mentor-coaching" },
-};
-
-const KPC_REQUIREMENTS = {
-  education: { label: "교육 이수", target: 125, unit: "시간", href: "/education" },
-  coaching: { label: "코칭 실습", target: 500, unit: "시간", href: "/coaching-log" },
-  mentoring: { label: "멘토코칭", target: 10, unit: "회", href: "/mentor-coaching" },
-  coderc: { label: "코더코", target: 3, unit: "회", href: "/mentor-coaching" },
+const GOAL_REQUIREMENTS: Record<string, {
+  education: { label: string; target: number; unit: string; href: string };
+  coaching: { label: string; target: number; unit: string; href: string };
+  mentoring: { label: string; target: number; unit: string; href: string };
+  coderc: { label: string; target: number; unit: string; href: string };
+}> = {
+  KAC: {
+    education: { label: "교육 이수", target: 20, unit: "시간", href: "/training-history?tab=current-education" },
+    coaching: { label: "코칭 실습", target: 50, unit: "시간", href: "/coaching-log" },
+    mentoring: { label: "멘토코칭", target: 10, unit: "회", href: "/mentor-coaching" },
+    coderc: { label: "코더코", target: 3, unit: "회", href: "/mentor-coaching" },
+  },
+  KPC: {
+    education: { label: "교육 이수", target: 60, unit: "시간", href: "/training-history?tab=current-education" },
+    coaching: { label: "코칭 실습", target: 300, unit: "시간", href: "/coaching-log" },
+    mentoring: { label: "멘토코칭", target: 10, unit: "회", href: "/mentor-coaching" },
+    coderc: { label: "코더코", target: 3, unit: "회", href: "/mentor-coaching" },
+  },
+  KSC: {
+    education: { label: "교육 이수", target: 150, unit: "시간", href: "/training-history?tab=current-education" },
+    coaching: { label: "코칭 실습", target: 1000, unit: "시간", href: "/coaching-log" },
+    mentoring: { label: "멘토코칭", target: 10, unit: "회", href: "/mentor-coaching" },
+    coderc: { label: "코더코", target: 3, unit: "회", href: "/mentor-coaching" },
+  },
+  ACC: {
+    education: { label: "교육 이수", target: 60, unit: "시간", href: "/training-history?tab=current-education" },
+    coaching: { label: "코칭 실습", target: 100, unit: "시간", href: "/coaching-log" },
+    mentoring: { label: "멘토코칭", target: 10, unit: "회", href: "/mentor-coaching" },
+    coderc: { label: "코더코", target: 3, unit: "회", href: "/mentor-coaching" },
+  },
+  MCC: {
+    education: { label: "교육 이수", target: 200, unit: "시간", href: "/training-history?tab=current-education" },
+    coaching: { label: "코칭 실습", target: 2500, unit: "시간", href: "/coaching-log" },
+    mentoring: { label: "멘토코칭", target: 10, unit: "회", href: "/mentor-coaching" },
+    coderc: { label: "코더코", target: 3, unit: "회", href: "/mentor-coaching" },
+  },
+  SMPCC: {
+    education: { label: "교육 이수", target: 60, unit: "시간", href: "/training-history?tab=current-education" },
+    coaching: { label: "코칭 실습", target: 20, unit: "건", href: "/coaching-log" },
+    mentoring: { label: "멘토코칭", target: 2, unit: "회", href: "/mentor-coaching" },
+    coderc: { label: "버디코칭", target: 2, unit: "회", href: "/bcp" },
+  },
 };
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
@@ -108,7 +138,8 @@ function CircularGauge({
 
 export default function TraineeDashboard({ user }: { user: User }) {
   const navigate = useNavigate();
-  const requirements = user.certificationGoal === "KPC" ? KPC_REQUIREMENTS : KAC_REQUIREMENTS;
+  const goal = user.certificationGoal || "KAC";
+  const requirements = GOAL_REQUIREMENTS[goal] || GOAL_REQUIREMENTS.KAC;
   const isNewUser = user._creationTime > Date.now() - 7 * 24 * 60 * 60 * 1000;
 
   const progressData = useQuery(api.progress.getMyProgress);
@@ -129,9 +160,13 @@ export default function TraineeDashboard({ user }: { user: User }) {
 
   const currentValues = {
     education: progressData?.approvedEducationHours ?? 0,
-    coaching: progressData?.approvedCoachingHours ?? 0,
-    mentoring: mentorSummary?.mentorCoachingCount ?? 0,
-    coderc: mentorSummary?.coderCoCount ?? 0,
+    coaching: goal === "SMPCC"
+      ? (progressData?.sportsCount ?? 0) + Math.min(progressData?.generalCount ?? 0, 15)
+      : (progressData?.approvedCoachingHours ?? 0),
+    mentoring: progressData?.mentorCount ?? 0,
+    coderc: goal === "SMPCC"
+      ? (progressData?.buddyCount ?? 0)
+      : (progressData?.svCount ?? 0),
   };
 
   const totalRequirements = Object.values(requirements).length;
@@ -396,7 +431,7 @@ export default function TraineeDashboard({ user }: { user: User }) {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-semibold flex items-center gap-2">
             <Target className="w-4 h-4 text-muted-foreground" />
-            {user.certificationGoal ?? "KAC"} 요건 달성 현황
+            {user.certificationGoal ?? "KAC"} 목표 달성 현황
           </h2>
           <Button variant="ghost" size="sm" onClick={() => navigate("/progress")} className="cursor-pointer">
             상세보기 <TrendingUp className="w-3.5 h-3.5 ml-1" />
