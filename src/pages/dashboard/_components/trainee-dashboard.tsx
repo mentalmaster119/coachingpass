@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { motion } from "motion/react";
@@ -142,6 +143,48 @@ export default function TraineeDashboard({ user }: { user: User }) {
   const requirements = GOAL_REQUIREMENTS[goal] || GOAL_REQUIREMENTS.KAC;
   const isNewUser = user._creationTime > Date.now() - 7 * 24 * 60 * 60 * 1000;
 
+  const randomMessage = useMemo(() => {
+    const messages = [
+      // 따뜻한 톤
+      "오늘도 당신의 기록과 성찰이 더 단단한 코치로 자라나는 하루가 되길 바랍니다.",
+      "하루를 천천히 돌아보는 이 시간이, 코치로서의 깊이와 따뜻함을 조금씩 키워줄 것입니다.",
+      "오늘의 작은 배움과 진심 어린 돌아봄이, 결국 누군가를 살리는 코칭의 힘이 됩니다.",
+      "지금 남기는 한 줄의 기록이 내일의 더 좋은 질문과 더 깊은 경청으로 이어질 수 있습니다.",
+      "오늘도 서두르지 말고, 당신만의 속도로 코치로서의 성장을 차분히 쌓아가 보세요.",
+      "하루의 경험을 따뜻하게 정리하는 시간 속에서, 코치로서의 시야와 마음도 함께 자랍니다.",
+      "오늘의 성찰은 자신을 다그치는 시간이 아니라, 더 나은 코치로 다듬어 가는 소중한 시간입니다.",
+      "작은 실천 하나, 진솔한 돌아봄 하나가 모여 당신의 코칭을 더 깊고 단단하게 만듭니다.",
+      "오늘도 당신의 배움과 변화가 누군가에게 힘이 되는 코치의 자산으로 차곡차곡 쌓여가길 바랍니다.",
+      "이곳에서의 기록이 오늘을 정리하는 데 그치지 않고, 내일의 더 성숙한 코칭으로 이어지길 바랍니다.",
+
+      // 전문적인 톤
+      "오늘의 경험을 구조화해 기록하고 성찰할수록, 코치로서의 판단력과 개입의 정교함은 더 높아집니다.",
+      "성장은 경험 자체보다 경험을 어떻게 해석하고 다음 행동으로 연결하느냐에 달려 있습니다.",
+      "오늘의 코칭 경험을 점검하며, 질문·경청·개입의 질을 한 단계 더 정교하게 다듬어 보세요.",
+      "성찰은 하루를 돌아보는 일이 아니라, 코치로서의 역량을 의식적으로 훈련하는 과정입니다.",
+      "기록된 경험은 단순한 메모가 아니라, 더 나은 코칭 판단 and 실천을 위한 중요한 학습 데이터가 됩니다.",
+      "오늘의 관찰과 성찰을 통해 자신의 코칭 패턴을 이해하고, 더 효과적인 개입 방향을 설계해 보세요.",
+      "좋은 코치는 경험을 반복하는 사람이 아니라, 경험에서 원리를 추출하고 다음 행동을 설계하는 사람입니다.",
+      "하루를 기록하는 습관은 코치의 감각을 훈련하고, 현장의 배움을 전문성으로 전환시키는 힘이 됩니다.",
+      "오늘의 성찰을 통해 자기이해를 높이고, 더 전략적이고 일관된 코칭 역량을 만들어 가보세요.",
+      "코칭의 깊이는 시간보다 돌아봄의 질에서 나옵니다. 오늘의 기록으로 그 깊이를 더해 보세요.",
+
+      // 감동적인 톤
+      "오늘 당신이 남기는 기록 하나가, 언젠가 누군가의 삶을 바꾸는 코칭의 시작이 될 수 있습니다.",
+      "더 좋은 코치는 하루아침에 만들어지지 않지만, 진심 어린 성찰은 분명 사람을 바꾸고 성장시킵니다.",
+      "오늘의 배움과 흔들림까지도 놓치지 않고 돌아볼 때, 당신의 코칭은 더 깊은 울림을 갖게 됩니다.",
+      "당신의 오늘이 쌓여 누군가에게는 다시 일어설 힘이 되고, 다시 도전할 용기가 될 것입니다.",
+      "지금의 작은 성찰이 미래의 누군가에게는 큰 위로와 변화의 문이 될 수 있습니다.",
+      "코치의 성장은 자신의 하루를 진실하게 마주하는 데서 시작되고, 그 진실함이 결국 사람의 마음에 닿습니다.",
+      "오늘도 당신의 성찰이 당신을 더 깊은 사람으로 만들고, 더 깊은 코치로 이끌어 줄 것입니다.",
+      "하루의 경험을 의미 있게 붙잡는 사람만이, 타인의 성장도 끝까지 따뜻하게 동행할 수 있습니다.",
+      "당신이 오늘 자신을 돌아보는 이 시간이, 결국 더 많은 사람을 살리고 세우는 힘으로 이어질 것입니다.",
+      "좋은 코치는 완벽한 사람이 아니라, 매일 자신을 돌아보며 더 나은 마음으로 다시 서는 사람입니다."
+    ];
+    const randomIndex = Math.floor(Math.random() * messages.length);
+    return messages[randomIndex];
+  }, []);
+
   const progressData = useQuery(api.progress.getMyProgress);
   const monthlyStats = useQuery(api.dashboard.getTraineeThisMonthStats);
   const recentActivity = useQuery(api.dashboard.getTraineeRecentActivity);
@@ -240,8 +283,8 @@ export default function TraineeDashboard({ user }: { user: User }) {
         className="flex flex-col sm:flex-row sm:items-start justify-between gap-3"
       >
         <div>
-          <h1 className="text-2xl font-bold">안녕하세요, {user.name || "수강생"}님!</h1>
-          <p className="text-muted-foreground text-sm mt-1">오늘도 코치로의 여정을 함께합니다.</p>
+          <h1 className="text-2xl font-bold">안녕하세요, {user.name || "수강생"}멘탈코치님!</h1>
+          <p className="text-muted-foreground text-sm mt-1">{randomMessage}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="secondary" className="text-sm px-3 py-1.5">
