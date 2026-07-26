@@ -1351,9 +1351,9 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
             {/* 임시저장 - new/draft records only */}
             {isNewOrDraft && (
               <Button
-                variant="secondary"
                 onClick={handleSaveDraft}
                 disabled={isPending || isSavingDraft}
+                className="bg-orange-500 hover:bg-orange-600 text-white transition-colors"
               >
                 <Save className="w-4 h-4 mr-2" />
                 {isSavingDraft ? "저장 중..." : "임시저장"}
@@ -1366,7 +1366,11 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit} disabled={isPending || isSavingDraft}>
+              <Button
+                onClick={handleSubmit}
+                disabled={isPending || isSavingDraft}
+                className="bg-red-600 hover:bg-red-700 text-white transition-colors"
+              >
                 <Send className="w-4 h-4 mr-2" />
                 {isPending ? "제출 중..." : isDraft || currentDraftId ? "승인 요청" : isEdit ? "수정 완료" : "제출"}
               </Button>

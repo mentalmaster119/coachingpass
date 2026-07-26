@@ -583,11 +583,20 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
               취소
             </Button>
             {(!isEdit || editLog?.approvalStatus === "draft") && (
-              <Button type="button" variant="secondary" onClick={handleSaveDraft} disabled={loading}>
+              <Button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={loading}
+                className="bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+              >
                 임시저장
               </Button>
             )}
-            <Button type="submit" disabled={loading}>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-red-600 hover:bg-red-700 text-white transition-colors"
+            >
               {loading ? "저장 중..." : isEdit && editLog?.approvalStatus !== "draft" ? "수정하기" : "제출하기"}
             </Button>
           </DialogFooter>
