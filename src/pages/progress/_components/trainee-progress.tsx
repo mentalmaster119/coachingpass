@@ -169,7 +169,7 @@ export default function TraineeProgressPage({ user }: { user: User }) {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-bold text-foreground">진행 현황</h1>
+          <h1 className="text-2xl font-bold text-foreground">목표설정 및 진행 현황</h1>
           <p className="text-muted-foreground text-sm mt-1">
             {user.certificationGoal === "KPC" ? "멘탈코칭전문가 2급" : "멘탈코칭전문가 1급"} 인증까지의 여정을 한눈에 확인하세요.
           </p>

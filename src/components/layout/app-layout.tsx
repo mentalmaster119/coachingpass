@@ -81,7 +81,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
       { label: "매일 자기 체크인", href: "/daily-checkin", icon: <Heart className="w-4 h-4" /> },
       { label: "출석 체크", href: "/attendance", icon: <CalendarDays className="w-4 h-4" /> },
-      { label: "진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
+      { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
       { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
       {
         label: "실습 및 슈퍼비전 기록",
@@ -120,7 +120,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "수료 및 인증 관리", href: "/admin/completion", icon: <Award className="w-4 h-4" /> },
       { label: "SMPCC 자격 관리", href: "/admin/smpcc", icon: <Award className="w-4 h-4" /> },
       { label: "종합 보고서", href: "/admin/report", icon: <BarChart2 className="w-4 h-4" /> },
-      { label: "진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
+      { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
       { label: "교육생 슈퍼바이저 배정", href: "/admin/assignments", icon: <UserCheck className="w-4 h-4" /> },
       { label: "인증 신청 관리", href: "/admin/certification", icon: <Award className="w-4 h-4" /> },
       { label: "공지사항 관리", href: "/admin/announcements", icon: <Megaphone className="w-4 h-4" /> },
@@ -158,7 +158,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
   if (role === "senior_coach") {
     return [
       { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
-      { label: "진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
+      { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
       { label: "교육 기록 검토", href: "/admin/education", icon: <BookOpen className="w-4 h-4" /> },
       { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
       { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
@@ -181,7 +181,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
     { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
     { label: "매일 자기 체크인", href: "/daily-checkin", icon: <Heart className="w-4 h-4" /> },
     { label: "출석 체크", href: "/attendance", icon: <CalendarDays className="w-4 h-4" /> },
-    { label: "진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
+    { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
     { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
     {
       label: "실습 및 슈퍼비전 기록",
