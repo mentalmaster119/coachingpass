@@ -277,7 +277,7 @@ export default function TraineeDashboard({ user }: { user: User }) {
       >
         <Card>
           <CardContent className="p-4 md:p-6">
-            <div className="flex flex-col sm:flex-row items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16 py-2">
               {/* Certification gauge */}
               <div className="flex flex-col items-center gap-2 text-center">
                 {progressData === undefined ? (
@@ -316,36 +316,6 @@ export default function TraineeDashboard({ user }: { user: User }) {
                 <p className="text-xs font-medium text-muted-foreground">
                   {attendanceStats === undefined ? "..." : `${attendanceStats.attendedSeminars}/${attendanceStats.totalSeminars} 세미나`}
                 </p>
-              </div>
-
-              <div className="w-px h-16 bg-border hidden sm:block" />
-
-              {/* Quick stats grid */}
-              <div className="flex-1 grid grid-cols-2 gap-3 w-full">
-                {[
-                  {
-                    label: "이번달 교육",
-                    value: monthlyStats === undefined ? "..." : `${monthlyStats.thisMonthEduHours}h`,
-                    icon: <BookOpen className="w-3.5 h-3.5" />,
-                    color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20",
-                  },
-                  {
-                    label: "이번달 성찰",
-                    value: monthlyStats === undefined ? "..." : `${monthlyStats.thisMonthReflections}건`,
-                    icon: <NotebookPen className="w-3.5 h-3.5" />,
-                    color: "text-purple-600 bg-purple-50 dark:bg-purple-900/20",
-                  },
-                ].map((stat) => (
-                  <div key={stat.label} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-muted/40">
-                    <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0", stat.color)}>
-                      {stat.icon}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold leading-tight">{stat.value}</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight">{stat.label}</p>
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           </CardContent>
