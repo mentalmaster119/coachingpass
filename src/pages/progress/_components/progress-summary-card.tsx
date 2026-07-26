@@ -104,7 +104,7 @@ export default function ProgressSummaryCard({ user }: { user: SummaryUser }) {
         <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-5 py-3 flex items-center justify-between border-b border-primary/10">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold">진행 요약</span>
+            <span className="text-sm font-semibold">멘탈코칭전문가 자격 취득 진행 요약</span>
           </div>
           <Badge variant="secondary" className="text-xs px-2 py-0.5">
             <Target className="w-3 h-3 mr-1" />
