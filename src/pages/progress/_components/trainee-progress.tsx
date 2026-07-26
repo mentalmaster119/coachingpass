@@ -133,6 +133,7 @@ export default function TraineeProgressPage({ user }: { user: User }) {
   const navigate = useNavigate();
   const [reportOpen, setReportOpen] = useState(false);
   const progress = useQuery(api.progress.getMyProgress);
+  const attendanceStats = useQuery(api.dashboard.getMyAttendanceStats);
 
   const getTargets = (goal: string | undefined) => {
     switch (goal) {
@@ -147,13 +148,16 @@ export default function TraineeProgressPage({ user }: { user: User }) {
   };
   const targets = getTargets(user.certificationGoal);
 
-  const educationPct =
-    progress ? Math.min((progress.approvedEducationHours / targets.education) * 100, 100) : 0;
-  const coachingPct =
-    progress ? Math.min((progress.approvedCoachingHours / targets.coaching) * 100, 100) : 0;
+  const attendedSeminars = attendanceStats?.attendedSeminars ?? 0;
+  const ncpTotalSessions = progress
+    ? (progress.sportsCount ?? 0) + Math.min(progress.generalCount ?? 0, 15)
+    : 0;
+
+  const educationPct = progress ? Math.min((attendedSeminars / 12) * 100, 100) : 0;
+  const coachingPct = progress ? Math.min((ncpTotalSessions / 20) * 100, 100) : 0;
   const overallPct = Math.round((educationPct + coachingPct) / 2);
 
-  const isLoading = progress === undefined;
+  const isLoading = progress === undefined || attendanceStats === undefined;
 
   return (
     <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-8">
@@ -227,7 +231,7 @@ export default function TraineeProgressPage({ user }: { user: User }) {
                   </p>
                   <RadialProgressRing
                     value={educationPct}
-                    label={`${Math.round(progress.approvedEducationHours * 10) / 10} / ${targets.education}시간`}
+                    label={`${attendedSeminars} / 12일`}
                     color="hsl(var(--chart-3))"
                     size={120}
                   />
@@ -244,7 +248,7 @@ export default function TraineeProgressPage({ user }: { user: User }) {
                   </p>
                   <RadialProgressRing
                     value={coachingPct}
-                    label={`${Math.round(progress.approvedCoachingHours * 10) / 10} / ${targets.coaching}시간`}
+                    label={`${ncpTotalSessions} / 20회`}
                     color="hsl(var(--chart-1))"
                     size={120}
                   />
