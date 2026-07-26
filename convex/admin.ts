@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./mockAuth";
 import type { Doc, Id } from "./_generated/dataModel.d.ts";
 import { requireAdmin } from "./helpers";
+import { hashPassword } from "./authUtils";
 
 // ── Dashboard stats ──────────────────────────────────────────────────────────
 
@@ -124,6 +125,25 @@ export const updateUserRole = mutation({
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
     await ctx.db.patch(args.userId, { role: args.role });
+  },
+});
+
+// 사용자 비밀번호 초기화
+export const resetUserPassword = mutation({
+  args: {
+    userId: v.id("users"),
+    newPassword: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    if (args.newPassword.length < 4) {
+      throw new ConvexError({
+        message: "비밀번호는 최소 4자리 이상이어야 합니다.",
+        code: "BAD_REQUEST",
+      });
+    }
+    const passwordHash = await hashPassword(args.newPassword);
+    await ctx.db.patch(args.userId, { passwordHash });
   },
 });
 

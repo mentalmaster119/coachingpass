@@ -16,6 +16,7 @@ import {
   UserCheck,
   AlertCircle,
   Trash2,
+  Key,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
 import type { Doc, Id } from "@/convex/_generated/dataModel.d.ts";
@@ -231,6 +232,66 @@ function DeleteUserDialog({
   );
 }
 
+function ResetPasswordDialog({
+  user,
+  open,
+  onOpenChange,
+}: {
+  user: User | null;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const [newPassword, setNewPassword] = useState("");
+  const [isPending, setIsPending] = useState(false);
+  const resetPassword = useMutation(api.admin.resetUserPassword);
+
+  const handleReset = async () => {
+    if (!user || !newPassword.trim()) return;
+    setIsPending(true);
+    try {
+      await resetPassword({ userId: user._id, newPassword: newPassword.trim() });
+      toast.success(`${user.name ?? "사용자"}님의 비밀번호가 재설정되었습니다.`);
+      onOpenChange(false);
+      setNewPassword("");
+    } catch (err: any) {
+      toast.error(err?.message || "비밀번호 초기화 중 오류가 발생했습니다.");
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>비밀번호 초기화</DialogTitle>
+          <DialogDescription>
+            <span className="font-semibold text-foreground">{user?.name}</span> ({user?.email}) 님의 비밀번호를 강제 재설정합니다.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">새 비밀번호 입력</label>
+            <Input
+              type="text"
+              placeholder="예: M12345 (최소 4자리)"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              disabled={isPending}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isPending}>취소</Button>
+          <Button variant="default" disabled={isPending || newPassword.trim().length < 4} onClick={handleReset}>
+            {isPending ? "변경 중..." : "비밀번호 재설정"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 type SortKey = "name" | "cohort";
 
@@ -245,6 +306,7 @@ function AllUsersTable({
   const [sortBy, setSortBy] = useState<SortKey>("name");
   const [rejectTarget, setRejectTarget] = useState<User | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [resetTarget, setResetTarget] = useState<User | null>(null);
   const updateRole = useMutation(api.admin.updateUserRole);
   const approveUser = useMutation(api.admin.approveUser);
   const changeCohort = useMutation(api.cohorts.changeMemberCohort);
@@ -399,6 +461,19 @@ function AllUsersTable({
                       </div>
                     )}
 
+                    {/* 비밀번호 초기화 버튼 - 자기 자신 제외 */}
+                    {currentUser?._id !== u._id && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-primary hover:bg-primary/10"
+                        title="비밀번호 초기화"
+                        onClick={(e) => { e.stopPropagation(); setResetTarget(u); }}
+                      >
+                        <Key className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+
                     {/* 삭제 버튼 - 자기 자신 제외 */}
                     {currentUser?._id !== u._id && (
                       <Button
@@ -433,6 +508,11 @@ function AllUsersTable({
         user={deleteTarget}
         open={deleteTarget !== null}
         onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+      />
+      <ResetPasswordDialog
+        user={resetTarget}
+        open={resetTarget !== null}
+        onOpenChange={(v) => { if (!v) setResetTarget(null); }}
       />
     </>
   );
