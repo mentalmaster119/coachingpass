@@ -177,7 +177,7 @@ export default function CertificationChecklist({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <GraduationCap className="w-5 h-5 text-primary" />
-              <CardTitle className="text-base font-semibold">자격증 취득 요건</CardTitle>
+              <CardTitle className="text-base font-semibold">한국코치협회 자격 취득 요건</CardTitle>
             </div>
             <div className="flex items-center gap-2">
               {allDone && (

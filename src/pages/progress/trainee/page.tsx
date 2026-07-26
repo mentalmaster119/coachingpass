@@ -201,7 +201,11 @@ export default function TraineeDetailPage() {
         transition={{ duration: 0.4, delay: 0.1 }}
       >
         <Card className="shadow-sm">
-          <CardContent className="pt-6 pb-6">
+          <CardHeader className="pb-3 flex-row items-center gap-2 space-y-0">
+            <GraduationCap className="w-5 h-5 text-primary" />
+            <CardTitle className="text-base font-semibold">멘탈코칭전문가자격 취득 요건</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 pb-6">
             {isLoading ? (
               <div className="flex justify-around">
                 {[1, 2, 3].map((i) => (
@@ -239,65 +243,6 @@ export default function TraineeDetailPage() {
           </CardContent>
         </Card>
       </motion.div>
-
-      {/* Requirements checklist */}
-      {!isLoading && detail && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.15 }}
-          className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-        >
-          {[
-            {
-              key: "education",
-              label: "교육 이수",
-              icon: <BookOpen className="w-5 h-5" />,
-              current: detail.approvedEducationHours,
-              target: detail.educationTarget,
-              color: "text-chart-3",
-              bg: "bg-chart-3/10",
-            },
-            {
-              key: "coaching",
-              label: "코칭 실습",
-              icon: <ClipboardList className="w-5 h-5" />,
-              current: detail.approvedCoachingHours,
-              target: detail.coachingTarget,
-              color: "text-chart-1",
-              bg: "bg-chart-1/10",
-            },
-          ].map((req) => {
-            const pct = Math.min((req.current / req.target) * 100, 100);
-            const done = req.current >= req.target;
-            return (
-              <Card key={req.key} className={`shadow-sm ${done ? "border-chart-4/30" : ""}`}>
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-9 h-9 rounded-lg ${req.bg} ${req.color} flex items-center justify-center`}>
-                        {req.icon}
-                      </div>
-                      <p className="font-semibold text-sm text-foreground">{req.label}</p>
-                    </div>
-                    {done ? (
-                      <Badge className="bg-chart-4/15 text-chart-4 border-chart-4/20 text-xs">완료</Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        <span className="font-bold text-foreground text-sm">{req.current}</span>/{req.target}시간
-                      </span>
-                    )}
-                  </div>
-                  <Progress value={pct} className="h-2.5" />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {done ? "목표 달성 완료!" : `${Math.round((req.target - req.current) * 10) / 10}시간 더 필요`}
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </motion.div>
-      )}
 
       {/* Monthly chart */}
       <motion.div

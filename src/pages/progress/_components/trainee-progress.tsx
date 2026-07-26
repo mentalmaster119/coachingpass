@@ -21,6 +21,7 @@ import {
   AlertCircle,
   ArrowRight,
   FileDown,
+  GraduationCap,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
 import type { Doc } from "@/convex/_generated/dataModel.d.ts";
@@ -181,7 +182,11 @@ export default function TraineeProgressPage({ user }: { user: User }) {
         transition={{ duration: 0.4, delay: 0.1 }}
       >
         <Card className="shadow-sm">
-          <CardContent className="pt-6 pb-6">
+          <CardHeader className="pb-3 flex-row items-center gap-2 space-y-0">
+            <GraduationCap className="w-5 h-5 text-primary" />
+            <CardTitle className="text-base font-semibold">멘탈코칭전문가자격 취득 요건</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 pb-6">
             {isLoading ? (
               <div className="flex justify-around">
                 {[1, 2, 3].map((i) => (
@@ -239,103 +244,6 @@ export default function TraineeProgressPage({ user }: { user: User }) {
             )}
           </CardContent>
         </Card>
-      </motion.div>
-
-      {/* Requirement cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.15 }}
-        className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-      >
-        {[
-          {
-            key: "education",
-            label: "교육 이수",
-            icon: <BookOpen className="w-5 h-5" />,
-            current: progress?.approvedEducationHours ?? 0,
-            target: targets.education,
-            pending: progress?.educationPendingCount ?? 0,
-            href: "/education",
-            color: "text-chart-3",
-            bg: "bg-chart-3/10",
-          },
-          {
-            key: "coaching",
-            label: "코칭 실습",
-            icon: <ClipboardList className="w-5 h-5" />,
-            current: progress?.approvedCoachingHours ?? 0,
-            target: targets.coaching,
-            pending: progress?.coachingPendingCount ?? 0,
-            href: "/coaching-log",
-            color: "text-chart-1",
-            bg: "bg-chart-1/10",
-          },
-        ].map((req) => {
-          const pct = Math.min((req.current / req.target) * 100, 100);
-          const remaining = Math.round((req.target - req.current) * 10) / 10;
-          const done = req.current >= req.target;
-
-          return (
-            <Card key={req.key} className={`shadow-sm ${done ? "border-chart-4/30" : ""}`}>
-              <CardContent className="pt-5 pb-4">
-                {isLoading ? (
-                  <Skeleton className="h-20 w-full" />
-                ) : (
-                  <>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`w-9 h-9 rounded-lg ${req.bg} ${req.color} flex items-center justify-center`}>
-                          {req.icon}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-sm text-foreground">{req.label}</p>
-                          {req.pending > 0 && (
-                            <p className="text-[10px] text-muted-foreground">
-                              검토중 {req.pending}건 있음
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      {done ? (
-                        <Badge className="bg-chart-4/15 text-chart-4 border-chart-4/20 text-xs">
-                          완료!
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          <span className="font-bold text-foreground text-sm">
-                            {Math.round(req.current * 10) / 10}
-                          </span>
-                          /{req.target}시간
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Progress bar */}
-                    <div className="w-full bg-muted/30 rounded-full h-2.5 mb-3">
-                      <div
-                        className={`h-2.5 rounded-full transition-all duration-700 ${done ? "bg-chart-4" : req.color.replace("text-", "bg-")}`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted-foreground">
-                        {done ? "✓ 목표 달성!" : `${remaining}시간 더 필요`}
-                      </p>
-                      <button
-                        onClick={() => navigate(req.href)}
-                        className="text-xs text-primary hover:underline flex items-center gap-0.5"
-                      >
-                        기록 추가 <ArrowRight className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
       </motion.div>
 
       {/* Certification checklist + goal change */}
