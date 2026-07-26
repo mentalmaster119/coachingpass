@@ -330,22 +330,10 @@ export default function TraineeDashboard({ user }: { user: User }) {
                     color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20",
                   },
                   {
-                    label: "이번달 코칭",
-                    value: monthlyStats === undefined ? "..." : `${monthlyStats.thisMonthCoachHours}h`,
-                    icon: <ClipboardList className="w-3.5 h-3.5" />,
-                    color: "text-green-600 bg-green-50 dark:bg-green-900/20",
-                  },
-                  {
                     label: "이번달 성찰",
                     value: monthlyStats === undefined ? "..." : `${monthlyStats.thisMonthReflections}건`,
                     icon: <NotebookPen className="w-3.5 h-3.5" />,
                     color: "text-purple-600 bg-purple-50 dark:bg-purple-900/20",
-                  },
-                  {
-                    label: "누적 코칭",
-                    value: progressData === undefined ? "..." : `${Math.round(progressData.approvedCoachingHours * 10) / 10}h`,
-                    icon: <Award className="w-3.5 h-3.5" />,
-                    color: "text-amber-600 bg-amber-50 dark:bg-amber-900/20",
                   },
                 ].map((stat) => (
                   <div key={stat.label} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-muted/40">
