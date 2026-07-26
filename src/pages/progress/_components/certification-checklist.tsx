@@ -76,15 +76,17 @@ export default function CertificationChecklist({
   user: User;
   progress: ProgressData;
 }) {
-  const currentGoal = (user.certificationGoal as GoalKey | "SMPCC") || "KAC";
+  const currentGoalRaw = (user.certificationGoal as GoalKey | "SMPCC") || "KAC";
+  const isSMPCC = currentGoalRaw === "SMPCC";
+  const currentGoal = (!isSMPCC && !(currentGoalRaw in REQUIREMENTS)) ? "KAC" : currentGoalRaw;
+
   const [changeDialogOpen, setChangeDialogOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<GoalKey>(
-    currentGoal === "SMPCC" ? "KAC" : currentGoal
+    currentGoal === "SMPCC" ? "KAC" : (currentGoal as GoalKey)
   );
   const [isChanging, setIsChanging] = useState(false);
   const changeGoal = useMutation(api.users.setCertificationGoal);
 
-  const isSMPCC = currentGoal === "SMPCC";
   const req = !isSMPCC ? REQUIREMENTS[currentGoal as GoalKey] : null;
 
   const requirements = isSMPCC ? [
