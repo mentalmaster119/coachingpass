@@ -4,10 +4,8 @@ import { api } from "@/convex/_generated/api.js";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { UserCircle, BarChart2 } from "lucide-react";
-import ProfileCard from "./_components/profile-card.tsx";
 import ProfileEditForm from "./_components/profile-edit-form.tsx";
 import PortfolioView from "./_components/portfolio-view.tsx";
-import ProgressSummaryCard from "@/pages/progress/_components/progress-summary-card.tsx";
 
 export default function ProfilePage() {
   const data = useQuery(api.users.getMyPortfolio, {});
@@ -53,22 +51,6 @@ export default function ProfilePage() {
 
         {/* Profile tab */}
         <TabsContent value="profile" className="space-y-5 mt-5">
-          {/* Show progress summary card only for trainees */}
-          {(user.role === "trainee" || !user.role) && (
-            <ProgressSummaryCard user={user} />
-          )}
-          <ProfileCard
-            name={user.name}
-            email={user.email}
-            role={user.role}
-            certificationGoal={user.certificationGoal}
-            bio={user.bio}
-            phone={user.phone}
-            specializations={user.specializations}
-            coachingStyle={user.coachingStyle}
-            avatarUrl={user.avatarUrl}
-            mbti={user.mbti ?? null}
-          />
           <ProfileEditForm
             profile={{
               name: user.name,
