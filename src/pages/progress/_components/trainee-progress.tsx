@@ -194,9 +194,11 @@ export default function TraineeProgressPage({ user }: { user: User }) {
         transition={{ duration: 0.4, delay: 0.1 }}
       >
         <Card className="shadow-sm">
-          <CardHeader className="pb-3 flex-row items-center gap-2 space-y-0">
-            <GraduationCap className="w-5 h-5 text-primary" />
-            <CardTitle className="text-base font-semibold">멘탈코칭전문가자격 취득 요건</CardTitle>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-primary" />
+              <CardTitle className="text-base font-semibold">멘탈코칭전문가자격 취득 요건</CardTitle>
+            </div>
           </CardHeader>
           <CardContent className="pt-0 pb-6">
             {isLoading ? (
