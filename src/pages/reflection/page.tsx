@@ -84,8 +84,10 @@ export default function ReflectionPage() {
       >
         <div>
           <h1 className="text-2xl font-bold text-foreground">성찰 일지</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            코칭 여정을 기록하고 성장을 돌아보세요.
+          <p className="text-muted-foreground text-sm mt-1 whitespace-pre-line leading-relaxed">
+            코칭 여정을 기록하며 하루를 차분히 돌아보세요.
+            {"\n"}
+            성찰노트는 오늘의 경험과 감정, 배움을 정리하고, 작은 변화의 의미를 발견하며 다음 성장의 방향을 세우는 시간입니다.
           </p>
         </div>
         <Button onClick={() => setAddOpen(true)} className="self-start sm:self-center">
