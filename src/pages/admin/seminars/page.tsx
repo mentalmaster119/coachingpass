@@ -211,6 +211,7 @@ export default function AdminSeminarsPage() {
   const removeSeminar = useMutation(api.seminars.remove);
   const bulkCreate = useMutation(api.seminars.bulkCreate);
   const copySeminars = useMutation(api.seminars.copySeminarsFromCohort);
+  const createCohort = useMutation(api.cohorts.create);
 
   const [selectedCohortId, setSelectedCohortId] = useState<Id<"cohorts"> | null>(null);
   const seminars = useQuery(
@@ -239,6 +240,68 @@ export default function AdminSeminarsPage() {
   // Which seminar types to copy: "all" or specific types
   type CopyMode = "all" | "two_day" | "one_day" | "group_coaching";
   const [copyModes, setCopyModes] = useState<CopyMode[]>(["all"]);
+
+  // Create cohort state
+  const [showCohortForm, setShowCohortForm] = useState(false);
+  const [cohortForm, setCohortForm] = useState({
+    name: "",
+    number: "",
+    term: "first" as "first" | "second",
+    status: "active" as "upcoming" | "active" | "completed",
+    startDate: "",
+    endDate: "",
+    description: "",
+  });
+  const [cohortSaving, setCohortSaving] = useState(false);
+
+  const handleSaveCohort = async () => {
+    if (!cohortForm.name.trim()) {
+      toast.error("과정(기수)명을 입력하세요");
+      return;
+    }
+    if (!cohortForm.number.trim()) {
+      toast.error("과정(기수) 번호를 입력하세요");
+      return;
+    }
+    if (!cohortForm.startDate) {
+      toast.error("시작일을 선택하세요");
+      return;
+    }
+    if (!cohortForm.endDate) {
+      toast.error("종료일을 선택하세요");
+      return;
+    }
+
+    setCohortSaving(true);
+    try {
+      const newCohortId = await createCohort({
+        name: cohortForm.name,
+        number: Number(cohortForm.number),
+        term: cohortForm.term,
+        status: cohortForm.status,
+        startDate: cohortForm.startDate,
+        endDate: cohortForm.endDate,
+        description: cohortForm.description || undefined,
+      });
+      toast.success("새 과정(기수)이 등록되었습니다");
+      setShowCohortForm(false);
+      setSelectedCohortId(newCohortId);
+      setCohortForm({
+        name: "",
+        number: "",
+        term: "first",
+        status: "active",
+        startDate: "",
+        endDate: "",
+        description: "",
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("과정 등록에 실패했습니다");
+    } finally {
+      setCohortSaving(false);
+    }
+  };
 
   const selectedCohort = cohorts?.find((c) => c._id === selectedCohortId);
 
@@ -464,6 +527,14 @@ export default function AdminSeminarsPage() {
                   </span>
                 </button>
               ))}
+              <Button
+                variant="outline"
+                className="px-4 py-2 h-auto text-sm font-medium border-dashed cursor-pointer gap-1.5 ml-auto sm:ml-0"
+                onClick={() => setShowCohortForm(true)}
+              >
+                <Plus className="w-4 h-4" />
+                새 과정(기수) 등록
+              </Button>
             </div>
           )}
         </CardContent>
@@ -983,6 +1054,96 @@ export default function AdminSeminarsPage() {
             >
               <Copy className="w-4 h-4" />
               {copying ? "복사 중..." : "복사하기"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Cohort Dialog */}
+      <Dialog open={showCohortForm} onOpenChange={setShowCohortForm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>새 과정(기수) 등록</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>과정/기수명 <span className="text-destructive">*</span></Label>
+                <Input
+                  placeholder="예: 19기"
+                  value={cohortForm.name}
+                  onChange={(e) => setCohortForm({ ...cohortForm, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>기수 번호 <span className="text-destructive">*</span></Label>
+                <Input
+                  type="number"
+                  placeholder="예: 19"
+                  value={cohortForm.number}
+                  onChange={(e) => setCohortForm({ ...cohortForm, number: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>과정 구분</Label>
+                <Select value={cohortForm.term} onValueChange={(v: "first" | "second") => setCohortForm({ ...cohortForm, term: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="first">상반기</SelectItem>
+                    <SelectItem value="second">하반기</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>상태</Label>
+                <Select value={cohortForm.status} onValueChange={(v: "upcoming" | "active" | "completed") => setCohortForm({ ...cohortForm, status: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="upcoming">예정</SelectItem>
+                    <SelectItem value="active">진행중</SelectItem>
+                    <SelectItem value="completed">완료</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>시작일 <span className="text-destructive">*</span></Label>
+                <Input
+                  type="date"
+                  value={cohortForm.startDate}
+                  onChange={(e) => setCohortForm({ ...cohortForm, startDate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>종료일 <span className="text-destructive">*</span></Label>
+                <Input
+                  type="date"
+                  value={cohortForm.endDate}
+                  onChange={(e) => setCohortForm({ ...cohortForm, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>설명 (선택)</Label>
+              <Textarea
+                placeholder="과정(기수)에 대한 설명을 입력하세요"
+                value={cohortForm.description}
+                onChange={(e) => setCohortForm({ ...cohortForm, description: e.target.value })}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowCohortForm(false)}>취소</Button>
+            <Button onClick={handleSaveCohort} disabled={cohortSaving}>
+              {cohortSaving ? "등록 중..." : "등록"}
             </Button>
           </DialogFooter>
         </DialogContent>
