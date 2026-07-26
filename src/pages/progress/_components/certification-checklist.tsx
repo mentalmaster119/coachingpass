@@ -36,16 +36,40 @@ type ProgressData = {
 
 const REQUIREMENTS = {
   KAC: {
-    label: "멘탈코칭전문가 1급",
-    education: { hours: 60, label: "교육 이수 60시간" },
-    coaching: { hours: 100, label: "코칭 실습 100시간" },
-    description: "입문 레벨 코칭 자격증",
+    label: "KCA KAC",
+    education: { hours: 20, label: "교육 이수 20시간" },
+    coaching: { hours: 50, label: "코칭 실습 50시간" },
+    description: "한국코치협회 KAC 자격 요건",
   },
   KPC: {
-    label: "멘탈코칭전문가 2급",
+    label: "KCA KPC",
+    education: { hours: 60, label: "교육 이수 60시간" },
+    coaching: { hours: 300, label: "코칭 실습 300시간" },
+    description: "한국코치협회 KPC 자격 요건",
+  },
+  KSC: {
+    label: "KCA KSC",
+    education: { hours: 150, label: "교육 이수 150시간" },
+    coaching: { hours: 1000, label: "코칭 실습 1,000시간" },
+    description: "한국코치협회 KSC 자격 요건",
+  },
+  ACC: {
+    label: "ICF ACC",
+    education: { hours: 60, label: "교육 이수 60시간" },
+    coaching: { hours: 100, label: "코칭 실습 100시간" },
+    description: "국제코치연맹 ACC 자격 요건",
+  },
+  PCC: {
+    label: "ICF PCC",
     education: { hours: 125, label: "교육 이수 125시간" },
     coaching: { hours: 500, label: "코칭 실습 500시간" },
-    description: "전문 레벨 코칭 자격증",
+    description: "국제코치연맹 PCC 자격 요건",
+  },
+  MCC: {
+    label: "ICF MCC",
+    education: { hours: 200, label: "교육 이수 200시간" },
+    coaching: { hours: 2500, label: "코칭 실습 2,500시간" },
+    description: "국제코치연맹 MCC 자격 요건",
   },
 } as const;
 
@@ -58,14 +82,14 @@ export default function CertificationChecklist({
   user: User;
   progress: ProgressData;
 }) {
+  const currentGoal = (user.certificationGoal as GoalKey | "SMPCC") || "KAC";
   const [changeDialogOpen, setChangeDialogOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<GoalKey>(
-    (user.certificationGoal === "KPC" ? "KPC" : "KAC"),
+    currentGoal === "SMPCC" ? "KAC" : currentGoal
   );
   const [isChanging, setIsChanging] = useState(false);
   const changeGoal = useMutation(api.users.setCertificationGoal);
 
-  const currentGoal = (user.certificationGoal as string) ?? "KAC";
   const isSMPCC = currentGoal === "SMPCC";
   const req = !isSMPCC ? REQUIREMENTS[currentGoal as GoalKey] : null;
 
@@ -154,9 +178,11 @@ export default function CertificationChecklist({
     }
     setIsChanging(true);
     try {
-      await changeGoal({});
+      await changeGoal({ goal: selectedGoal });
+      localStorage.setItem("selected_progress_goal", selectedGoal);
       toast.success(`목표가 ${selectedGoal}로 변경되었습니다.`);
       setChangeDialogOpen(false);
+      window.location.reload();
     } catch {
       toast.error("목표 변경에 실패했습니다. 다시 시도해 주세요.");
     } finally {
@@ -177,7 +203,7 @@ export default function CertificationChecklist({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <GraduationCap className="w-5 h-5 text-primary" />
-              <CardTitle className="text-base font-semibold">한국코치협회 자격 취득 요건</CardTitle>
+              <CardTitle className="text-base font-semibold">KCA / ICF 자격 취득 요건</CardTitle>
             </div>
             <div className="flex items-center gap-2">
               {allDone && (

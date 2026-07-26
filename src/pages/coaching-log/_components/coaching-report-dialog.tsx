@@ -19,7 +19,7 @@ type CoachingLog = Doc<"coachingLogs"> & { evidenceUrl?: string | null; reviewer
 type UserInfo = {
   name?: string;
   email?: string;
-  certificationGoal?: "KAC" | "KPC" | "SMPCC";
+  certificationGoal?: "KAC" | "KPC" | "KSC" | "ACC" | "PCC" | "MCC" | "SMPCC";
 };
 
 type Summary = {

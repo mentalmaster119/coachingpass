@@ -34,7 +34,7 @@ function buildScoreMap(assessment: Doc<"competencyAssessments">): ScoreMap {
   return map;
 }
 
-function getAreaAverage(scoreMap: ScoreMap, area: CompetencyArea, goal: "KAC" | "KPC" | "SMPCC"): number {
+function getAreaAverage(scoreMap: ScoreMap, area: CompetencyArea, goal: "KAC" | "KPC" | "KSC" | "ACC" | "PCC" | "MCC" | "SMPCC"): number {
   const items = getItemsForGoal(goal).filter((i) => i.area === area);
   if (items.length === 0) return 0;
   const scores = items.map((i) => scoreMap[i.id] ?? 0).filter((s) => s > 0);

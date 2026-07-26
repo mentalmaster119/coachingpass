@@ -17,7 +17,7 @@ type EducationRecord = Doc<"educationRecords"> & { certificateUrl?: string | nul
 type UserInfo = {
   name?: string;
   email?: string;
-  certificationGoal?: "KAC" | "KPC" | "SMPCC";
+  certificationGoal?: "KAC" | "KPC" | "KSC" | "ACC" | "PCC" | "MCC" | "SMPCC";
 };
 
 type Summary = {

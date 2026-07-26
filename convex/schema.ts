@@ -20,8 +20,7 @@ export default defineSchema({
     rejectionReason: v.optional(v.string()),
     onboardingCompleted: v.boolean(),
     assignedCoachId: v.optional(v.id("users")), // senior coach assigned to this trainee
-    // Legacy field kept for DB compatibility (SMPCC is the only certification goal now)
-    certificationGoal: v.optional(v.union(v.literal("KAC"), v.literal("KPC"), v.literal("SMPCC"))),
+    certificationGoal: v.optional(v.union(v.literal("KAC"), v.literal("KPC"), v.literal("KSC"), v.literal("ACC"), v.literal("PCC"), v.literal("MCC"), v.literal("SMPCC"))),
     // Extended profile fields
     avatarStorageId: v.optional(v.id("_storage")),
     bio: v.optional(v.string()),            // 자기소개
@@ -256,7 +255,7 @@ export default defineSchema({
   competencyAssessments: defineTable({
     userId: v.id("users"),
     assessedAt: v.string(), // ISO 8601 date string
-    certificationGoal: v.optional(v.union(v.literal("SMPCC"), v.literal("KAC"), v.literal("KPC"))),
+    certificationGoal: v.optional(v.union(v.literal("SMPCC"), v.literal("KAC"), v.literal("KPC"), v.literal("KSC"), v.literal("ACC"), v.literal("PCC"), v.literal("MCC"))),
     scores: v.array(
       v.object({
         itemId: v.string(),  // e.g. "rel_rapport"
@@ -571,7 +570,7 @@ export default defineSchema({
 
   certificationApplications: defineTable({
     userId: v.id("users"),
-    certificationGoal: v.optional(v.union(v.literal("SMPCC"), v.literal("KAC"), v.literal("KPC"))),
+    certificationGoal: v.optional(v.union(v.literal("SMPCC"), v.literal("KAC"), v.literal("KPC"), v.literal("KSC"), v.literal("ACC"), v.literal("PCC"), v.literal("MCC"))),
     submittedAt: v.string(), // ISO 8601
     status: v.union(
       v.literal("submitted"),    // 신청 완료, 검토 대기

@@ -212,10 +212,10 @@ export const ALL_COMPETENCY_ITEMS: CompetencyItem[] = [
 ];
 
 /** 자격증 목표에 맞는 항목만 반환 */
-export function getItemsForGoal(goal: "KAC" | "KPC" | "SMPCC"): CompetencyItem[] {
-  if (goal === "KAC") return ALL_COMPETENCY_ITEMS.filter((item) => item.kac);
-  if (goal === "KPC") return ALL_COMPETENCY_ITEMS.filter((item) => item.kpc);
-  // SMPCC: 전체 항목 반환
+export function getItemsForGoal(goal: "KAC" | "KPC" | "KSC" | "ACC" | "PCC" | "MCC" | "SMPCC"): CompetencyItem[] {
+  if (goal === "KAC" || goal === "ACC") return ALL_COMPETENCY_ITEMS.filter((item) => item.kac);
+  if (goal === "KPC" || goal === "PCC") return ALL_COMPETENCY_ITEMS.filter((item) => item.kpc);
+  // KSC, MCC, SMPCC: 전체 항목 반환
   return ALL_COMPETENCY_ITEMS;
 }
 

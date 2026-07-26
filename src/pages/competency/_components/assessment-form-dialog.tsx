@@ -27,7 +27,7 @@ import {
 type Props = {
   open: boolean;
   onClose: () => void;
-  certificationGoal: "KAC" | "KPC" | "SMPCC";
+  certificationGoal: "KAC" | "KPC" | "KSC" | "ACC" | "PCC" | "MCC" | "SMPCC";
 };
 
 export default function AssessmentFormDialog({ open, onClose, certificationGoal }: Props) {

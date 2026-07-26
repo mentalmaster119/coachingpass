@@ -145,11 +145,25 @@ export default function TraineeDetailPage() {
     );
   }
 
+  const getTargets = (goal: string | undefined) => {
+    switch (goal) {
+      case "KAC": return { education: 20, coaching: 50 };
+      case "KPC": return { education: 60, coaching: 300 };
+      case "KSC": return { education: 150, coaching: 1000 };
+      case "ACC": return { education: 60, coaching: 100 };
+      case "PCC": return { education: 125, coaching: 500 };
+      case "MCC": return { education: 200, coaching: 2500 };
+      default: return { education: 20, coaching: 50 };
+    }
+  };
+
+  const targets = getTargets(detail?.user.certificationGoal);
+
   const educationPct = detail
-    ? Math.min((detail.approvedEducationHours / detail.educationTarget) * 100, 100)
+    ? Math.min((detail.approvedEducationHours / targets.education) * 100, 100)
     : 0;
   const coachingPct = detail
-    ? Math.min((detail.approvedCoachingHours / detail.coachingTarget) * 100, 100)
+    ? Math.min((detail.approvedCoachingHours / targets.coaching) * 100, 100)
     : 0;
   const overallPct = Math.round((educationPct + coachingPct) / 2);
 
@@ -223,7 +237,7 @@ export default function TraineeDetailPage() {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">교육 이수</p>
                   <RadialProgressRing
                     value={educationPct}
-                    label={`${detail!.approvedEducationHours} / ${detail!.educationTarget}시간`}
+                    label={`${detail!.approvedEducationHours} / ${targets.education}시간`}
                     color="hsl(var(--chart-3))"
                     size={120}
                   />
@@ -233,7 +247,7 @@ export default function TraineeDetailPage() {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">코칭 실습</p>
                   <RadialProgressRing
                     value={coachingPct}
-                    label={`${detail!.approvedCoachingHours} / ${detail!.coachingTarget}시간`}
+                    label={`${detail!.approvedCoachingHours} / ${targets.coaching}시간`}
                     color="hsl(var(--chart-1))"
                     size={120}
                   />

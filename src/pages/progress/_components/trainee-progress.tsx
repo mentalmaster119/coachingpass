@@ -133,7 +133,19 @@ export default function TraineeProgressPage({ user }: { user: User }) {
   const navigate = useNavigate();
   const [reportOpen, setReportOpen] = useState(false);
   const progress = useQuery(api.progress.getMyProgress);
-  const targets = user.certificationGoal === "KPC" ? KPC : KAC;
+
+  const getTargets = (goal: string | undefined) => {
+    switch (goal) {
+      case "KAC": return { education: 20, coaching: 50 };
+      case "KPC": return { education: 60, coaching: 300 };
+      case "KSC": return { education: 150, coaching: 1000 };
+      case "ACC": return { education: 60, coaching: 100 };
+      case "PCC": return { education: 125, coaching: 500 };
+      case "MCC": return { education: 200, coaching: 2500 };
+      default: return { education: 20, coaching: 50 };
+    }
+  };
+  const targets = getTargets(user.certificationGoal);
 
   const educationPct =
     progress ? Math.min((progress.approvedEducationHours / targets.education) * 100, 100) : 0;

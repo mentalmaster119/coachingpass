@@ -153,12 +153,25 @@ export const getCurrentUser = query({
 });
 
 export const setCertificationGoal = mutation({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    goal: v.optional(
+      v.union(
+        v.literal("KAC"),
+        v.literal("KPC"),
+        v.literal("KSC"),
+        v.literal("ACC"),
+        v.literal("PCC"),
+        v.literal("MCC")
+      )
+    ),
+  },
+  handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
-    await ctx.db.patch(user._id, {
-      onboardingCompleted: true,
-    });
+    const patchData: any = { onboardingCompleted: true };
+    if (args.goal) {
+      patchData.certificationGoal = args.goal;
+    }
+    await ctx.db.patch(user._id, patchData);
   },
 });
 
