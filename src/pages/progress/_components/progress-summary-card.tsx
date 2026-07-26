@@ -71,38 +71,28 @@ export default function ProgressSummaryCard({ user }: { user: SummaryUser }) {
   const monthlyStats = useQuery(api.dashboard.getTraineeThisMonthStats);
   const attendanceStats = useQuery(api.dashboard.getMyAttendanceStats);
   const mentorSummary = useQuery(api.mentorCoaching.getMySummary);
-
-  const requirements =
-    user.certificationGoal === "KPC" ? KPC_REQUIREMENTS : KAC_REQUIREMENTS;
+  const coachingSummary = useQuery(api.coaching.getMySummary);
 
   const isLoading =
     progressData === undefined ||
     monthlyStats === undefined ||
     attendanceStats === undefined ||
-    mentorSummary === undefined;
+    mentorSummary === undefined ||
+    coachingSummary === undefined;
 
-  const currentValues = {
-    education: progressData?.approvedEducationHours ?? 0,
-    coaching: progressData?.approvedCoachingHours ?? 0,
-  };
+  const coachingCount = coachingSummary?.approvedSessionCount ?? 0;
+  const coachingPct = Math.min((coachingCount / 20) * 100, 100);
+  const coachingDone = coachingCount >= 20;
 
-  const eduPct = progressData
-    ? Math.min((currentValues.education / requirements.education.target) * 100, 100)
-    : 0;
-  const coachPct = progressData
-    ? Math.min((currentValues.coaching / requirements.coaching.target) * 100, 100)
-    : 0;
-  const overallPct = Math.round((eduPct + coachPct) / 2);
+  const attendedSeminars = attendanceStats?.attendedSeminars ?? 0;
+  const absentSeminars = attendanceStats?.absentSeminars ?? 0;
+  const hasSessionFailure = attendanceStats?.hasSessionFailure ?? false;
+  
+  const eduFailed = absentSeminars >= 3 || hasSessionFailure;
+  const eduDone = attendedSeminars >= 10 && !hasSessionFailure;
+  const eduPct = Math.min((attendedSeminars / 12) * 100, 100);
 
-  // Activity streak: consecutive days with at least one log
-  const streakDays = (() => {
-    if (!progressData) return 0;
-    // Use monthly activity — count months with activity as a rough streak indicator
-    const activeMonths = progressData.monthlyActivity.filter(
-      (m) => m.educationHours > 0 || m.coachingHours > 0,
-    );
-    return activeMonths.length;
-  })();
+  const overallPct = Math.round((eduPct + coachingPct) / 2);
 
   const goalLabel =
     user.certificationGoal === "KPC" ? "멘탈코칭전문가 2급" : "멘탈코칭전문가 1급";
@@ -145,45 +135,46 @@ export default function ProgressSummaryCard({ user }: { user: SummaryUser }) {
                 </div>
 
                 {/* Mini gauges + text */}
-                <div className="flex-1 space-y-2.5">
-                  {Object.entries(requirements).map(([key, req]) => {
-                    const current = currentValues[key as keyof typeof currentValues];
-                    const pct = Math.min((current / req.target) * 100, 100);
-                    const done = current >= req.target;
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => navigate(req.href)}
-                        className="w-full text-left group"
-                      >
-                        <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-xs font-medium text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
-                            {key === "education" ? (
-                              <BookOpen className="w-3 h-3 text-blue-500" />
-                            ) : (
-                              <ClipboardList className="w-3 h-3 text-green-500" />
-                            )}
-                            {req.label}
-                          </span>
-                          <span
-                            className={cn(
-                              "text-xs font-bold",
-                              done ? "text-green-600 dark:text-green-400" : "text-foreground",
-                            )}
-                          >
-                            {Math.round(current * 10) / 10}
-                            <span className="text-[10px] font-normal text-muted-foreground ml-0.5">
-                              / {req.target}{req.unit}
-                            </span>
-                          </span>
-                        </div>
-                        <Progress
-                          value={pct}
-                          className={cn("h-1.5", done ? "[&>div]:bg-green-500" : "")}
-                        />
-                      </button>
-                    );
-                  })}
+                <div className="flex-1 space-y-3">
+                  {/* 교육 이수 (세미나 출석) */}
+                  <button onClick={() => navigate("/calendar")} className="w-full text-left group block">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs font-medium text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
+                        <BookOpen className="w-3 h-3 text-blue-500" />
+                        교육 이수 (세미나 출석)
+                      </span>
+                      <span className={cn("text-xs font-bold", eduFailed ? "text-destructive" : eduDone ? "text-green-600 dark:text-green-400" : "text-foreground")}>
+                        {attendedSeminars}
+                        <span className="text-[10px] font-normal text-muted-foreground ml-0.5">
+                          / 12일 {eduFailed ? "(미수료)" : eduDone ? "(수료)" : "(진행중)"}
+                        </span>
+                      </span>
+                    </div>
+                    <Progress
+                      value={eduPct}
+                      className={cn("h-1.5", eduFailed ? "[&>div]:bg-destructive" : eduDone ? "[&>div]:bg-green-500" : "")}
+                    />
+                  </button>
+
+                  {/* 코칭 실습 */}
+                  <button onClick={() => navigate("/coaching-log")} className="w-full text-left group block">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs font-medium text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
+                        <ClipboardList className="w-3 h-3 text-green-500" />
+                        코칭 실습
+                      </span>
+                      <span className={cn("text-xs font-bold", coachingDone ? "text-green-600 dark:text-green-400" : "text-foreground")}>
+                        {coachingCount}
+                        <span className="text-[10px] font-normal text-muted-foreground ml-0.5">
+                          / 20회
+                        </span>
+                      </span>
+                    </div>
+                    <Progress
+                      value={coachingPct}
+                      className={cn("h-1.5", coachingDone ? "[&>div]:bg-green-500" : "")}
+                    />
+                  </button>
                 </div>
               </div>
 
@@ -238,41 +229,11 @@ export default function ProgressSummaryCard({ user }: { user: SummaryUser }) {
                 ))}
               </div>
 
-              {/* ── Mentor coaching + activity streak row ── */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border">
-                  <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center flex-shrink-0">
-                    <Award className="w-4 h-4 text-orange-500" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs text-muted-foreground">멘토코칭</p>
-                    <p className="text-sm font-bold">
-                      {mentorSummary.mentorCoachingCount}
-                      <span className="text-[10px] font-normal text-muted-foreground ml-0.5">
-                        회
-                      </span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex-1 flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border">
-                  <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center flex-shrink-0">
-                    <Flame className="w-4 h-4 text-amber-500" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs text-muted-foreground">활동 월수</p>
-                    <p className="text-sm font-bold">
-                      {streakDays}
-                      <span className="text-[10px] font-normal text-muted-foreground ml-0.5">
-                        개월
-                      </span>
-                    </p>
-                  </div>
-                </div>
-
+              {/* ── Action buttons row ── */}
+              <div className="flex items-center justify-end">
                 <button
                   onClick={() => navigate("/progress")}
-                  className="flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors text-primary text-xs font-medium cursor-pointer flex-shrink-0"
+                  className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors text-primary text-xs font-medium cursor-pointer"
                 >
                   상세보기
                   <ChevronRight className="w-3.5 h-3.5" />

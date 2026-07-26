@@ -311,6 +311,8 @@ export const getMyAttendanceStats = query({
     attendedSeminars: number;
     attendanceRate: number;
     thisMonthAttended: number;
+    absentSeminars: number;
+    hasSessionFailure: boolean;
   }> => {
     const user = await getAuthenticatedUser(ctx);
     const today = new Date().toISOString().slice(0, 10);
@@ -325,6 +327,8 @@ export const getMyAttendanceStats = query({
     let totalSeminars = 0; // Total day-slots
     let attendedSeminars = 0; // Attended day-slots
     let thisMonthAttended = 0;
+    let totalAbsentDays = 0;
+    let hasSessionFailure = false;
 
     for (const m of memberships) {
       const seminars = await ctx.db
@@ -336,6 +340,7 @@ export const getMyAttendanceStats = query({
 
       for (const s of pastSeminars) {
         const dates = s.startDate === s.endDate ? [s.startDate] : [s.startDate, s.endDate];
+        let sessionAbsentCount = 0;
         
         for (const date of dates) {
           totalSeminars++;
@@ -350,7 +355,13 @@ export const getMyAttendanceStats = query({
           if (record && (record.status === "present" || record.status === "late" || record.status === "excused")) {
             attendedSeminars++;
             if (date.startsWith(monthKey)) thisMonthAttended++;
+          } else {
+            totalAbsentDays++;
+            sessionAbsentCount++;
           }
+        }
+        if (sessionAbsentCount >= 2) {
+          hasSessionFailure = true;
         }
       }
     }
@@ -359,7 +370,14 @@ export const getMyAttendanceStats = query({
       ? Math.round((attendedSeminars / totalSeminars) * 100)
       : 0;
 
-    return { totalSeminars, attendedSeminars, attendanceRate, thisMonthAttended };
+    return {
+      totalSeminars,
+      attendedSeminars,
+      attendanceRate,
+      thisMonthAttended,
+      absentSeminars: totalAbsentDays,
+      hasSessionFailure,
+    };
   },
 });
 

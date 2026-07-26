@@ -59,12 +59,6 @@ const REQUIREMENTS = {
     coaching: { hours: 100, label: "코칭 실습 100시간" },
     description: "국제코치연맹 ACC 자격 요건",
   },
-  PCC: {
-    label: "ICF PCC",
-    education: { hours: 125, label: "교육 이수 125시간" },
-    coaching: { hours: 500, label: "코칭 실습 500시간" },
-    description: "국제코치연맹 PCC 자격 요건",
-  },
   MCC: {
     label: "ICF MCC",
     education: { hours: 200, label: "교육 이수 200시간" },
