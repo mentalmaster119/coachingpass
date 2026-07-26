@@ -749,7 +749,7 @@ export default function TraineeDashboard({ user }: { user: User }) {
               { icon: <NotebookPen className="w-4 h-4" />, label: "성찰 일지", sub: "일지 작성", href: "/reflection", color: "text-purple-600 bg-purple-50 dark:bg-purple-900/20" },
               { icon: <BarChart2 className="w-4 h-4" />, label: "역량 평가", sub: "자가 평가", href: "/competency-assessment", color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20" },
               { icon: <Award className="w-4 h-4" />, label: "자격증 신청", sub: "신청 현황", href: "/certification", color: "text-amber-600 bg-amber-50 dark:bg-amber-900/20" },
-              { icon: <Target className="w-4 h-4" />, label: "인정 기준 현황", sub: "NCP·BCP·MCP", href: "/recognition-status", color: "text-primary bg-primary/10" },
+              { icon: <Target className="w-4 h-4" />, label: "인정 기준 현황", sub: "NCP·BCP·MCP·SVP", href: "/recognition-status", color: "text-primary bg-primary/10" },
             ].map((item) => (
               <button
                 key={item.href}
