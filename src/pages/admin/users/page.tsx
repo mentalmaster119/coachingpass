@@ -310,6 +310,7 @@ function AllUsersTable({
   const updateRole = useMutation(api.admin.updateUserRole);
   const approveUser = useMutation(api.admin.approveUser);
   const changeCohort = useMutation(api.cohorts.changeMemberCohort);
+  const toggleMentor = useMutation(api.admin.toggleMentorCoach);
   const cohorts = useQuery(api.cohorts.list, {});
   const { user: currentUser } = useCurrentUser();
 
@@ -319,6 +320,15 @@ function AllUsersTable({
       toast.success("기수가 변경되었습니다.");
     } catch {
       toast.error("기수 변경 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleToggleMentorCoach = async (userId: Id<"users">, isMentor: boolean) => {
+    try {
+      await toggleMentor({ userId, isMentorCoach: isMentor });
+      toast.success(isMentor ? "멘토코치로 지정되었습니다." : "멘토코치 지정이 취소되었습니다.");
+    } catch {
+      toast.error("멘토코치 지정 처리 중 오류가 발생했습니다.");
     }
   };
 
@@ -402,6 +412,9 @@ function AllUsersTable({
                       {u.cohortName && (
                         <Badge variant="outline" className="text-xs flex-shrink-0">{u.cohortName}</Badge>
                       )}
+                      {u.isMentorCoach && (
+                        <Badge className="bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800 text-[10px] h-4 px-1 flex-shrink-0">멘토코치</Badge>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                   </div>
@@ -442,6 +455,23 @@ function AllUsersTable({
                             </SelectContent>
                           </Select>
                         )}
+
+                        <Button
+                          size="sm"
+                          variant={u.isMentorCoach ? "default" : "outline"}
+                          className={cn(
+                            "h-7 text-xs px-2 cursor-pointer transition-colors",
+                            u.isMentorCoach
+                              ? "bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+                              : "text-purple-600 border-purple-200 hover:bg-purple-50 hover:text-purple-700 dark:border-purple-900/30 dark:hover:bg-purple-900/20"
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleMentorCoach(u._id, !u.isMentorCoach);
+                          }}
+                        >
+                          {u.isMentorCoach ? "멘토 지정됨" : "멘토 지정"}
+                        </Button>
                       </div>
                     )}
 

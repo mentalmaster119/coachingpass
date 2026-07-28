@@ -194,6 +194,7 @@ export const updateDetailedProfile = mutation({
     coachingStyle: v.optional(v.string()),
     mbti: v.optional(v.string()),
     motivationalMessage: v.optional(v.string()),
+    hasMentalCoachLicense: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
@@ -205,6 +206,7 @@ export const updateDetailedProfile = mutation({
       coachingStyle: args.coachingStyle,
       mbti: args.mbti,
       motivationalMessage: args.motivationalMessage,
+      hasMentalCoachLicense: args.hasMentalCoachLicense,
     });
   },
 });
@@ -242,6 +244,7 @@ export const getMyPortfolio = query({
       joinedAt: string | null;
       mbti: string | null;
       motivationalMessage: string | null;
+      hasMentalCoachLicense: boolean | null;
     };
     stats: {
       approvedEducationHours: number;
@@ -334,6 +337,7 @@ export const getMyPortfolio = query({
         joinedAt: user.joinedAt ?? null,
         mbti: user.mbti ?? null,
         motivationalMessage: user.motivationalMessage ?? null,
+        hasMentalCoachLicense: user.hasMentalCoachLicense ?? null,
       },
       stats: {
         approvedEducationHours: Math.round(approvedEducationHours * 10) / 10,
@@ -574,5 +578,82 @@ export const forceClearMockRoles = mutation({
         await ctx.db.patch(u._id, { activeMockRole: undefined, activeMockTraineeId: undefined });
       }
     }
+  },
+});
+
+// 멘토코치 리스트 조회 (교육생 열람용)
+export const listMentorCoaches = query({
+  args: {},
+  handler: async (ctx): Promise<Array<{
+    _id: Id<"users">;
+    name: string;
+    email: string;
+    bio: string | null;
+    phone: string | null;
+    specializations: string[];
+    coachingStyle: string | null;
+    avatarUrl: string | null;
+    mbti: string | null;
+    hasMentalCoachLicense: boolean;
+  }>> => {
+    const mentorCoaches = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("isMentorCoach"), true))
+      .collect();
+
+    return await Promise.all(
+      mentorCoaches.map(async (u) => {
+        const avatarUrl = u.avatarStorageId
+          ? await ctx.storage.getUrl(u.avatarStorageId)
+          : null;
+        return {
+          _id: u._id,
+          name: u.name ?? "이름 미설정",
+          email: u.email ?? "",
+          bio: u.bio ?? null,
+          phone: u.phone ?? null,
+          specializations: u.specializations ?? [],
+          coachingStyle: u.coachingStyle ?? null,
+          avatarUrl,
+          mbti: u.mbti ?? null,
+          hasMentalCoachLicense: u.hasMentalCoachLicense ?? false,
+        };
+      })
+    );
+  },
+});
+
+// 멘토코칭 매칭 신청 처리
+export const requestMentoring = mutation({
+  args: {
+    mentorId: v.id("users"),
+    message: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new ConvexError({ message: "로그인이 필요합니다", code: "UNAUTHENTICATED" });
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+    if (!user) throw new ConvexError({ message: "사용자를 찾을 수 없습니다", code: "NOT_FOUND" });
+
+    // 멘토용 알림 생성
+    await ctx.db.insert("notifications", {
+      userId: args.mentorId,
+      type: "feedback_received",
+      title: "멘토코칭 매칭 신청",
+      message: `${user.name ?? "교육생"}님으로부터 멘토코칭 매칭 신청이 도착했습니다.\n\n신청 메시지: "${args.message}"\n연락처: ${user.phone ?? "미등록"}\n이메일: ${user.email ?? ""}`,
+      isRead: false,
+    });
+
+    // 신청자용 확인 알림 생성
+    await ctx.db.insert("notifications", {
+      userId: user._id,
+      type: "announcement",
+      title: "멘토코칭 신청 완료",
+      message: `멘토코칭 신청이 성공적으로 접수되었습니다. 지정된 멘토코치님께 연락이 전달되었습니다.`,
+      isRead: false,
+    });
   },
 });

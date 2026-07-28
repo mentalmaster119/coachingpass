@@ -39,6 +39,8 @@ export default defineSchema({
     activeMockRole: v.optional(v.union(v.literal("trainee"), v.literal("senior_coach"))), // 어드민별 화면 프리뷰 역할 설정
     activeMockTraineeId: v.optional(v.id("users")), // 프리뷰 대상이 될 실제 교육생 ID (가장 많은 기록 보유자 등)
     passwordHash: v.optional(v.string()), // 자체 로그인을 위한 비밀번호 해시
+    isMentorCoach: v.optional(v.boolean()), // 어드민 지정 멘토코치 여부
+    hasMentalCoachLicense: v.optional(v.boolean()), // 개인 프로필 자격취득 여부
   })
     .index("by_token", ["tokenIdentifier"])
     .index("by_approval_status", ["approvalStatus"])

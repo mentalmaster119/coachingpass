@@ -62,6 +62,7 @@ export default function ProfilePage() {
               avatarUrl: user.avatarUrl,
               mbti: user.mbti ?? null,
               motivationalMessage: user.motivationalMessage ?? null,
+              hasMentalCoachLicense: user.hasMentalCoachLicense ?? null,
             }}
           />
         </TabsContent>

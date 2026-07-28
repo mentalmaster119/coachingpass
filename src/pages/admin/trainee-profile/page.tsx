@@ -189,6 +189,17 @@ export default function AdminTraineeProfilePage() {
                   {user.mbti && (
                     <Badge variant="outline" className="text-xs">{user.mbti}</Badge>
                   )}
+                  {user.hasMentalCoachLicense && (
+                    <Badge className="bg-purple-600 hover:bg-purple-700 text-white text-xs gap-0.5 select-none">
+                      <Award className="w-3.5 h-3.5" />
+                      자격 취득
+                    </Badge>
+                  )}
+                  {user.isMentorCoach && (
+                    <Badge className="bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800 text-xs">
+                      멘토코치
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1 mt-1">
                   {user.email && (

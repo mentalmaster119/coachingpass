@@ -90,6 +90,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
         items: [
           { label: "일반 코칭실습 기록", href: "/coaching-log" },
           { label: "버디코칭 실습 기록", href: "/bcp" },
+          { label: "멘토코치 매칭 및 신청", href: "/mentors" },
           { label: "멘토코칭 실습 기록", href: "/mentor-coaching" },
           { label: "슈퍼비전 기록", href: "/supervision" },
         ]
@@ -190,6 +191,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       items: [
         { label: "일반 코칭실습 기록", href: "/coaching-log" },
         { label: "버디코칭 실습 기록", href: "/bcp" },
+        { label: "멘토코치 매칭 및 신청", href: "/mentors" },
         { label: "멘토코칭 실습 기록", href: "/mentor-coaching" },
         { label: "슈퍼비전 기록", href: "/supervision" },
       ]

@@ -35,6 +35,7 @@ type ProfileData = {
   avatarUrl: string | null;
   mbti: string | null;
   motivationalMessage: string | null;
+  hasMentalCoachLicense: boolean | null;
 };
 
 type ProfileEditFormProps = {
@@ -55,6 +56,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
   const [coachingStyle, setCoachingStyle] = useState(profile.coachingStyle ?? "");
   const [mbti, setMbti] = useState(profile.mbti ?? "");
   const [motivationalMessage, setMotivationalMessage] = useState(profile.motivationalMessage ?? "");
+  const [hasMentalCoachLicense, setHasMentalCoachLicense] = useState(profile.hasMentalCoachLicense ?? false);
   const [tagInput, setTagInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -96,6 +98,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
       if (coachingStyle.trim()) payload.coachingStyle = coachingStyle.trim();
       if (mbti.trim() && mbti !== "none") payload.mbti = mbti.trim();
       if (motivationalMessage.trim()) payload.motivationalMessage = motivationalMessage.trim();
+      payload.hasMentalCoachLicense = hasMentalCoachLicense;
 
       await updateProfile(payload);
       toast.success("프로필이 저장되었습니다.");
@@ -207,6 +210,30 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
             maxLength={500}
           />
           <p className="text-xs text-muted-foreground text-right">{bio.length}/500</p>
+        </div>
+
+        {/* Mental Coach License Status */}
+        <div className="space-y-2 p-3.5 border rounded-lg bg-primary/5 border-primary/20">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm font-semibold text-foreground">멘탈코칭전문가 자격증 취득 여부</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                멘탈코칭전문가 자격증을 취득하셨습니까? (1~15기 수료 및 취득 코치 포함)
+              </p>
+            </div>
+            <Select
+              value={hasMentalCoachLicense ? "yes" : "no"}
+              onValueChange={(val) => setHasMentalCoachLicense(val === "yes")}
+            >
+              <SelectTrigger className="w-28 h-9 cursor-pointer">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no">미취득</SelectItem>
+                <SelectItem value="yes">취득 완료</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Coaching style */}

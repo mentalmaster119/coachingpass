@@ -128,6 +128,17 @@ export const updateUserRole = mutation({
   },
 });
 
+export const toggleMentorCoach = mutation({
+  args: {
+    userId: v.id("users"),
+    isMentorCoach: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    await ctx.db.patch(args.userId, { isMentorCoach: args.isMentorCoach });
+  },
+});
+
 // 사용자 비밀번호 초기화
 export const resetUserPassword = mutation({
   args: {
@@ -345,6 +356,8 @@ export const getTraineeFullProfile = query({
       certificationGoal: string | null;
       onboardingCompleted: boolean;
       cohortName: string | null;
+      hasMentalCoachLicense: boolean | null;
+      isMentorCoach: boolean | null;
     };
     stats: {
       totalCoachingLogs: number;
@@ -469,6 +482,8 @@ export const getTraineeFullProfile = query({
         certificationGoal: user.certificationGoal ?? null,
         onboardingCompleted: user.onboardingCompleted,
         cohortName: cohort?.name ?? null,
+        hasMentalCoachLicense: user.hasMentalCoachLicense ?? null,
+        isMentorCoach: user.isMentorCoach ?? null,
       },
       stats: {
         totalCoachingLogs: coachingLogs.length,

@@ -51,8 +51,9 @@ import AdminCheckInPage from "./pages/admin/checkin/page.tsx";
 import InstallGuidePage from "./pages/install-guide/page.tsx";
 import AdminTraineeProfilePage from "./pages/admin/trainee-profile/page.tsx";
 import BcpPage from "./pages/bcp/page.tsx";
-import AdminBcpPage from "./pages/admin/bcp/page.tsx";
 import RecognitionStatusPage from "./pages/recognition-status/page.tsx";
+import MentorsPage from "./pages/mentors/page.tsx";
+import AdminBcpPage from "./pages/admin/bcp/page.tsx";
 import SearchPage from "./pages/search/page.tsx";
 import ClassroomBookingPage from "./pages/classroom-booking/page.tsx";
 
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="/education" element={<Navigate to="/training-history" replace />} />
             <Route path="/coaching-log" element={<CoachingLogPage />} />
             <Route path="/mentor-coaching" element={<MentorCoachingPage />} />
+            <Route path="/mentors" element={<MentorsPage />} />
             <Route path="/progress" element={<ProgressPage />} />
             <Route path="/progress/trainee/:userId" element={<TraineeDetailPage />} />
             <Route path="/admin" element={<AdminDashboardPage />} />
