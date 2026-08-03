@@ -6,6 +6,14 @@ import { ConvexError } from "convex/values";
 export const deleteAllTestData = internalMutation({
   args: {},
   handler: async (ctx) => {
+    // Safety guard to protect production database from accidental resets
+    const isProduction =
+      process.env.CONVEX_SITE_URL?.includes("peaceful-wolverine-673") ||
+      process.env.NODE_ENV === "production";
+    if (isProduction) {
+      throw new Error("DANGER: Deleting test data is strictly disabled in the production environment!");
+    }
+
     const tables = [
       "announcements",
       "attendances",
@@ -59,6 +67,14 @@ export const deleteAllTestData = internalMutation({
 export const resetAllData = mutation({
   args: {},
   handler: async (ctx): Promise<{ success: boolean }> => {
+    // Safety guard to protect production database from accidental resets
+    const isProduction =
+      process.env.CONVEX_SITE_URL?.includes("peaceful-wolverine-673") ||
+      process.env.NODE_ENV === "production";
+    if (isProduction) {
+      throw new ConvexError({ message: "DANGER: Resetting database is strictly disabled in the production environment!", code: "FORBIDDEN" });
+    }
+
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new ConvexError({ message: "Unauthenticated", code: "UNAUTHENTICATED" });

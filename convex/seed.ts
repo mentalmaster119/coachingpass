@@ -6,6 +6,14 @@ const DEFAULT_ISSUER = "https://peaceful-wolverine-673.convex.site";
 export const run = mutation({
   args: {},
   handler: async (ctx) => {
+    // Safety guard to protect production database from accidental resets
+    const isProduction =
+      process.env.CONVEX_SITE_URL?.includes("peaceful-wolverine-673") ||
+      process.env.NODE_ENV === "production";
+    if (isProduction) {
+      throw new Error("DANGER: Seeding mock data is strictly disabled in the production environment to protect live user data!");
+    }
+
     // 1. Clear existing data
     const tables = [
       "users",
