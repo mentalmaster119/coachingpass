@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "motion/react";
 import {
@@ -426,6 +426,18 @@ export default function AdminSmpccPage() {
     { key: "sports_coaching_advanced", name: "스포츠멘탈코칭강독 심화", hours: 15 },
   ];
 
+  const allCredits = useMemo(() => {
+    const list = [...DEFAULT_CREDITS];
+    if (courseCredits) {
+      for (const cc of courseCredits) {
+        if (!list.some((item) => item.key === cc.courseKey)) {
+          list.push({ key: cc.courseKey, name: cc.courseName, hours: cc.creditHours });
+        }
+      }
+    }
+    return list;
+  }, [courseCredits]);
+
   const [editingCredit, setEditingCredit] = useState<string | null>(null);
   const [creditInput, setCreditInput] = useState<number>(0);
 
@@ -605,7 +617,7 @@ export default function AdminSmpccPage() {
             <p className="text-sm text-muted-foreground">각 과정별로 인정받는 교육시간을 설정합니다. 수강생의 누적 교육시간 계산에 반영됩니다.</p>
           </div>
           <div className="space-y-2">
-            {DEFAULT_CREDITS.map((dc) => {
+            {allCredits.map((dc) => {
               const saved = courseCredits?.find((c) => c.courseKey === dc.key);
               const displayHours = saved?.creditHours ?? dc.hours;
               const isEditing = editingCredit === dc.key;

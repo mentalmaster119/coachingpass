@@ -420,7 +420,7 @@ export const getTraineeFullProfile = query({
       .first();
     const cohort = cohortMember ? await ctx.db.get(cohortMember.cohortId) : null;
 
-    const [coachingLogs, mentorLogs, educationRecords, bookReports, essays, attendances, checkIns, reflections, licenses, certApps] =
+    const [coachingLogs, mentorLogs, educationRecords, bookReports, essays, attendances, checkIns, reflections, licenses, certApps, bcpLogs] =
       await Promise.all([
         ctx.db.query("coachingLogs").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
         ctx.db.query("mentorCoachingLogs").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
@@ -432,11 +432,22 @@ export const getTraineeFullProfile = query({
         ctx.db.query("reflectionJournals").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
         ctx.db.query("coachLicenses").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
         ctx.db.query("certificationApplications").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
+        ctx.db.query("bcpLogs").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
       ]);
 
     const approvedCoaching = coachingLogs.filter((l) => l.approvalStatus === "approved");
     const approvedMentor = mentorLogs.filter((l) => l.approvalStatus === "approved");
     const approvedEdu = educationRecords.filter((r) => r.approvalStatus === "approved");
+
+    const approvedBcpHours = bcpLogs
+      .filter((b) => b.approvalStatus === "approved")
+      .reduce((sum, b) => sum + b.durationMinutes, 0) / 60;
+
+    const approvedBuddyHours = coachingLogs
+      .filter((l: any) => l.coachingType === "buddy" && l.approvalStatus === "approved")
+      .reduce((sum: number, l: any) => sum + l.durationMinutes, 0) / 60;
+
+    const approvedEducationHours = approvedEdu.reduce((s, r) => s + r.hours, 0) + approvedBcpHours + approvedBuddyHours;
 
     const recentCoachingLogs = [...coachingLogs]
       .sort((a, b) => b.coachingDate.localeCompare(a.coachingDate))
@@ -493,7 +504,7 @@ export const getTraineeFullProfile = query({
         approvedMentorLogs: approvedMentor.length,
         approvedMentorMinutes: approvedMentor.reduce((s, l) => s + l.durationMinutes, 0),
         totalEducationRecords: educationRecords.length,
-        approvedEducationHours: approvedEdu.reduce((s, r) => s + r.hours, 0),
+        approvedEducationHours: approvedEducationHours,
         bookReports: bookReports.length,
         approvedBookReports: bookReports.filter((r) => r.approvalStatus === "approved").length,
         essays: essays.length,

@@ -266,16 +266,27 @@ export const getMyPortfolio = query({
   }> => {
     const user = await getAuthenticatedUser(ctx);
 
-    const [educationRecords, coachingLogs, mentorLogs, reflections] = await Promise.all([
+    const [educationRecords, coachingLogs, mentorLogs, reflections, bcpLogs] = await Promise.all([
       ctx.db.query("educationRecords").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
       ctx.db.query("coachingLogs").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
       ctx.db.query("mentorCoachingLogs").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
       ctx.db.query("reflectionJournals").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
+      ctx.db.query("bcpLogs").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
     ]);
+
+    const approvedBcpHours = bcpLogs
+      .filter((b) => b.approvalStatus === "approved")
+      .reduce((sum, b) => sum + b.durationMinutes, 0) / 60;
+
+    const approvedBuddyHours = coachingLogs
+      .filter((l) => l.coachingType === "buddy" && l.approvalStatus === "approved")
+      .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
 
     const approvedEducationHours = educationRecords
       .filter((r) => r.approvalStatus === "approved")
-      .reduce((sum, r) => sum + r.hours, 0);
+      .reduce((sum, r) => sum + r.hours, 0)
+      + approvedBcpHours
+      + approvedBuddyHours;
 
     const approvedCoachingHours =
       coachingLogs
@@ -595,6 +606,8 @@ export const listMentorCoaches = query({
     avatarUrl: string | null;
     mbti: string | null;
     hasMentalCoachLicense: boolean;
+    cohortName: string | null;
+    assignedTraineesCount: number;
   }>> => {
     const mentorCoaches = await ctx.db
       .query("users")
@@ -606,6 +619,26 @@ export const listMentorCoaches = query({
         const avatarUrl = u.avatarStorageId
           ? await ctx.storage.getUrl(u.avatarStorageId)
           : null;
+
+        // Resolve cohort name
+        let cohortName = null;
+        const membership = await ctx.db
+          .query("cohortMembers")
+          .withIndex("by_user", (q) => q.eq("userId", u._id))
+          .first();
+        if (membership) {
+          const cohort = await ctx.db.get(membership.cohortId);
+          if (cohort) {
+            cohortName = cohort.name;
+          }
+        }
+
+        // Count assigned trainees
+        const currentTrainees = await ctx.db
+          .query("users")
+          .filter((q) => q.eq(q.field("assignedCoachId"), u._id))
+          .collect();
+
         return {
           _id: u._id,
           name: u.name ?? "이름 미설정",
@@ -617,6 +650,8 @@ export const listMentorCoaches = query({
           avatarUrl,
           mbti: u.mbti ?? null,
           hasMentalCoachLicense: u.hasMentalCoachLicense ?? false,
+          cohortName,
+          assignedTraineesCount: currentTrainees.length,
         };
       })
     );
@@ -638,6 +673,29 @@ export const requestMentoring = mutation({
       .unique();
     if (!user) throw new ConvexError({ message: "사용자를 찾을 수 없습니다", code: "NOT_FOUND" });
 
+    if (user.assignedCoachId) {
+      if (user.assignedCoachId === args.mentorId) {
+        throw new ConvexError({ message: "이미 이 멘토코치님께 신청된 상태입니다.", code: "BAD_REQUEST" });
+      }
+      throw new ConvexError({ message: "이미 매칭된 멘토코치가 있습니다. 다른 코치로 신청하려면 기존 배정을 해제하거나 취소해 주세요.", code: "BAD_REQUEST" });
+    }
+
+    const mentor = await ctx.db.get(args.mentorId);
+    if (!mentor || !mentor.isMentorCoach) {
+      throw new ConvexError({ message: "올바른 멘토코치가 아닙니다.", code: "BAD_REQUEST" });
+    }
+
+    const currentTrainees = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("assignedCoachId"), args.mentorId))
+      .collect();
+
+    if (currentTrainees.length >= 2) {
+      throw new ConvexError({ message: "해당 멘토코치님은 이미 신청이 마감되었습니다 (최대 2명).", code: "BAD_REQUEST" });
+    }
+
+    await ctx.db.patch(user._id, { assignedCoachId: args.mentorId });
+
     // 멘토용 알림 생성
     await ctx.db.insert("notifications", {
       userId: args.mentorId,
@@ -657,3 +715,35 @@ export const requestMentoring = mutation({
     });
   },
 });
+
+// 멘토코칭 매칭 신청 취소 처리
+export const cancelMentoring = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new ConvexError({ message: "로그인이 필요합니다", code: "UNAUTHENTICATED" });
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+    if (!user) throw new ConvexError({ message: "사용자를 찾을 수 없습니다", code: "NOT_FOUND" });
+
+    const prevMentorId = user.assignedCoachId;
+    if (!prevMentorId) {
+      throw new ConvexError({ message: "신청된 멘토코칭 매칭 내역이 없습니다.", code: "BAD_REQUEST" });
+    }
+
+    await ctx.db.patch(user._id, { assignedCoachId: undefined });
+
+    // Send notification to the previous mentor
+    await ctx.db.insert("notifications", {
+      userId: prevMentorId,
+      type: "feedback_received",
+      title: "멘토코칭 매칭 취소",
+      message: `${user.name ?? "교육생"}님이 멘토코칭 매칭 신청을 취소했습니다.`,
+      isRead: false,
+    });
+  },
+});
+
+

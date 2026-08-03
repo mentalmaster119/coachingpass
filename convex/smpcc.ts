@@ -426,6 +426,7 @@ export const rejectForumAttendance = mutation({
 // ── 누적 인증 시간 ────────────────────────────────────────────────────────────
 
 /** 수강생 본인의 인정 교육시간 누적 조회 */
+/** 수강생 본인의 인정 교육시간 누적 조회 */
 export const getMyCreditHours = query({
   args: {},
   handler: async (ctx) => {
@@ -453,11 +454,28 @@ export const getMyCreditHours = query({
       .collect();
     const educationHours = educationRecords.reduce((sum: number, r) => sum + (r.hours ?? 0), 0);
 
+    const bcpLogs = await ctx.db
+      .query("bcpLogs")
+      .withIndex("by_user_and_status", (q) => q.eq("userId", me._id).eq("approvalStatus", "approved"))
+      .collect();
+    const bcpHours = bcpLogs.reduce((sum, b) => sum + b.durationMinutes, 0) / 60;
+
+    const coachingLogs = await ctx.db
+      .query("coachingLogs")
+      .withIndex("by_user_and_status", (q) => q.eq("userId", me._id).eq("approvalStatus", "approved"))
+      .collect();
+    const buddyCoachingLogs = coachingLogs.filter((l) => l.coachingType === "buddy");
+    const buddyHours = buddyCoachingLogs.reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
+
+    const totalBuddyHours = bcpHours + buddyHours;
+    const buddyCount = bcpLogs.length + buddyCoachingLogs.length;
+
     const breakdown = [
       { key: "mental_forum", label: "멘탈 포럼", hours: forumHours, count: forumAttendances.length },
       { key: "education_record", label: "교육 이수 기록", hours: educationHours, count: educationRecords.length },
+      { key: "buddy_coaching", label: "버디코칭", hours: totalBuddyHours, count: buddyCount },
     ];
-    return { totalHours: forumHours + educationHours, breakdown };
+    return { totalHours: forumHours + educationHours + totalBuddyHours, breakdown };
   },
 });
 
@@ -483,11 +501,28 @@ export const getUserCreditHours = query({
       .collect();
     const educationHours = educationRecords.reduce((sum: number, r) => sum + (r.hours ?? 0), 0);
 
+    const bcpLogs = await ctx.db
+      .query("bcpLogs")
+      .withIndex("by_user_and_status", (q) => q.eq("userId", args.userId).eq("approvalStatus", "approved"))
+      .collect();
+    const bcpHours = bcpLogs.reduce((sum, b) => sum + b.durationMinutes, 0) / 60;
+
+    const coachingLogs = await ctx.db
+      .query("coachingLogs")
+      .withIndex("by_user_and_status", (q) => q.eq("userId", args.userId).eq("approvalStatus", "approved"))
+      .collect();
+    const buddyCoachingLogs = coachingLogs.filter((l) => l.coachingType === "buddy");
+    const buddyHours = buddyCoachingLogs.reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
+
+    const totalBuddyHours = bcpHours + buddyHours;
+    const buddyCount = bcpLogs.length + buddyCoachingLogs.length;
+
     const breakdown = [
       { key: "mental_forum", label: "멘탈 포럼", hours: forumHours, count: forumAttendances.length },
       { key: "education_record", label: "교육 이수 기록", hours: educationHours, count: educationRecords.length },
+      { key: "buddy_coaching", label: "버디코칭", hours: totalBuddyHours, count: buddyCount },
     ];
-    return { totalHours: forumHours + educationHours, breakdown };
+    return { totalHours: forumHours + educationHours + totalBuddyHours, breakdown };
   },
 });
 

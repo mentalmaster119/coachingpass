@@ -37,15 +37,19 @@ import {
 } from "@/components/ui/empty.tsx";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils.ts";
+import { useCurrentUser } from "@/hooks/use-current-user.ts";
 
 export default function MentorsPage() {
   const mentors = useQuery(api.users.listMentorCoaches);
   const requestMentoring = useMutation(api.users.requestMentoring);
+  const cancelMentoring = useMutation(api.users.cancelMentoring);
+  const { user: currentUser } = useCurrentUser();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMentor, setSelectedMentor] = useState<any | null>(null);
   const [applyMessage, setApplyMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [canceling, setCanceling] = useState(false);
 
   const isLoading = mentors === undefined;
 
@@ -82,11 +86,26 @@ export default function MentorsPage() {
       });
       toast.success(`${selectedMentor.name} 멘토코치님께 매칭 신청을 전송했습니다!`);
       setSelectedMentor(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("신청 전송에 실패했습니다. 다시 시도해 주세요.");
+      const errMsg = error instanceof Error ? error.message : String(error);
+      toast.error(errMsg.includes("이미 신청") || errMsg.includes("마감") ? errMsg : "신청 전송에 실패했습니다. 다시 시도해 주세요.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleCancelClick = async () => {
+    if (!window.confirm("멘토코칭 매칭 신청을 취소하시겠습니까?")) return;
+    setCanceling(true);
+    try {
+      await cancelMentoring();
+      toast.success("신청이 취소되었습니다.");
+    } catch (error) {
+      console.error(error);
+      toast.error("신청 취소에 실패했습니다. 다시 시도해 주세요.");
+    } finally {
+      setCanceling(false);
     }
   };
 
@@ -148,110 +167,163 @@ export default function MentorsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AnimatePresence mode="popLayout">
-            {filteredMentors?.map((mentor) => (
-              <motion.div
-                key={mentor._id}
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Card className="overflow-hidden border-purple-100 hover:border-purple-300 shadow-sm hover:shadow-md transition-all h-full flex flex-col justify-between group">
-                  <CardContent className="p-5 flex flex-col justify-between h-full space-y-4">
-                    <div className="flex gap-4 items-start">
-                      {/* Avatar */}
-                      <div className="w-16 h-16 rounded-full bg-purple-100 border border-purple-200 flex-shrink-0 overflow-hidden flex items-center justify-center text-purple-700 font-bold text-lg">
-                        {mentor.avatarUrl ? (
-                          <img
-                            src={mentor.avatarUrl}
-                            alt={mentor.name}
-                            className="w-full h-full object-cover"
-                          />
+            {filteredMentors?.map((mentor) => {
+              const isAppliedToThisMentor = currentUser?.assignedCoachId === mentor._id;
+              const isAppliedToOtherMentor = currentUser?.assignedCoachId && currentUser?.assignedCoachId !== mentor._id;
+              const isMentorFull = mentor.assignedTraineesCount >= 2;
+
+              return (
+                <motion.div
+                  key={mentor._id}
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Card className="overflow-hidden border-purple-100 hover:border-purple-300 shadow-sm hover:shadow-md transition-all h-full flex flex-col justify-between group">
+                    <CardContent className="p-5 flex flex-col justify-between h-full space-y-4">
+                      <div className="flex gap-4 items-start">
+                        {/* Avatar */}
+                        <div className="w-16 h-16 rounded-full bg-purple-100 border border-purple-200 flex-shrink-0 overflow-hidden flex items-center justify-center text-purple-700 font-bold text-lg animate-pulse-once">
+                          {mentor.avatarUrl ? (
+                            <img
+                              src={mentor.avatarUrl}
+                              alt={mentor.name}
+                              className="w-full h-full object-cover animate-fade-in"
+                            />
+                          ) : (
+                            mentor.name.slice(0, 2)
+                          )}
+                        </div>
+
+                        {/* Header info */}
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h3 className="font-semibold text-base text-foreground truncate">
+                              {mentor.name}
+                            </h3>
+                            {mentor.cohortName && (
+                              <Badge variant="outline" className="border-purple-200 text-purple-700 bg-purple-50/50 text-[10px] h-4.5 px-1.5 flex-shrink-0">
+                                {mentor.cohortName}
+                              </Badge>
+                            )}
+                            {mentor.hasMentalCoachLicense && (
+                              <Badge className="bg-purple-600 hover:bg-purple-700 text-white text-[10px] h-4.5 px-1.5 gap-0.5 select-none flex-shrink-0">
+                                <Award className="w-3 h-3" />
+                                자격 취득
+                              </Badge>
+                            )}
+                          </div>
+
+                          {/* Matching Availability Stats */}
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            {isMentorFull ? (
+                              <Badge className="bg-red-100 hover:bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-none text-[10px] h-4.5 px-1.5 flex-shrink-0 font-semibold">
+                                신청불가능 (마감)
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-green-100 hover:bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-none text-[10px] h-4.5 px-1.5 flex-shrink-0 font-semibold">
+                                신청가능
+                              </Badge>
+                            )}
+                            <span className="text-[11px] text-muted-foreground font-medium">
+                              신청 인원: <strong>{mentor.assignedTraineesCount} / 2명</strong>
+                            </span>
+                          </div>
+
+                          {/* Contact details */}
+                          <div className="space-y-0.5 text-xs text-muted-foreground pt-1.5">
+                            {mentor.email && (
+                              <div className="flex items-center gap-1">
+                                <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                                <span className="truncate">{mentor.email}</span>
+                              </div>
+                            )}
+                            {mentor.phone && (
+                              <div className="flex items-center gap-1">
+                                <Phone className="w-3.5 h-3.5 flex-shrink-0" />
+                                <span>{mentor.phone}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bio */}
+                      {mentor.bio && (
+                        <p className="text-xs text-muted-foreground/80 line-clamp-3 leading-relaxed bg-muted/30 p-2.5 rounded-lg border border-muted-foreground/5">
+                          {mentor.bio}
+                        </p>
+                      )}
+
+                      {/* Coaching style */}
+                      {mentor.coachingStyle && (
+                        <div className="space-y-1">
+                          <h4 className="text-[10px] font-semibold text-purple-600 uppercase tracking-wider">
+                            코칭 스타일
+                          </h4>
+                          <p className="text-xs text-foreground/90 font-medium truncate">
+                            {mentor.coachingStyle}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Specializations tags */}
+                      {mentor.specializations.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {mentor.specializations.map((spec: string) => (
+                            <Badge
+                              key={spec}
+                              variant="secondary"
+                              className="bg-purple-100/50 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-none text-[10px] px-1.5 py-0.5"
+                            >
+                              {spec}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Apply / Cancel matching Button */}
+                      <div className="pt-2 border-t border-purple-50">
+                        {isAppliedToThisMentor ? (
+                          <Button
+                            onClick={handleCancelClick}
+                            disabled={canceling}
+                            variant="destructive"
+                            className="w-full text-xs h-9 gap-1.5 cursor-pointer bg-red-600 hover:bg-red-700 text-white"
+                          >
+                            <UserCheck className="w-3.5 h-3.5" />
+                            {canceling ? "취소 처리 중..." : "신청 취소하기 (배정 완료)"}
+                          </Button>
+                        ) : isAppliedToOtherMentor ? (
+                          <Button
+                            disabled
+                            className="w-full bg-muted text-muted-foreground text-xs h-9 gap-1.5 cursor-not-allowed border border-border"
+                          >
+                            다른 멘토 신청됨
+                          </Button>
+                        ) : isMentorFull ? (
+                          <Button
+                            disabled
+                            className="w-full bg-red-100 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-xs h-9 gap-1.5 cursor-not-allowed border border-red-200 dark:border-red-900/50 font-semibold"
+                          >
+                            신청 마감
+                          </Button>
                         ) : (
-                          mentor.name.slice(0, 2)
+                          <Button
+                            onClick={() => handleApplyClick(mentor)}
+                            className="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs h-9 gap-1.5 cursor-pointer"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            멘토코칭 신청하기
+                          </Button>
                         )}
                       </div>
-
-                      {/* Header info */}
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <h3 className="font-semibold text-base text-foreground truncate">
-                            {mentor.name}
-                          </h3>
-                          {mentor.hasMentalCoachLicense && (
-                            <Badge className="bg-purple-600 hover:bg-purple-700 text-white text-[10px] h-4.5 px-1.5 gap-0.5 select-none flex-shrink-0">
-                              <Award className="w-3 h-3" />
-                              자격 취득
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* Contact details */}
-                        <div className="space-y-0.5 text-xs text-muted-foreground">
-                          {mentor.email && (
-                            <div className="flex items-center gap-1">
-                              <Mail className="w-3 h-3 flex-shrink-0" />
-                              <span className="truncate">{mentor.email}</span>
-                            </div>
-                          )}
-                          {mentor.phone && (
-                            <div className="flex items-center gap-1">
-                              <Phone className="w-3 h-3 flex-shrink-0" />
-                              <span>{mentor.phone}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bio */}
-                    {mentor.bio && (
-                      <p className="text-xs text-muted-foreground/80 line-clamp-3 leading-relaxed bg-muted/30 p-2.5 rounded-lg border border-muted-foreground/5">
-                        {mentor.bio}
-                      </p>
-                    )}
-
-                    {/* Coaching style */}
-                    {mentor.coachingStyle && (
-                      <div className="space-y-1">
-                        <h4 className="text-[10px] font-semibold text-purple-600 uppercase tracking-wider">
-                          코칭 스타일
-                        </h4>
-                        <p className="text-xs text-foreground/90 font-medium truncate">
-                          {mentor.coachingStyle}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Specializations tags */}
-                    {mentor.specializations.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {mentor.specializations.map((spec: string) => (
-                          <Badge
-                            key={spec}
-                            variant="secondary"
-                            className="bg-purple-100/50 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-none text-[10px] px-1.5 py-0.5"
-                          >
-                            {spec}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Apply Button */}
-                    <div className="pt-2 border-t border-purple-50">
-                      <Button
-                        onClick={() => handleApplyClick(mentor)}
-                        className="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs h-9 gap-1.5 cursor-pointer"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        멘토코칭 신청하기
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </div>
       )}

@@ -1,0 +1,23 @@
+{
+  "bcpLogs": [
+    {
+      "approvalStatus": "approved",
+      "date": "2026-03-25",
+      "durationMinutes": 60,
+      "id": "jd701vtkx667wtq3x766xkr775896y3j"
+    },
+    {
+      "approvalStatus": "approved",
+      "date": "2026-04-08",
+      "durationMinutes": 60,
+      "id": "jd7f4gga5mfrnxvb6v8dr5fvf58979cx"
+    },
+    {
+      "approvalStatus": "pending",
+      "date": "2026-05-24",
+      "durationMinutes": 60,
+      "id": "jd7esrhqvc1yx2d495rmwf719s896d8z"
+    }
+  ],
+  "buddyCoachingLogs": []
+}

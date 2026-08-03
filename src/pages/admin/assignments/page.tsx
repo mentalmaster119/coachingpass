@@ -7,8 +7,14 @@ import type { Id } from "@/convex/_generated/dataModel.d.ts";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
-import { Card, CardContent } from "@/components/ui/card.tsx";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
+import { cn } from "@/lib/utils.ts";
 import {
   Select,
   SelectContent,
@@ -109,6 +115,80 @@ export default function AdminAssignmentsPage() {
             <UserCheck className="w-3.5 h-3.5 text-muted-foreground" />
             <span>상위코치 <strong>{coaches.length}명</strong></span>
           </div>
+        </motion.div>
+      )}
+
+      {/* 멘토코치별 매칭 현황 */}
+      {!isLoading && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.08 }}
+        >
+          <Card className="border-purple-100 bg-purple-50/10 dark:bg-purple-950/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold flex items-center gap-2 text-purple-950 dark:text-purple-300">
+                <Users className="w-4 h-4 text-purple-600" />
+                멘토코치별 매칭 현황 (인원 제한: 최대 2명)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {coaches.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">등록된 상위코치가 없습니다.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {coaches.map((coach) => {
+                    const matched = trainees.filter((t) => t.assignedCoachId === coach._id);
+                    const isFull = matched.length >= 2;
+                    return (
+                      <div
+                        key={coach._id}
+                        className={cn(
+                          "p-3 rounded-lg border text-sm flex flex-col justify-between space-y-2.5",
+                          isFull
+                            ? "bg-red-50/30 dark:bg-red-950/10 border-red-200 dark:border-red-900/50"
+                            : "bg-background border-border"
+                        )}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-foreground">{coach.name ?? "이름 미설정"}</p>
+                            <p className="text-[10px] text-muted-foreground">{coach.email}</p>
+                          </div>
+                          <Badge
+                            className={cn(
+                              "text-[10px] font-semibold px-1.5 py-0.5",
+                              isFull
+                                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                            )}
+                            variant="secondary"
+                          >
+                            {matched.length} / 2명
+                          </Badge>
+                        </div>
+                        <div className="space-y-1">
+                          {matched.length === 0 ? (
+                            <p className="text-[11px] text-muted-foreground italic">배정된 교육생 없음</p>
+                          ) : (
+                            matched.map((t) => (
+                              <div
+                                key={t._id}
+                                className="flex justify-between items-center text-xs bg-muted/50 dark:bg-muted/30 px-2 py-1 rounded border border-muted"
+                              >
+                                <span className="font-medium">{t.name ?? "이름 미설정"}</span>
+                                <span className="text-[10px] text-muted-foreground">{t.phone ?? "연락처 없음"}</span>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </motion.div>
       )}
 

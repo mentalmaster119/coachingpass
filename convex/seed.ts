@@ -56,7 +56,7 @@ export const run = mutation({
 
     console.log("Seeding users...");
     const issuer = process.env.CONVEX_SITE_URL || DEFAULT_ISSUER;
-    const defaultPasswordHash = await hashPassword("123456");
+    const defaultPasswordHash = await hashPassword("M12345");
 
     // 2. Create Users
     const coachId = await ctx.db.insert("users", {
@@ -70,18 +70,18 @@ export const run = mutation({
       bio: "국제멘탈코칭센터 Senior Coach / 스포츠 심리학 박사",
       phone: "010-1234-5678",
       specializations: ["골프", "야구", "집중력 조절"],
-      coachingStyle: "선수 중심의 자발적 동기 부여 및 루틴 설계"
+      coachingStyle: "선수 중심의 자발적 동기 부여 및 루틴 설계",
+      isMentorCoach: true,
     });
     await ctx.db.patch(coachId, { tokenIdentifier: `${issuer}|${coachId}` });
 
     const traineeId = await ctx.db.insert("users", {
       tokenIdentifier: "temporary-trainee-token",
       name: "테스트 코치",
-      email: "coach@test.com",
+      email: "mentalcoach119@naver.com",
       role: "trainee",
       approvalStatus: "approved",
       onboardingCompleted: true,
-      assignedCoachId: coachId,
       passwordHash: defaultPasswordHash,
       bio: "SMPCC 18기 교육생 / 성장의 기록을 시각화합니다.",
       phone: "010-9876-5432",
@@ -110,7 +110,6 @@ export const run = mutation({
       role: "trainee",
       approvalStatus: "approved",
       onboardingCompleted: true,
-      assignedCoachId: coachId,
       passwordHash: defaultPasswordHash
     });
     await ctx.db.patch(buddyId, { tokenIdentifier: `${issuer}|${buddyId}` });

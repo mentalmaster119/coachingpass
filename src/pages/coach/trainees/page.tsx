@@ -122,7 +122,9 @@ export default function CoachTraineesPage() {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate">{trainee.email}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {trainee.email} {trainee.phone ? `· ${trainee.phone}` : ""}
+                      </p>
                     </div>
 
                     {/* Actions */}

@@ -125,6 +125,7 @@ export const getCoachDashboardData = query({
           _id: trainee._id,
           name: trainee.name ?? "이름 미설정",
           email: trainee.email ?? "",
+          phone: trainee.phone ?? null,
           certificationGoal: "SMPCC",
           approvedEduHours: Math.round(approvedEduHours * 10) / 10,
           approvedCoachHours: Math.round(approvedCoachHours * 10) / 10,

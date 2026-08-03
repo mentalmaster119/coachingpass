@@ -190,6 +190,15 @@ export default function SeniorCoachDashboard({ user }: { user: User }) {
                           </Badge>
                         )}
                       </div>
+                      <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+                        <span>{trainee.email}</span>
+                        {trainee.phone && (
+                          <>
+                            <span>·</span>
+                            <span>{trainee.phone}</span>
+                          </>
+                        )}
+                      </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <div className="flex justify-between text-xs mb-1">

@@ -213,6 +213,24 @@ export default function AdminSeminarsPage() {
   const copySeminars = useMutation(api.seminars.copySeminarsFromCohort);
   const createCohort = useMutation(api.cohorts.create);
 
+  const courseCredits = useQuery(api.smpcc.listCourseCredits);
+  const upsertCourseCredit = useMutation(api.smpcc.upsertCourseCredit);
+
+  const [showCourseDefForm, setShowCourseDefForm] = useState(false);
+  const [courseDefName, setCourseDefName] = useState("");
+  const [courseDefHours, setCourseDefHours] = useState("");
+  const [courseDefDesc, setCourseDefDesc] = useState("");
+  const [savingCourseDef, setSavingCourseDef] = useState(false);
+
+  const courseOptions = useMemo(() => {
+    if (!courseCredits) return COMMON_COURSE_OPTIONS;
+    const dbCourseNames = courseCredits.map((c) => c.courseName);
+    const allNames = Array.from(
+      new Set([...COMMON_COURSE_OPTIONS.filter((o) => o !== "기타(직접입력)"), ...dbCourseNames])
+    );
+    return [...allNames, "기타(직접입력)"];
+  }, [courseCredits]);
+
   const [selectedCohortId, setSelectedCohortId] = useState<Id<"cohorts"> | null>(null);
   const seminars = useQuery(
     api.seminars.listByCohort,
@@ -328,8 +346,8 @@ export default function AdminSeminarsPage() {
     setForm({ ...defaultForm, sessionNumber: "" });
     setFormErrors({});
     if (selectedCohortId === null) {
-      setCommonCourseSelect(COMMON_COURSE_OPTIONS[0]);
-      setForm((prev) => ({ ...prev, title: COMMON_COURSE_OPTIONS[0] }));
+      setCommonCourseSelect(courseOptions[0]);
+      setForm((prev) => ({ ...prev, title: courseOptions[0] }));
       setCustomCourseTitle("");
     } else {
       setCommonCourseSelect("");
@@ -354,7 +372,7 @@ export default function AdminSeminarsPage() {
       isOnline: s.isOnline ?? false,
     });
     if (selectedCohortId === null) {
-      const isPredefined = COMMON_COURSE_OPTIONS.slice(0, -1).includes(s.title);
+      const isPredefined = courseOptions.slice(0, -1).includes(s.title);
       if (isPredefined) {
         setCommonCourseSelect(s.title);
         setCustomCourseTitle("");
@@ -527,14 +545,24 @@ export default function AdminSeminarsPage() {
                   </span>
                 </button>
               ))}
-              <Button
-                variant="outline"
-                className="px-4 py-2 h-auto text-sm font-medium border-dashed cursor-pointer gap-1.5 ml-auto sm:ml-0"
-                onClick={() => setShowCohortForm(true)}
-              >
-                <Plus className="w-4 h-4" />
-                새 과정(기수) 등록
-              </Button>
+              <div className="flex gap-2 ml-auto sm:ml-0 flex-wrap">
+                <Button
+                  variant="outline"
+                  className="px-4 py-2 h-auto text-sm font-medium border-dashed cursor-pointer gap-1.5"
+                  onClick={() => setShowCourseDefForm(true)}
+                >
+                  <Plus className="w-4 h-4" />
+                  교육과정 등록
+                </Button>
+                <Button
+                  variant="outline"
+                  className="px-4 py-2 h-auto text-sm font-medium border-dashed cursor-pointer gap-1.5"
+                  onClick={() => setShowCohortForm(true)}
+                >
+                  <Plus className="w-4 h-4" />
+                  새 과정(기수) 등록
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
@@ -715,7 +743,7 @@ export default function AdminSeminarsPage() {
                         <SelectValue placeholder="과정 선택" />
                       </SelectTrigger>
                       <SelectContent>
-                        {COMMON_COURSE_OPTIONS.map((opt) => (
+                        {courseOptions.map((opt) => (
                           <SelectItem key={opt} value={opt}>
                             {opt}
                           </SelectItem>
@@ -1144,6 +1172,77 @@ export default function AdminSeminarsPage() {
             <Button variant="ghost" onClick={() => setShowCohortForm(false)}>취소</Button>
             <Button onClick={handleSaveCohort} disabled={cohortSaving}>
               {cohortSaving ? "등록 중..." : "등록"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 교육과정 등록 다이얼로그 */}
+      <Dialog open={showCourseDefForm} onOpenChange={setShowCourseDefForm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-primary" />
+              새 교육과정 등록
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>과정명 <span className="text-destructive">*</span></Label>
+              <Input
+                placeholder="예: KPC실습과정, 멘탈코칭기초"
+                value={courseDefName}
+                onChange={(e) => setCourseDefName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>인정 교육시간 (시간) <span className="text-destructive">*</span></Label>
+              <Input
+                type="number"
+                min={1}
+                placeholder="예: 20"
+                value={courseDefHours}
+                onChange={(e) => setCourseDefHours(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>과정 설명 (선택)</Label>
+              <Textarea
+                placeholder="과정에 대한 간략한 설명을 입력하세요"
+                value={courseDefDesc}
+                onChange={(e) => setCourseDefDesc(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowCourseDefForm(false)}>
+              취소
+            </Button>
+            <Button
+              onClick={async () => {
+                setSavingCourseDef(true);
+                try {
+                  const key = "custom_" + Date.now();
+                  await upsertCourseCredit({
+                    courseKey: key,
+                    courseName: courseDefName.trim(),
+                    creditHours: Number(courseDefHours) || 0,
+                    description: courseDefDesc.trim() || undefined,
+                  });
+                  toast.success("교육과정이 성공적으로 등록되었습니다.");
+                  setCourseDefName("");
+                  setCourseDefHours("");
+                  setCourseDefDesc("");
+                  setShowCourseDefForm(false);
+                } catch (err) {
+                  toast.error("교육과정 등록에 실패했습니다.");
+                } finally {
+                  setSavingCourseDef(false);
+                }
+              }}
+              disabled={savingCourseDef || !courseDefName.trim() || !courseDefHours}
+            >
+              {savingCourseDef ? "저장 중..." : "등록 완료"}
             </Button>
           </DialogFooter>
         </DialogContent>
