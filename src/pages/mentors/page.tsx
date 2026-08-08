@@ -251,7 +251,7 @@ export default function MentorsPage() {
 
                       {/* Bio */}
                       {mentor.bio && (
-                        <p className="text-xs text-muted-foreground/80 line-clamp-3 leading-relaxed bg-muted/30 p-2.5 rounded-lg border border-muted-foreground/5">
+                        <p className="text-xs text-muted-foreground/80 leading-relaxed bg-muted/30 p-2.5 rounded-lg border border-muted-foreground/5 max-h-[90px] overflow-y-auto">
                           {mentor.bio}
                         </p>
                       )}
