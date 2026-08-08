@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { Paperclip, X } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
@@ -86,6 +86,15 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const generateUploadUrl = useMutation(api.mentorCoaching.generateUploadUrl);
+
+  // Sync form values when dialog opens or editLog changes
+  useEffect(() => {
+    if (open) {
+      setValues(getDefaultValues(editLog));
+      setFile(null);
+      setExistingEvidenceId(editLog?.evidenceStorageId);
+    }
+  }, [open, editLog]);
 
   const set = (key: keyof FormState) => (val: string) =>
     setValues((prev) => ({ ...prev, [key]: val }));

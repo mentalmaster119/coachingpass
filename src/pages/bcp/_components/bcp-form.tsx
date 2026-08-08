@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { Paperclip, X } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
@@ -166,6 +166,15 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const generateUploadUrl = useMutation(api.bcp.generateUploadUrl);
+
+  // Sync form values when dialog opens or editLog changes
+  useEffect(() => {
+    if (open) {
+      setValues(getDefaultValues(editLog));
+      setFile(null);
+      setExistingEvidenceId(editLog?.evidenceStorageId);
+    }
+  }, [open, editLog]);
 
   const set = <K extends keyof FormState>(key: K) =>
     (val: FormState[K]) => setValues((prev) => ({ ...prev, [key]: val }));
