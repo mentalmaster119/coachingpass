@@ -338,7 +338,7 @@ export const exportAttendanceByCohort = query({
           .withIndex("by_seminar_and_user", (q) =>
             q.eq("seminarId", seminar._id).eq("userId", member.userId)
           )
-          .unique();
+          .first();
         const statusLabel =
           att?.status === "present"
             ? "출석"
