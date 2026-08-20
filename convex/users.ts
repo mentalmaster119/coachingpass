@@ -745,7 +745,29 @@ export const cancelMentoring = mutation({
     });
   },
 });
+export const debugGetUserByEmail = query({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("email"), args.email.trim().toLowerCase()))
+      .first();
+  },
+});
 
+export const debugSearchUserByName = query({
+  args: { name: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("name"), args.name.trim()))
+      .collect();
+  },
+});
 
-
-
+export const debugListAllUsers = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("users").collect();
+  },
+});

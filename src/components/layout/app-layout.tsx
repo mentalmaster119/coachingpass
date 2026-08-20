@@ -899,7 +899,7 @@ export default function AppLayout() {
         setIsPreviewModeState(true);
         setPreviewRoleState(role);
       } else {
-        const clearRole = (realRole === "admin" || realRole === "admin3") ? realRole : "admin";
+        const clearRole = (realRole === "admin" || realRole === "admin3" || realRole === "senior_coach") ? realRole : "admin";
         await mockLogin({ role: clearRole as any });
         localStorage.removeItem("admin_preview_mode");
         localStorage.removeItem("preview_role");
