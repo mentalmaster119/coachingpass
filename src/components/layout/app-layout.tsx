@@ -166,6 +166,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
       { label: "인증 신청 관리", href: "/admin/certification", icon: <Award className="w-4 h-4" /> },
       { label: "담당 교육생", href: "/coach/trainees", icon: <UserCheck className="w-4 h-4" /> },
+      { label: "멘토링 누적 실적", href: "/coach/mentoring-history", icon: <Award className="w-4 h-4" /> },
       { label: "피드백 관리", href: "/coach/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
       { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
       { label: "교육장 예약", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },

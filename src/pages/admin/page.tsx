@@ -411,6 +411,13 @@ export default function AdminDashboardPage() {
             href="/admin/coaching"
             delay={0.36}
           />
+          <QuickActionCard
+            icon={<UserCheck className="w-4 h-4" />}
+            title="멘토코칭 매칭 관리"
+            description="수강생별 담당 멘토코치 매칭 및 신청 현황 관리"
+            href="/admin/assignments"
+            delay={0.4}
+          />
         </div>
 
         {/* Pie chart */}

@@ -21,6 +21,7 @@ import MentorCoachingPage from "./pages/mentor-coaching/page.tsx";
 import AdminMentorCoachingPage from "./pages/admin/mentor-coaching/page.tsx";
 import AdminAssignmentsPage from "./pages/admin/assignments/page.tsx";
 import CoachTraineesPage from "./pages/coach/trainees/page.tsx";
+import CoachMentoringHistoryPage from "./pages/coach/mentoring-history/page.tsx";
 import ReflectionPage from "./pages/reflection/page.tsx";
 import CertificationPage from "./pages/certification/page.tsx";
 import AdminCertificationPage from "./pages/admin/certification/page.tsx";
@@ -86,6 +87,7 @@ export default function App() {
             <Route path="/admin/assignments" element={<AdminAssignmentsPage />} />
             <Route path="/admin/certification" element={<AdminCertificationPage />} />
             <Route path="/coach/trainees" element={<CoachTraineesPage />} />
+            <Route path="/coach/mentoring-history" element={<CoachMentoringHistoryPage />} />
             <Route path="/certification" element={<CertificationPage />} />
             <Route path="/reflection" element={<ReflectionPage />} />
             <Route path="/announcements" element={<AnnouncementsPage />} />

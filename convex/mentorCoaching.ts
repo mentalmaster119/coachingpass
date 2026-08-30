@@ -327,3 +327,58 @@ export const submitDraft = mutation({
     await ctx.db.patch(logId, { ...fields, approvalStatus: "pending" });
   },
 });
+
+export const getCoachMentoringHistory = query({
+  args: {},
+  handler: async (ctx) => {
+    const coach = await getAuthenticatedUser(ctx);
+    if (coach.role !== "senior_coach" && coach.role !== "admin" && coach.role !== "admin3") {
+      throw new ConvexError({ message: "상위코치만 조회할 수 있습니다.", code: "FORBIDDEN" });
+    }
+
+    const allLogs = await ctx.db
+      .query("mentorCoachingLogs")
+      .collect();
+
+    // Fetch all trainees assigned to this coach to check matching
+    const assignedTrainees = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("assignedCoachId"), coach._id))
+      .collect();
+    const assignedTraineeIds = new Set(assignedTrainees.map((t) => t._id));
+
+    // Filter logs conducted with this coach
+    const coachNameClean = coach.name?.trim().toLowerCase() || "";
+    const coachLogs = [];
+
+    for (const log of allLogs) {
+      const isNameMatch = log.coachName?.trim().toLowerCase() === coachNameClean;
+      const isAssignedMatch = assignedTraineeIds.has(log.userId);
+
+      if (isNameMatch || isAssignedMatch) {
+        const trainee = await ctx.db.get(log.userId);
+        coachLogs.push({
+          ...log,
+          traineeName: trainee?.name ?? "알 수 없음",
+          traineeEmail: trainee?.email ?? "",
+        });
+      }
+    }
+
+    // Sort by sessionDate desc
+    coachLogs.sort((a, b) => b.sessionDate.localeCompare(a.sessionDate));
+
+    // Calculate cumulative summary
+    const approved = coachLogs.filter((l) => l.approvalStatus === "approved");
+    const totalMinutes = approved.reduce((sum, l) => sum + l.durationMinutes, 0);
+
+    return {
+      logs: coachLogs,
+      summary: {
+        totalHours: totalMinutes / 60,
+        totalCount: approved.length,
+        pendingCount: coachLogs.filter((l) => l.approvalStatus === "pending").length,
+      }
+    };
+  },
+});
