@@ -331,7 +331,7 @@ export default function MentorsPage() {
                             disabled
                             className="w-full bg-muted text-muted-foreground text-xs h-9 gap-1.5 cursor-not-allowed border border-border"
                           >
-                            다른 멘토 신청됨
+                            신청 한도 도달 (최대 {maxMentorsLimit}명)
                           </Button>
                         ) : isMentorFull ? (
                           <Button
