@@ -38,14 +38,46 @@ export const listByCohort = query({
     
     const allSeminars = await ctx.db.query("seminars").collect();
     const commonSeminars = allSeminars.filter((s) => s.cohortId === undefined || s.cohortId === null);
+    const cohorts = await ctx.db.query("cohorts").collect();
+    const cohortMap = new Map(cohorts.map((c) => [c._id, c]));
+
+    const sortSeminars = (a: any, b: any) => {
+      const aIsCohort = a.cohortId !== undefined && a.cohortId !== null;
+      const bIsCohort = b.cohortId !== undefined && b.cohortId !== null;
+
+      if (aIsCohort && !bIsCohort) return -1;
+      if (!aIsCohort && bIsCohort) return 1;
+
+      if (aIsCohort && bIsCohort) {
+        // Both are cohort-specific (전문가과정)
+        // 1. 기수별로 (Cohort number ascending)
+        const aCohort = cohortMap.get(a.cohortId);
+        const bCohort = cohortMap.get(b.cohortId);
+        const aNum = aCohort ? aCohort.number : 0;
+        const bNum = bCohort ? bCohort.number : 0;
+        if (aNum !== bNum) {
+          return aNum - bNum;
+        }
+        // 2. 차수 순 (sessionNumber)
+        if (a.sessionNumber !== b.sessionNumber) {
+          return a.sessionNumber - b.sessionNumber;
+        }
+        // 3. 날짜 순 (startDate)
+        return a.startDate.localeCompare(b.startDate);
+      } else {
+        // Both are common/other courses (다른 과정)
+        // 1. 날짜 순 (startDate)
+        return a.startDate.localeCompare(b.startDate);
+      }
+    };
 
     if (!args.cohortId) {
-      return commonSeminars.sort((a, b) => a.sessionNumber - b.sessionNumber);
+      return commonSeminars.sort((a, b) => a.startDate.localeCompare(b.startDate));
     }
 
     const cohortSeminars = allSeminars.filter((s) => s.cohortId === args.cohortId);
     const combined = [...cohortSeminars, ...commonSeminars];
-    return combined.sort((a, b) => a.sessionNumber - b.sessionNumber);
+    return combined.sort(sortSeminars);
   },
 });
 
