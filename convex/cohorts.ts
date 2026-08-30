@@ -145,6 +145,7 @@ export const create = mutation({
     endDate: v.string(),
     status: v.union(v.literal("upcoming"), v.literal("active"), v.literal("completed")),
     description: v.optional(v.string()),
+    maxMentors: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const admin = await requireAdmin(ctx);
@@ -167,6 +168,7 @@ export const update = mutation({
     endDate: v.optional(v.string()),
     status: v.optional(v.union(v.literal("upcoming"), v.literal("active"), v.literal("completed"))),
     description: v.optional(v.string()),
+    maxMentors: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);

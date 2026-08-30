@@ -210,9 +210,17 @@ export const getUserById = query({
     const user = await ctx.db.get(args.userId);
     if (!user) return null;
 
-    // Get assigned coach name
-    const coach = user.assignedCoachId ? await ctx.db.get(user.assignedCoachId) : null;
-    const coach2 = user.assignedCoachId2 ? await ctx.db.get(user.assignedCoachId2) : null;
+    // Get assigned coach names
+    const coachIds = [
+      user.assignedCoachId,
+      user.assignedCoachId2,
+      user.assignedCoachId3,
+      user.assignedCoachId4,
+      user.assignedCoachId5
+    ];
+    const coaches = await Promise.all(
+      coachIds.map(async (id) => id ? await ctx.db.get(id) : null)
+    );
 
     // Get stats
     const [coachingLogs, mentorLogs, educationRecords, bookReports, essays, attendances] =
@@ -227,8 +235,9 @@ export const getUserById = query({
 
     return {
       ...user,
-      coachName: coach?.name ?? null,
-      coachName2: coach2?.name ?? null,
+      coachName: coaches[0]?.name ?? null,
+      coachName2: coaches[1]?.name ?? null,
+      coachNames: coaches.map((c) => c?.name ?? null),
       stats: {
         totalCoachingLogs: coachingLogs.length,
         approvedCoachingLogs: coachingLogs.filter((l) => l.approvalStatus === "approved").length,
@@ -299,18 +308,37 @@ export const getApprovedTrainees = query({
 
     return await Promise.all(
       approvedTrainees.map(async (trainee) => {
-        const coach = trainee.assignedCoachId
-          ? await ctx.db.get(trainee.assignedCoachId)
-          : null;
-        const coach2 = trainee.assignedCoachId2
-          ? await ctx.db.get(trainee.assignedCoachId2)
-          : null;
+        const coachIds = [
+          trainee.assignedCoachId,
+          trainee.assignedCoachId2,
+          trainee.assignedCoachId3,
+          trainee.assignedCoachId4,
+          trainee.assignedCoachId5
+        ];
+        const coaches = await Promise.all(
+          coachIds.map(async (id) => id ? await ctx.db.get(id) : null)
+        );
+        let maxMentorsLimit = 2;
+        const membership = await ctx.db
+          .query("cohortMembers")
+          .withIndex("by_user", (q) => q.eq("userId", trainee._id))
+          .first();
+        if (membership) {
+          const cohort = await ctx.db.get(membership.cohortId);
+          if (cohort && cohort.maxMentors !== undefined) {
+            maxMentorsLimit = Math.max(1, Math.min(5, cohort.maxMentors));
+          }
+        }
+
         return {
           ...trainee,
-          coachName: coach?.name ?? null,
-          coachEmail: coach?.email ?? null,
-          coachName2: coach2?.name ?? null,
-          coachEmail2: coach2?.email ?? null,
+          coachName: coaches[0]?.name ?? null,
+          coachEmail: coaches[0]?.email ?? null,
+          coachName2: coaches[1]?.name ?? null,
+          coachEmail2: coaches[1]?.email ?? null,
+          coachNames: coaches.map((c) => c?.name ?? null),
+          coachEmails: coaches.map((c) => c?.email ?? null),
+          maxMentorsLimit,
         };
       }),
     );
@@ -321,7 +349,13 @@ export const assignCoach = mutation({
   args: {
     traineeId: v.id("users"),
     coachId: v.optional(v.id("users")), // undefined = unassign
-    slot: v.optional(v.union(v.literal("first"), v.literal("second"))), // "first" or "second"
+    slot: v.optional(v.union(
+      v.literal("first"),
+      v.literal("second"),
+      v.literal("third"),
+      v.literal("fourth"),
+      v.literal("fifth")
+    )), // "first" to "fifth"
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
@@ -338,7 +372,14 @@ export const assignCoach = mutation({
       }
     }
 
-    const field = args.slot === "second" ? "assignedCoachId2" : "assignedCoachId";
+    const fieldMap = {
+      first: "assignedCoachId",
+      second: "assignedCoachId2",
+      third: "assignedCoachId3",
+      fourth: "assignedCoachId4",
+      fifth: "assignedCoachId5",
+    } as const;
+    const field = fieldMap[args.slot ?? "first"];
     await ctx.db.patch(args.traineeId, { [field]: args.coachId });
   },
 });

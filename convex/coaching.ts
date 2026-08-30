@@ -14,10 +14,20 @@ async function notifyCoachOfSubmission(
 ) {
   const trainee = await ctx.db.get(traineeId);
   
-  // 1. Notify the assigned coach if exists
-  if (trainee?.assignedCoachId) {
+  const coachIds = trainee
+    ? [
+        trainee.assignedCoachId,
+        trainee.assignedCoachId2,
+        trainee.assignedCoachId3,
+        trainee.assignedCoachId4,
+        trainee.assignedCoachId5
+      ].filter((id): id is Id<"users"> => !!id)
+    : [];
+
+  // 1. Notify the assigned coaches if they exist
+  for (const coachId of coachIds) {
     await insertNotification(ctx, {
-      userId: trainee.assignedCoachId,
+      userId: coachId,
       type: "coaching_log_submitted",
       title: "코칭 로그 제출",
       message: `${traineeName}님이 코칭 로그를 제출했습니다: "${topic}"`,
@@ -32,8 +42,8 @@ async function notifyCoachOfSubmission(
     .collect();
   
   for (const admin of admins) {
-    // Avoid duplicate notification if the admin is also the assigned coach
-    if (trainee?.assignedCoachId === admin._id) continue;
+    // Avoid duplicate notification if the admin is also one of the assigned coaches
+    if (coachIds.some((cid) => cid.toString() === admin._id.toString())) continue;
     
     await insertNotification(ctx, {
       userId: admin._id,

@@ -13,14 +13,25 @@ async function notifyCoachOfReflection(
   title: string,
 ) {
   const trainee = await ctx.db.get(traineeId);
-  if (!trainee?.assignedCoachId) return;
-  await insertNotification(ctx, {
-    userId: trainee.assignedCoachId,
-    type: "reflection_submitted",
-    title: "성찰 일지 작성",
-    message: `${traineeName}님이 성찰 일지를 작성했습니다: "${title}"`,
-    relatedId: traineeId,
-  });
+  const coachIds = trainee
+    ? [
+        trainee.assignedCoachId,
+        trainee.assignedCoachId2,
+        trainee.assignedCoachId3,
+        trainee.assignedCoachId4,
+        trainee.assignedCoachId5
+      ].filter((id): id is Id<"users"> => !!id)
+    : [];
+
+  for (const coachId of coachIds) {
+    await insertNotification(ctx, {
+      userId: coachId,
+      type: "reflection_submitted",
+      title: "성찰 일지 작성",
+      message: `${traineeName}님이 성찰 일지를 작성했습니다: "${title}"`,
+      relatedId: traineeId,
+    });
+  }
 }
 
 // ── Validators ────────────────────────────────────────────────────────────────

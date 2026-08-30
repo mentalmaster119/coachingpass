@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./mockAuth";
 import { getAuthenticatedUser } from "./helpers";
 import { insertNotification } from "./notifications";
+import type { Id } from "./_generated/dataModel.d.ts";
 
 export const list = query({
   args: {
@@ -67,9 +68,19 @@ export const add = mutation({
     // If admin or coach commented, notify the trainee
     if (user.role === "trainee") {
       const trainee = await ctx.db.get(log.userId);
-      if (trainee?.assignedCoachId) {
+      const coachIds = trainee
+        ? [
+            trainee.assignedCoachId,
+            trainee.assignedCoachId2,
+            trainee.assignedCoachId3,
+            trainee.assignedCoachId4,
+            trainee.assignedCoachId5
+          ].filter((id): id is Id<"users"> => !!id)
+        : [];
+
+      for (const coachId of coachIds) {
         await insertNotification(ctx, {
-          userId: trainee.assignedCoachId,
+          userId: coachId,
           type: "coaching_log_commented",
           title: "코칭 로그 새 댓글",
           message: `${user.name}님이 코칭 로그에 새 댓글을 남겼습니다: "${content.substring(0, 20)}..."`,
@@ -83,7 +94,7 @@ export const add = mutation({
         .withIndex("by_role", (q) => q.eq("role", "admin"))
         .collect();
       for (const admin of admins) {
-        if (trainee?.assignedCoachId === admin._id) continue;
+        if (coachIds.some((cid) => cid.toString() === admin._id.toString())) continue;
         await insertNotification(ctx, {
           userId: admin._id,
           type: "coaching_log_commented",

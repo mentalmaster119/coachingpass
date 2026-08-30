@@ -81,6 +81,7 @@ type CohortFormData = {
   endDate: string;
   status: CohortStatus;
   description: string;
+  maxMentors: string;
 };
 
 const defaultForm: CohortFormData = {
@@ -91,6 +92,7 @@ const defaultForm: CohortFormData = {
   endDate: "",
   status: "upcoming",
   description: "",
+  maxMentors: "2",
 };
 
 type Cohort = {
@@ -104,6 +106,7 @@ type Cohort = {
   description?: string;
   createdBy: Id<"users">;
   _creationTime: number;
+  maxMentors?: number;
 };
 
 export default function AdminCohortsPage() {
@@ -135,6 +138,7 @@ export default function AdminCohortsPage() {
       endDate: cohort.endDate,
       status: cohort.status,
       description: cohort.description ?? "",
+      maxMentors: String(cohort.maxMentors ?? 2),
     });
     setShowForm(true);
   };
@@ -156,6 +160,7 @@ export default function AdminCohortsPage() {
           endDate: form.endDate,
           status: form.status,
           description: form.description || undefined,
+          maxMentors: Number(form.maxMentors),
         });
         toast.success("기수 정보가 수정되었습니다");
       } else {
@@ -167,6 +172,7 @@ export default function AdminCohortsPage() {
           endDate: form.endDate,
           status: form.status,
           description: form.description || undefined,
+          maxMentors: Number(form.maxMentors),
         });
         toast.success("기수가 생성되었습니다");
       }
@@ -244,7 +250,8 @@ export default function AdminCohortsPage() {
                       <p className="text-sm text-muted-foreground">
                         {cohort.term === "first" ? "상반기" : "하반기"} ·{" "}
                         {format(new Date(cohort.startDate), "yyyy년 M월", { locale: ko })} ~{" "}
-                        {format(new Date(cohort.endDate), "yyyy년 M월", { locale: ko })}
+                        {format(new Date(cohort.endDate), "yyyy년 M월", { locale: ko })} ·{" "}
+                        최대 멘토: <strong>{cohort.maxMentors ?? 2}명</strong>
                       </p>
                     </div>
                   </div>
@@ -358,6 +365,27 @@ export default function AdminCohortsPage() {
                   onChange={(e) => setForm({ ...form, endDate: e.target.value })}
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>최대 멘토 배정 수 <span className="text-destructive">*</span></Label>
+              <Select
+                value={form.maxMentors}
+                onValueChange={(v) => setForm({ ...form, maxMentors: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1명</SelectItem>
+                  <SelectItem value="2">2명</SelectItem>
+                  <SelectItem value="3">3명</SelectItem>
+                  <SelectItem value="4">4명</SelectItem>
+                  <SelectItem value="5">5명</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">
+                교육생이 본인 기수 내에서 매칭 신청할 수 있는 최대 멘토코치 수입니다 (1~5명 설정 가능).
+              </p>
             </div>
             <div className="space-y-2">
               <Label>설명 (선택)</Label>

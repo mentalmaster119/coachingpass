@@ -343,7 +343,15 @@ export const getCoachMentoringHistory = query({
     // Fetch all trainees assigned to this coach to check matching
     const assignedTrainees = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("assignedCoachId"), coach._id))
+      .filter((q) =>
+        q.or(
+          q.eq(q.field("assignedCoachId"), coach._id),
+          q.eq(q.field("assignedCoachId2"), coach._id),
+          q.eq(q.field("assignedCoachId3"), coach._id),
+          q.eq(q.field("assignedCoachId4"), coach._id),
+          q.eq(q.field("assignedCoachId5"), coach._id)
+        )
+      )
       .collect();
     const assignedTraineeIds = new Set(assignedTrainees.map((t) => t._id));
 

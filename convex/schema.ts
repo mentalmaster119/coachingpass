@@ -21,6 +21,9 @@ export default defineSchema({
     onboardingCompleted: v.boolean(),
     assignedCoachId: v.optional(v.id("users")), // senior coach assigned to this trainee
     assignedCoachId2: v.optional(v.id("users")), // second senior coach assigned to this trainee
+    assignedCoachId3: v.optional(v.id("users")), // third senior coach assigned to this trainee
+    assignedCoachId4: v.optional(v.id("users")), // fourth senior coach assigned to this trainee
+    assignedCoachId5: v.optional(v.id("users")), // fifth senior coach assigned to this trainee
     certificationGoal: v.optional(v.union(v.literal("KAC"), v.literal("KPC"), v.literal("KSC"), v.literal("ACC"), v.literal("PCC"), v.literal("MCC"), v.literal("SMPCC"))),
     // Extended profile fields
     avatarStorageId: v.optional(v.id("_storage")),
@@ -511,6 +514,7 @@ export default defineSchema({
     ),
     description: v.optional(v.string()),
     createdBy: v.id("users"),
+    maxMentors: v.optional(v.number()), // 최대 멘토 매칭 수 설정 (1~5)
   })
     .index("by_number", ["number"])
     .index("by_status", ["status"]),

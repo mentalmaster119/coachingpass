@@ -34,10 +34,15 @@ export const create = mutation({
     if (trainee.role !== "trainee") {
       throw new ConvexError({ message: "수강생만 피드백을 받을 수 있습니다", code: "BAD_REQUEST" });
     }
-    if (
-      coach.role === "senior_coach" &&
-      trainee.assignedCoachId?.toString() !== coach._id.toString()
-    ) {
+    const coachFields = [
+      trainee.assignedCoachId,
+      trainee.assignedCoachId2,
+      trainee.assignedCoachId3,
+      trainee.assignedCoachId4,
+      trainee.assignedCoachId5
+    ];
+    const isAssignedToThisCoach = coachFields.some((id) => id?.toString() === coach._id.toString());
+    if (coach.role === "senior_coach" && !isAssignedToThisCoach) {
       throw new ConvexError({
         message: "담당 수강생에게만 피드백을 작성할 수 있습니다",
         code: "FORBIDDEN",

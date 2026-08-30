@@ -663,7 +663,10 @@ export const listMentorCoaches = query({
           .filter((q) =>
             q.or(
               q.eq(q.field("assignedCoachId"), u._id),
-              q.eq(q.field("assignedCoachId2"), u._id)
+              q.eq(q.field("assignedCoachId2"), u._id),
+              q.eq(q.field("assignedCoachId3"), u._id),
+              q.eq(q.field("assignedCoachId4"), u._id),
+              q.eq(q.field("assignedCoachId5"), u._id)
             )
           )
           .collect();
@@ -706,12 +709,37 @@ export const requestMentoring = mutation({
       .unique();
     if (!user) throw new ConvexError({ message: "사용자를 찾을 수 없습니다", code: "NOT_FOUND" });
 
-    if (user.assignedCoachId === args.mentorId || user.assignedCoachId2 === args.mentorId) {
+    const coachFields = [
+      "assignedCoachId",
+      "assignedCoachId2",
+      "assignedCoachId3",
+      "assignedCoachId4",
+      "assignedCoachId5"
+    ] as const;
+
+    const isAlreadyApplied = coachFields.some((field) => user[field] === args.mentorId);
+    if (isAlreadyApplied) {
       throw new ConvexError({ message: "이미 이 멘토코치님께 신청된 상태입니다.", code: "BAD_REQUEST" });
     }
 
-    if (user.assignedCoachId && user.assignedCoachId2) {
-      throw new ConvexError({ message: "이미 2명의 멘토코치와 매칭된 상태입니다. 다른 코치로 신청하려면 기존 배정을 해제하거나 취소해 주세요.", code: "BAD_REQUEST" });
+    let maxMentorsLimit = 2; // Default to 2
+    const membership = await ctx.db
+      .query("cohortMembers")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+    if (membership) {
+      const cohort = await ctx.db.get(membership.cohortId);
+      if (cohort && cohort.maxMentors !== undefined) {
+        maxMentorsLimit = Math.max(1, Math.min(5, cohort.maxMentors));
+      }
+    }
+
+    const assignedCount = coachFields.filter((field) => !!user[field]).length;
+    if (assignedCount >= maxMentorsLimit) {
+      throw new ConvexError({ 
+        message: `이미 이번 기수 최대 ${maxMentorsLimit}명의 멘토코치와 매칭된 상태입니다. 다른 코치로 신청하려면 기존 배정을 해제하거나 취소해 주세요.`, 
+        code: "BAD_REQUEST" 
+      });
     }
 
     const mentor = await ctx.db.get(args.mentorId);
@@ -724,15 +752,13 @@ export const requestMentoring = mutation({
       .filter((q) =>
         q.or(
           q.eq(q.field("assignedCoachId"), args.mentorId),
-          q.eq(q.field("assignedCoachId2"), args.mentorId)
+          q.eq(q.field("assignedCoachId2"), args.mentorId),
+          q.eq(q.field("assignedCoachId3"), args.mentorId),
+          q.eq(q.field("assignedCoachId4"), args.mentorId),
+          q.eq(q.field("assignedCoachId5"), args.mentorId)
         )
       )
       .collect();
-
-    const membership = await ctx.db
-      .query("cohortMembers")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .first();
 
     let count = currentTrainees.length;
     if (membership) {
@@ -748,11 +774,12 @@ export const requestMentoring = mutation({
       throw new ConvexError({ message: "해당 멘토코치님은 이미 이번 기수 신청이 마감되었습니다 (최대 2명).", code: "BAD_REQUEST" });
     }
 
-    if (!user.assignedCoachId) {
-      await ctx.db.patch(user._id, { assignedCoachId: args.mentorId });
-    } else {
-      await ctx.db.patch(user._id, { assignedCoachId2: args.mentorId });
+    const emptyField = coachFields.slice(0, maxMentorsLimit).find((field) => !user[field]);
+    if (!emptyField) {
+      throw new ConvexError({ message: "더 이상 신청을 보낼 수 있는 빈 슬롯이 없습니다.", code: "BAD_REQUEST" });
     }
+
+    await ctx.db.patch(user._id, { [emptyField]: args.mentorId });
 
     // 멘토용 알림 생성
     await ctx.db.insert("notifications", {
@@ -788,11 +815,20 @@ export const cancelMentoring = mutation({
       .unique();
     if (!user) throw new ConvexError({ message: "사용자를 찾을 수 없습니다", code: "NOT_FOUND" });
 
-    let matchedField: "assignedCoachId" | "assignedCoachId2" | null = null;
-    if (user.assignedCoachId === args.mentorId) {
-      matchedField = "assignedCoachId";
-    } else if (user.assignedCoachId2 === args.mentorId) {
-      matchedField = "assignedCoachId2";
+    const coachFields = [
+      "assignedCoachId",
+      "assignedCoachId2",
+      "assignedCoachId3",
+      "assignedCoachId4",
+      "assignedCoachId5"
+    ] as const;
+
+    let matchedField: typeof coachFields[number] | null = null;
+    for (const field of coachFields) {
+      if (user[field] === args.mentorId) {
+        matchedField = field;
+        break;
+      }
     }
 
     if (!matchedField) {
