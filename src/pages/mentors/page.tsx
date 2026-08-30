@@ -126,6 +126,10 @@ export default function MentorsPage() {
           <p className="text-muted-foreground text-sm mt-1">
             국제멘탈코칭센터가 공인한 전문 멘토코치님을 열람하고 멘토코칭 매칭을 신청합니다.
           </p>
+          <div className="mt-2 text-xs text-muted-foreground bg-purple-500/5 border border-purple-100 rounded-md px-3 py-2 space-y-0.5 max-w-md">
+            <p>• 멘토코치 한 명당 이번 기수에서 최대 <strong>2명</strong>의 교육생만 신청 가능합니다.</p>
+            <p>• 이미 2명 신청이 완료된 멘토코칭 카드는 <strong>신청 마감</strong>으로 표시됩니다.</p>
+          </div>
         </div>
       </motion.div>
 
@@ -211,6 +215,12 @@ export default function MentorsPage() {
                               <Badge className="bg-purple-600 hover:bg-purple-700 text-white text-[10px] h-4.5 px-1.5 gap-0.5 select-none flex-shrink-0">
                                 <Award className="w-3 h-3" />
                                 자격 취득
+                              </Badge>
+                            )}
+                            {isAppliedToThisMentor && (
+                              <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] h-4.5 px-1.5 gap-0.5 select-none flex-shrink-0 font-semibold">
+                                <CheckCircle className="w-3 h-3" />
+                                배정 완료
                               </Badge>
                             )}
                           </div>
@@ -304,8 +314,10 @@ export default function MentorsPage() {
                           </Button>
                         ) : isMentorFull ? (
                           <Button
-                            disabled
-                            className="w-full bg-red-100 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-xs h-9 gap-1.5 cursor-not-allowed border border-red-200 dark:border-red-900/50 font-semibold"
+                            onClick={() => {
+                              alert("해당 멘토코치님은 이미 이번 기수 신청이 마감되었습니다 (최대 2명). 더 이상 신청할 수 없습니다.");
+                            }}
+                            className="w-full bg-red-100 hover:bg-red-200 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-xs h-9 gap-1.5 border border-red-200 dark:border-red-900/50 font-semibold cursor-pointer"
                           >
                             신청 마감
                           </Button>

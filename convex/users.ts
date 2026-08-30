@@ -609,6 +609,30 @@ export const listMentorCoaches = query({
     cohortName: string | null;
     assignedTraineesCount: number;
   }>> => {
+    const identity = await ctx.auth.getUserIdentity();
+    let cohortUserIds = new Set<string>();
+    if (identity) {
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+        .first();
+      if (user) {
+        const membership = await ctx.db
+          .query("cohortMembers")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .first();
+        if (membership) {
+          const cohortMembers = await ctx.db
+            .query("cohortMembers")
+            .withIndex("by_cohort", (q) => q.eq("cohortId", membership.cohortId))
+            .collect();
+          for (const m of cohortMembers) {
+            cohortUserIds.add(m.userId);
+          }
+        }
+      }
+    }
+
     const mentorCoaches = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("isMentorCoach"), true))
@@ -633,11 +657,15 @@ export const listMentorCoaches = query({
           }
         }
 
-        // Count assigned trainees
+        // Count assigned trainees in same cohort
         const currentTrainees = await ctx.db
           .query("users")
           .filter((q) => q.eq(q.field("assignedCoachId"), u._id))
           .collect();
+
+        const assignedTraineesCount = cohortUserIds.size > 0
+          ? currentTrainees.filter((t) => cohortUserIds.has(t._id)).length
+          : currentTrainees.length;
 
         return {
           _id: u._id,
@@ -651,7 +679,7 @@ export const listMentorCoaches = query({
           mbti: u.mbti ?? null,
           hasMentalCoachLicense: u.hasMentalCoachLicense ?? false,
           cohortName,
-          assignedTraineesCount: currentTrainees.length,
+          assignedTraineesCount,
         };
       })
     );
@@ -690,8 +718,23 @@ export const requestMentoring = mutation({
       .filter((q) => q.eq(q.field("assignedCoachId"), args.mentorId))
       .collect();
 
-    if (currentTrainees.length >= 2) {
-      throw new ConvexError({ message: "해당 멘토코치님은 이미 신청이 마감되었습니다 (최대 2명).", code: "BAD_REQUEST" });
+    const membership = await ctx.db
+      .query("cohortMembers")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+
+    let count = currentTrainees.length;
+    if (membership) {
+      const cohortMembers = await ctx.db
+        .query("cohortMembers")
+        .withIndex("by_cohort", (q) => q.eq("cohortId", membership.cohortId))
+        .collect();
+      const cohortUserIds = new Set(cohortMembers.map((m) => m.userId));
+      count = currentTrainees.filter((t) => cohortUserIds.has(t._id)).length;
+    }
+
+    if (count >= 2) {
+      throw new ConvexError({ message: "해당 멘토코치님은 이미 이번 기수 신청이 마감되었습니다 (최대 2명).", code: "BAD_REQUEST" });
     }
 
     await ctx.db.patch(user._id, { assignedCoachId: args.mentorId });
