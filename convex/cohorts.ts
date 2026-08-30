@@ -37,12 +37,17 @@ export const list = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError({ message: "로그인이 필요합니다", code: "UNAUTHENTICATED" });
     const cohorts = await ctx.db.query("cohorts").collect();
-    // Sort: active first, then upcoming, then completed (by number desc)
+    // Sort: active first, then upcoming, then completed
     const statusOrder: Record<string, number> = { active: 0, upcoming: 1, completed: 2 };
     return cohorts.sort((a, b) => {
       const statusDiff = (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3);
       if (statusDiff !== 0) return statusDiff;
-      // Within completed, sort by number descending (latest first)
+      
+      // Within upcoming, sort by number ascending (e.g. 18기, then 19기)
+      if (a.status === "upcoming") {
+        return a.number - b.number;
+      }
+      // Within active or completed, sort by number descending (latest first)
       return b.number - a.number;
     });
   },
