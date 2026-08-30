@@ -20,6 +20,7 @@ export default defineSchema({
     rejectionReason: v.optional(v.string()),
     onboardingCompleted: v.boolean(),
     assignedCoachId: v.optional(v.id("users")), // senior coach assigned to this trainee
+    assignedCoachId2: v.optional(v.id("users")), // second senior coach assigned to this trainee
     certificationGoal: v.optional(v.union(v.literal("KAC"), v.literal("KPC"), v.literal("KSC"), v.literal("ACC"), v.literal("PCC"), v.literal("MCC"), v.literal("SMPCC"))),
     // Extended profile fields
     avatarStorageId: v.optional(v.id("_storage")),

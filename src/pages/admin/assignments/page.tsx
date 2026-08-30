@@ -50,15 +50,16 @@ export default function AdminAssignmentsPage() {
         (t.email ?? "").toLowerCase().includes(search.toLowerCase()),
     ) ?? [];
 
-  const unassignedCount = trainees?.filter((t) => !t.assignedCoachId).length ?? 0;
-  const assignedCount = trainees?.filter((t) => !!t.assignedCoachId).length ?? 0;
+  const unassignedCount = trainees?.filter((t) => !t.assignedCoachId && !t.assignedCoachId2).length ?? 0;
+  const assignedCount = trainees?.filter((t) => !!t.assignedCoachId || !!t.assignedCoachId2).length ?? 0;
 
-  const handleAssign = async (traineeId: Id<"users">, coachId: string) => {
+  const handleAssign = async (traineeId: Id<"users">, coachId: string, slot: "first" | "second") => {
     setAssigningId(traineeId);
     try {
       await assignCoach({
         traineeId,
         coachId: coachId === "none" ? undefined : (coachId as Id<"users">),
+        slot,
       });
       toast.success(coachId === "none" ? "배정이 해제되었습니다." : "코치가 배정되었습니다.");
     } catch {
@@ -138,7 +139,7 @@ export default function AdminAssignmentsPage() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {coaches.map((coach) => {
-                    const matched = trainees.filter((t) => t.assignedCoachId === coach._id);
+                    const matched = trainees.filter((t) => t.assignedCoachId === coach._id || t.assignedCoachId2 === coach._id);
                     const isFull = matched.length >= 2;
                     return (
                       <div
@@ -250,43 +251,69 @@ export default function AdminAssignmentsPage() {
                             {trainee.certificationGoal}
                           </Badge>
                         )}
-                        {!trainee.assignedCoachId && (
+                        {!trainee.assignedCoachId && !trainee.assignedCoachId2 && (
                           <Badge variant="secondary" className="text-[11px] px-1.5 py-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                             미배정
                           </Badge>
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">{trainee.email}</p>
-                      {trainee.coachName && (
+                      {(trainee.coachName || trainee.coachName2) && (
                         <p className="text-xs text-muted-foreground">
-                          현재 담당: <span className="text-foreground font-medium">{trainee.coachName}</span>
+                          현재 담당: <span className="text-foreground font-medium">{[trainee.coachName, trainee.coachName2].filter(Boolean).join(", ")}</span>
                         </p>
                       )}
                     </div>
 
-                    {/* Coach selector */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <Select
-                        value={trainee.assignedCoachId ?? "none"}
-                        onValueChange={(val) => handleAssign(trainee._id, val)}
-                        disabled={assigningId === trainee._id}
-                      >
-                        <SelectTrigger className="w-44 h-8 text-sm">
-                          <SelectValue placeholder="코치 선택" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">
-                            <span className="text-muted-foreground">배정 안함</span>
-                          </SelectItem>
-                          {coaches.map((coach) => (
-                            <SelectItem key={coach._id} value={coach._id}>
-                              {coach.name ?? coach.email ?? "이름 미설정"}
+                    {/* Coach selectors */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground w-12 text-right">멘토 1:</span>
+                        <Select
+                          value={trainee.assignedCoachId ?? "none"}
+                          onValueChange={(val) => handleAssign(trainee._id, val, "first")}
+                          disabled={assigningId === trainee._id}
+                        >
+                          <SelectTrigger className="w-32 h-8 text-xs">
+                            <SelectValue placeholder="코치 1 선택" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">
+                              <span className="text-muted-foreground">배정 안함</span>
                             </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                            {coaches.map((coach) => (
+                              <SelectItem key={coach._id} value={coach._id}>
+                                {coach.name ?? "이름 미설정"}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground w-12 text-right">멘토 2:</span>
+                        <Select
+                          value={trainee.assignedCoachId2 ?? "none"}
+                          onValueChange={(val) => handleAssign(trainee._id, val, "second")}
+                          disabled={assigningId === trainee._id}
+                        >
+                          <SelectTrigger className="w-32 h-8 text-xs">
+                            <SelectValue placeholder="코치 2 선택" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">
+                              <span className="text-muted-foreground">배정 안함</span>
+                            </SelectItem>
+                            {coaches.map((coach) => (
+                              <SelectItem key={coach._id} value={coach._id}>
+                                {coach.name ?? "이름 미설정"}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       {assigningId === trainee._id && (
-                        <span className="text-xs text-muted-foreground">저장 중...</span>
+                        <span className="text-[10px] text-muted-foreground">저장 중...</span>
                       )}
                     </div>
                   </div>

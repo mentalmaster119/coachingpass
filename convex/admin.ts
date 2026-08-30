@@ -212,6 +212,7 @@ export const getUserById = query({
 
     // Get assigned coach name
     const coach = user.assignedCoachId ? await ctx.db.get(user.assignedCoachId) : null;
+    const coach2 = user.assignedCoachId2 ? await ctx.db.get(user.assignedCoachId2) : null;
 
     // Get stats
     const [coachingLogs, mentorLogs, educationRecords, bookReports, essays, attendances] =
@@ -227,6 +228,7 @@ export const getUserById = query({
     return {
       ...user,
       coachName: coach?.name ?? null,
+      coachName2: coach2?.name ?? null,
       stats: {
         totalCoachingLogs: coachingLogs.length,
         approvedCoachingLogs: coachingLogs.filter((l) => l.approvalStatus === "approved").length,
@@ -300,10 +302,15 @@ export const getApprovedTrainees = query({
         const coach = trainee.assignedCoachId
           ? await ctx.db.get(trainee.assignedCoachId)
           : null;
+        const coach2 = trainee.assignedCoachId2
+          ? await ctx.db.get(trainee.assignedCoachId2)
+          : null;
         return {
           ...trainee,
           coachName: coach?.name ?? null,
           coachEmail: coach?.email ?? null,
+          coachName2: coach2?.name ?? null,
+          coachEmail2: coach2?.email ?? null,
         };
       }),
     );
@@ -314,6 +321,7 @@ export const assignCoach = mutation({
   args: {
     traineeId: v.id("users"),
     coachId: v.optional(v.id("users")), // undefined = unassign
+    slot: v.optional(v.union(v.literal("first"), v.literal("second"))), // "first" or "second"
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
@@ -330,7 +338,8 @@ export const assignCoach = mutation({
       }
     }
 
-    await ctx.db.patch(args.traineeId, { assignedCoachId: args.coachId });
+    const field = args.slot === "second" ? "assignedCoachId2" : "assignedCoachId";
+    await ctx.db.patch(args.traineeId, { [field]: args.coachId });
   },
 });
 
@@ -548,7 +557,10 @@ export const getMyAssignedTrainees = query({
 
     const allUsers = await ctx.db.query("users").collect();
     const trainees = allUsers.filter(
-      (u) => u.role === "trainee" && u.approvalStatus === "approved" && u.assignedCoachId === me._id,
+      (u) =>
+        u.role === "trainee" &&
+        u.approvalStatus === "approved" &&
+        (u.assignedCoachId === me._id || u.assignedCoachId2 === me._id),
     );
 
     // Attach counts of pending records for quick overview

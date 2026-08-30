@@ -660,7 +660,12 @@ export const listMentorCoaches = query({
         // Count assigned trainees in same cohort
         const currentTrainees = await ctx.db
           .query("users")
-          .filter((q) => q.eq(q.field("assignedCoachId"), u._id))
+          .filter((q) =>
+            q.or(
+              q.eq(q.field("assignedCoachId"), u._id),
+              q.eq(q.field("assignedCoachId2"), u._id)
+            )
+          )
           .collect();
 
         const assignedTraineesCount = cohortUserIds.size > 0
@@ -701,11 +706,12 @@ export const requestMentoring = mutation({
       .unique();
     if (!user) throw new ConvexError({ message: "사용자를 찾을 수 없습니다", code: "NOT_FOUND" });
 
-    if (user.assignedCoachId) {
-      if (user.assignedCoachId === args.mentorId) {
-        throw new ConvexError({ message: "이미 이 멘토코치님께 신청된 상태입니다.", code: "BAD_REQUEST" });
-      }
-      throw new ConvexError({ message: "이미 매칭된 멘토코치가 있습니다. 다른 코치로 신청하려면 기존 배정을 해제하거나 취소해 주세요.", code: "BAD_REQUEST" });
+    if (user.assignedCoachId === args.mentorId || user.assignedCoachId2 === args.mentorId) {
+      throw new ConvexError({ message: "이미 이 멘토코치님께 신청된 상태입니다.", code: "BAD_REQUEST" });
+    }
+
+    if (user.assignedCoachId && user.assignedCoachId2) {
+      throw new ConvexError({ message: "이미 2명의 멘토코치와 매칭된 상태입니다. 다른 코치로 신청하려면 기존 배정을 해제하거나 취소해 주세요.", code: "BAD_REQUEST" });
     }
 
     const mentor = await ctx.db.get(args.mentorId);
@@ -715,7 +721,12 @@ export const requestMentoring = mutation({
 
     const currentTrainees = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("assignedCoachId"), args.mentorId))
+      .filter((q) =>
+        q.or(
+          q.eq(q.field("assignedCoachId"), args.mentorId),
+          q.eq(q.field("assignedCoachId2"), args.mentorId)
+        )
+      )
       .collect();
 
     const membership = await ctx.db
@@ -737,7 +748,11 @@ export const requestMentoring = mutation({
       throw new ConvexError({ message: "해당 멘토코치님은 이미 이번 기수 신청이 마감되었습니다 (최대 2명).", code: "BAD_REQUEST" });
     }
 
-    await ctx.db.patch(user._id, { assignedCoachId: args.mentorId });
+    if (!user.assignedCoachId) {
+      await ctx.db.patch(user._id, { assignedCoachId: args.mentorId });
+    } else {
+      await ctx.db.patch(user._id, { assignedCoachId2: args.mentorId });
+    }
 
     // 멘토용 알림 생성
     await ctx.db.insert("notifications", {
@@ -761,8 +776,10 @@ export const requestMentoring = mutation({
 
 // 멘토코칭 매칭 신청 취소 처리
 export const cancelMentoring = mutation({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    mentorId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError({ message: "로그인이 필요합니다", code: "UNAUTHENTICATED" });
     const user = await ctx.db
@@ -771,16 +788,22 @@ export const cancelMentoring = mutation({
       .unique();
     if (!user) throw new ConvexError({ message: "사용자를 찾을 수 없습니다", code: "NOT_FOUND" });
 
-    const prevMentorId = user.assignedCoachId;
-    if (!prevMentorId) {
-      throw new ConvexError({ message: "신청된 멘토코칭 매칭 내역이 없습니다.", code: "BAD_REQUEST" });
+    let matchedField: "assignedCoachId" | "assignedCoachId2" | null = null;
+    if (user.assignedCoachId === args.mentorId) {
+      matchedField = "assignedCoachId";
+    } else if (user.assignedCoachId2 === args.mentorId) {
+      matchedField = "assignedCoachId2";
     }
 
-    await ctx.db.patch(user._id, { assignedCoachId: undefined });
+    if (!matchedField) {
+      throw new ConvexError({ message: "해당 코치님과 매칭 신청된 내역이 없습니다.", code: "BAD_REQUEST" });
+    }
+
+    await ctx.db.patch(user._id, { [matchedField]: undefined });
 
     // Send notification to the previous mentor
     await ctx.db.insert("notifications", {
-      userId: prevMentorId,
+      userId: args.mentorId,
       type: "feedback_received",
       title: "멘토코칭 매칭 취소",
       message: `${user.name ?? "교육생"}님이 멘토코칭 매칭 신청을 취소했습니다.`,

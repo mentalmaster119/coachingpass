@@ -38,6 +38,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils.ts";
 import { useCurrentUser } from "@/hooks/use-current-user.ts";
+import type { Id } from "@/convex/_generated/dataModel.d.ts";
 
 export default function MentorsPage() {
   const mentors = useQuery(api.users.listMentorCoaches);
@@ -95,11 +96,11 @@ export default function MentorsPage() {
     }
   };
 
-  const handleCancelClick = async () => {
+  const handleCancelClick = async (mentorId: Id<"users">) => {
     if (!window.confirm("멘토코칭 매칭 신청을 취소하시겠습니까?")) return;
     setCanceling(true);
     try {
-      await cancelMentoring();
+      await cancelMentoring({ mentorId });
       toast.success("신청이 취소되었습니다.");
     } catch (error) {
       console.error(error);
@@ -127,6 +128,7 @@ export default function MentorsPage() {
             국제멘탈코칭센터가 공인한 전문 멘토코치님을 열람하고 멘토코칭 매칭을 신청합니다.
           </p>
           <div className="mt-2 text-xs text-muted-foreground bg-purple-500/5 border border-purple-100 rounded-md px-3 py-2 space-y-0.5 max-w-md">
+            <p>• 교육생 한 명당 최대 <strong>2명</strong>의 멘토코치까지 배정 신청할 수 있습니다.</p>
             <p>• 멘토코치 한 명당 이번 기수에서 최대 <strong>2명</strong>의 교육생만 신청 가능합니다.</p>
             <p>• 이미 2명 신청이 완료된 멘토코칭 카드는 <strong>신청 마감</strong>으로 표시됩니다.</p>
           </div>
@@ -172,8 +174,14 @@ export default function MentorsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AnimatePresence mode="popLayout">
             {filteredMentors?.map((mentor) => {
-              const isAppliedToThisMentor = currentUser?.assignedCoachId === mentor._id;
-              const isAppliedToOtherMentor = currentUser?.assignedCoachId && currentUser?.assignedCoachId !== mentor._id;
+              const isAppliedToThisMentor =
+                currentUser?.assignedCoachId === mentor._id ||
+                currentUser?.assignedCoachId2 === mentor._id;
+              const isAppliedToOtherMentor =
+                currentUser?.assignedCoachId &&
+                currentUser?.assignedCoachId2 &&
+                currentUser?.assignedCoachId !== mentor._id &&
+                currentUser?.assignedCoachId2 !== mentor._id;
               const isMentorFull = mentor.assignedTraineesCount >= 2;
 
               return (
@@ -297,7 +305,7 @@ export default function MentorsPage() {
                       <div className="pt-2 border-t border-purple-50">
                         {isAppliedToThisMentor ? (
                           <Button
-                            onClick={handleCancelClick}
+                            onClick={() => handleCancelClick(mentor._id)}
                             disabled={canceling}
                             variant="destructive"
                             className="w-full text-xs h-9 gap-1.5 cursor-pointer bg-red-600 hover:bg-red-700 text-white"
