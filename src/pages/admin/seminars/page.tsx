@@ -25,6 +25,9 @@ import {
   Save,
   RefreshCw,
   Copy,
+  FileDown,
+  ExternalLink,
+  Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
@@ -75,6 +78,75 @@ const SEMINAR_TYPE_COLORS: Record<SeminarType, string> = {
   one_day: "secondary",
   group_coaching: "outline",
 };
+
+type CourseInfo = {
+  key: string;
+  name: string;
+  fullName: string;
+  description: string;
+  creditHours: number;
+  pdfUrl?: string;
+  landingPageUrl?: string;
+};
+
+const DEFAULT_COURSES: CourseInfo[] = [
+  {
+    key: "expert_mcci",
+    name: "전문가과정",
+    fullName: "전문가과정 (MCCI 스포츠멘탈코칭 전문가과정)",
+    description: "한국스포츠멘탈코칭협회(MCCI) 정규 전문가 자격 취득 과정으로, 기수별 온/오프라인 6회차 세미나와 실습 및 코칭 수련이 진행됩니다.",
+    creditHours: 60,
+  },
+  {
+    key: "kac_basic",
+    name: "KAC기본과정",
+    fullName: "KAC기본과정",
+    description: "한국코치협회 인증 KAC 자격 취득을 위한 기초 코칭 역량 및 이론 실습 교육과정입니다.",
+    creditHours: 20,
+  },
+  {
+    key: "kpc_advanced",
+    name: "KPC심화과정",
+    fullName: "KPC심화과정",
+    description: "전문 코치로서의 역량 심화 및 KPC 단계 도약을 위한 전문 코칭 심화 교육과정입니다.",
+    creditHours: 60,
+  },
+  {
+    key: "kpc_dev",
+    name: "KPC개발과정",
+    fullName: "KPC개발과정",
+    description: "KPC 전문성 개발 및 실제 코칭 세션 코칭 역량 심화 실습 과정입니다.",
+    creditHours: 40,
+  },
+  {
+    key: "mspe_meditation",
+    name: "MSPE명상기본과정",
+    fullName: "MSPE명상기본과정",
+    description: "스포츠 선수의 몰입과 감정 조절, 심리적 안정감을 위한 마인드풀니스(MSPE) 기반 명상 기초 과정입니다.",
+    creditHours: 16,
+  },
+  {
+    key: "psychology_basic",
+    name: "스포츠심리학강독기본과정",
+    fullName: "스포츠심리학강독기본과정",
+    description: "스포츠 심리학 핵심 이론 강독 및 멘탈코칭 현장 적용 기초 과정입니다.",
+    creditHours: 15,
+  },
+  {
+    key: "psychology_adv",
+    name: "스포츠심리학강독심화과정",
+    fullName: "스포츠심리학강독심화과정",
+    description: "최신 스포츠 심리학 연구 분석 및 엘리트 선수 케이스 스터디 심화 과정입니다.",
+    creditHours: 15,
+  },
+  {
+    key: "supervisor_training",
+    name: "멘탈코칭슈퍼바이저양성과정",
+    fullName: "멘탈코칭슈퍼바이저양성과정",
+    description: "상위 코치 및 슈퍼바이저로서 코칭 피드백과 지도를 수행할 수 있는 역량을 양성하는 최고위 과정입니다.",
+    creditHours: 30,
+  },
+];
 
 const COMMON_COURSE_OPTIONS = [
   "KAC기본과정",
@@ -216,26 +288,182 @@ export default function AdminSeminarsPage() {
   const courseCredits = useQuery(api.smpcc.listCourseCredits);
   const upsertCourseCredit = useMutation(api.smpcc.upsertCourseCredit);
 
+  const allSeminars = useQuery(api.seminars.listAll);
+
+  // Course & Cohort selection state
+  const [selectedCourse, setSelectedCourse] = useState<string>("전문가과정");
+  const [selectedCohortId, setSelectedCohortId] = useState<Id<"cohorts"> | "all" | null>(null);
+
+  const activeCohort = useMemo(() => {
+    return cohorts?.find((c) => c.status === "active") ?? cohorts?.[0];
+  }, [cohorts]);
+
+  const effectiveCohortId = useMemo(() => {
+    if (selectedCourse !== "전문가과정") return null;
+    if (selectedCohortId === "all") return "all";
+    if (selectedCohortId) return selectedCohortId;
+    return activeCohort?._id ?? cohorts?.[0]?._id ?? "all";
+  }, [selectedCourse, selectedCohortId, activeCohort, cohorts]);
+
+  // Combined course list with defaults + database values
+  const allCourses = useMemo(() => {
+    const list: CourseInfo[] = DEFAULT_COURSES.map((d) => ({ ...d }));
+    if (courseCredits) {
+      for (const cc of courseCredits) {
+        const idx = list.findIndex(
+          (c) => c.name === cc.courseName || c.key === cc.courseKey
+        );
+        if (idx >= 0) {
+          list[idx] = {
+            ...list[idx],
+            fullName: cc.courseName,
+            description: cc.description || list[idx].description,
+            creditHours: cc.creditHours ?? list[idx].creditHours,
+            pdfUrl: cc.pdfUrl || list[idx].pdfUrl,
+            landingPageUrl: cc.landingPageUrl || list[idx].landingPageUrl,
+          };
+        } else {
+          list.push({
+            key: cc.courseKey,
+            name: cc.courseName,
+            fullName: cc.courseName,
+            description: cc.description || "",
+            creditHours: cc.creditHours ?? 0,
+            pdfUrl: cc.pdfUrl,
+            landingPageUrl: cc.landingPageUrl,
+          });
+        }
+      }
+    }
+    return list;
+  }, [courseCredits]);
+
+  const currentCourseInfo = useMemo(() => {
+    return (
+      allCourses.find((c) => c.name === selectedCourse) ?? {
+        key: "custom",
+        name: selectedCourse,
+        fullName: selectedCourse,
+        description: "",
+        creditHours: 0,
+      }
+    );
+  }, [allCourses, selectedCourse]);
+
+  // Course def modal state (for registration & editing)
   const [showCourseDefForm, setShowCourseDefForm] = useState(false);
+  const [isEditingCourseDef, setIsEditingCourseDef] = useState(false);
+  const [courseDefKey, setCourseDefKey] = useState("");
   const [courseDefName, setCourseDefName] = useState("");
   const [courseDefHours, setCourseDefHours] = useState("");
   const [courseDefDesc, setCourseDefDesc] = useState("");
+  const [courseDefPdfUrl, setCourseDefPdfUrl] = useState("");
+  const [courseDefLandingUrl, setCourseDefLandingUrl] = useState("");
   const [savingCourseDef, setSavingCourseDef] = useState(false);
 
+  const handleSaveCourseDef = async () => {
+    if (!courseDefName.trim()) {
+      toast.error("과정명을 입력하세요.");
+      return;
+    }
+    setSavingCourseDef(true);
+    try {
+      const key = courseDefKey.trim() || ("course_" + Date.now());
+      await upsertCourseCredit({
+        courseKey: key,
+        courseName: courseDefName.trim(),
+        creditHours: Number(courseDefHours) || 0,
+        description: courseDefDesc.trim() || undefined,
+        pdfUrl: courseDefPdfUrl.trim() || undefined,
+        landingPageUrl: courseDefLandingUrl.trim() || undefined,
+      });
+      toast.success(
+        isEditingCourseDef
+          ? "과정 정보가 성공적으로 수정되었습니다."
+          : "교육과정이 성공적으로 등록되었습니다."
+      );
+      setSelectedCourse(courseDefName.trim());
+      setShowCourseDefForm(false);
+    } catch (err) {
+      toast.error("과정 정보 저장에 실패했습니다.");
+    } finally {
+      setSavingCourseDef(false);
+    }
+  };
+
   const courseOptions = useMemo(() => {
-    if (!courseCredits) return COMMON_COURSE_OPTIONS;
-    const dbCourseNames = courseCredits.map((c) => c.courseName);
+    const dbCourseNames = (courseCredits ?? []).map((c) => c.courseName);
     const allNames = Array.from(
       new Set([...COMMON_COURSE_OPTIONS.filter((o) => o !== "기타(직접입력)"), ...dbCourseNames])
     );
     return [...allNames, "기타(직접입력)"];
   }, [courseCredits]);
 
-  const [selectedCohortId, setSelectedCohortId] = useState<Id<"cohorts"> | null>(null);
-  const seminars = useQuery(
-    api.seminars.listByCohort,
-    selectedCohortId ? { cohortId: selectedCohortId } : {}
-  );
+  const displayedSeminars = useMemo(() => {
+    if (!allSeminars) return undefined;
+    const cohortsMap = new Map((cohorts ?? []).map((c) => [c._id, c]));
+
+    if (selectedCourse === "전문가과정") {
+      let filtered = allSeminars.filter((s) => s.cohortId !== undefined && s.cohortId !== null);
+      if (effectiveCohortId !== "all" && effectiveCohortId !== null) {
+        filtered = filtered.filter((s) => s.cohortId === effectiveCohortId);
+      }
+      return filtered.sort((a, b) => {
+        const aCohort = a.cohortId ? cohortsMap.get(a.cohortId) : null;
+        const bCohort = b.cohortId ? cohortsMap.get(b.cohortId) : null;
+        const aNum = aCohort ? aCohort.number : 0;
+        const bNum = bCohort ? bCohort.number : 0;
+        if (aNum !== bNum) return bNum - aNum;
+        if (a.sessionNumber !== b.sessionNumber) return a.sessionNumber - b.sessionNumber;
+        return a.startDate.localeCompare(b.startDate);
+      });
+    }
+
+    if (selectedCourse === "공통 / 전체") {
+      return [...allSeminars].sort((a, b) => a.startDate.localeCompare(b.startDate));
+    }
+
+    // Other courses: match title or description with selectedCourse
+    const filtered = allSeminars.filter((s) => {
+      if (s.cohortId !== undefined && s.cohortId !== null) return false;
+      return (
+        s.title.includes(selectedCourse) ||
+        s.description?.includes(selectedCourse) ||
+        s.title === selectedCourse
+      );
+    });
+    return filtered.sort((a, b) => {
+      if (a.sessionNumber !== b.sessionNumber) return a.sessionNumber - b.sessionNumber;
+      return a.startDate.localeCompare(b.startDate);
+    });
+  }, [allSeminars, cohorts, selectedCourse, effectiveCohortId]);
+
+  const seminars = displayedSeminars;
+  const cohortsMap = useMemo(() => new Map((cohorts ?? []).map((c) => [c._id, c])), [cohorts]);
+
+  const openEditCourseDef = (course: CourseInfo) => {
+    setIsEditingCourseDef(true);
+    setCourseDefKey(course.key);
+    setCourseDefName(course.name);
+    setCourseDefHours(course.creditHours > 0 ? String(course.creditHours) : "");
+    setCourseDefDesc(course.description || "");
+    setCourseDefPdfUrl(course.pdfUrl || "");
+    setCourseDefLandingUrl(course.landingPageUrl || "");
+    setShowCourseDefForm(true);
+  };
+
+  const openCreateCourseDef = () => {
+    setIsEditingCourseDef(false);
+    setCourseDefKey("");
+    setCourseDefName("");
+    setCourseDefHours("");
+    setCourseDefDesc("");
+    setCourseDefPdfUrl("");
+    setCourseDefLandingUrl("");
+    setShowCourseDefForm(true);
+  };
+
+  const [formCohortId, setFormCohortId] = useState<Id<"cohorts"> | "">("");
 
   const [showForm, setShowForm] = useState(false);
   const [editingSeminar, setEditingSeminar] = useState<Seminar | null>(null);
@@ -321,7 +549,9 @@ export default function AdminSeminarsPage() {
     }
   };
 
-  const selectedCohort = cohorts?.find((c) => c._id === selectedCohortId);
+  const selectedCohort = cohorts?.find(
+    (c) => c._id === (selectedCourse === "전문가과정" && effectiveCohortId !== "all" ? effectiveCohortId : null)
+  );
 
   const handleCommonCourseChange = (val: string) => {
     setCommonCourseSelect(val);
@@ -343,14 +573,34 @@ export default function AdminSeminarsPage() {
 
   const openCreate = () => {
     setEditingSeminar(null);
-    setForm({ ...defaultForm, sessionNumber: "" });
     setFormErrors({});
-    if (selectedCohortId === null) {
-      setCommonCourseSelect(courseOptions[0]);
-      setForm((prev) => ({ ...prev, title: courseOptions[0] }));
+    if (selectedCourse === "전문가과정") {
+      const defaultCId = effectiveCohortId !== "all" && effectiveCohortId ? effectiveCohortId : (activeCohort?._id ?? "");
+      setFormCohortId(defaultCId);
+      setCommonCourseSelect("");
+      setCustomCourseTitle("");
+      setForm({
+        ...defaultForm,
+        title: "1차 세미나",
+        sessionNumber: "1",
+      });
+    } else if (selectedCourse === "공통 / 전체") {
+      setFormCohortId("");
+      setCommonCourseSelect(courseOptions[0] || "공통");
+      setForm({
+        ...defaultForm,
+        title: courseOptions[0] || "공통",
+        sessionNumber: "1",
+      });
       setCustomCourseTitle("");
     } else {
-      setCommonCourseSelect("");
+      setFormCohortId("");
+      setCommonCourseSelect(selectedCourse);
+      setForm({
+        ...defaultForm,
+        title: selectedCourse,
+        sessionNumber: "1",
+      });
       setCustomCourseTitle("");
     }
     setShowForm(true);
@@ -371,7 +621,12 @@ export default function AdminSeminarsPage() {
       description: s.description ?? "",
       isOnline: s.isOnline ?? false,
     });
-    if (selectedCohortId === null) {
+    if (s.cohortId) {
+      setFormCohortId(s.cohortId);
+      setCommonCourseSelect("");
+      setCustomCourseTitle("");
+    } else {
+      setFormCohortId("");
       const isPredefined = courseOptions.slice(0, -1).includes(s.title);
       if (isPredefined) {
         setCommonCourseSelect(s.title);
@@ -380,9 +635,6 @@ export default function AdminSeminarsPage() {
         setCommonCourseSelect("기타(직접입력)");
         setCustomCourseTitle(s.title);
       }
-    } else {
-      setCommonCourseSelect("");
-      setCustomCourseTitle("");
     }
     setShowForm(true);
   };
@@ -416,7 +668,11 @@ export default function AdminSeminarsPage() {
         await updateSeminar({ seminarId: editingSeminar._id, ...payload });
         toast.success("세미나가 수정되었습니다");
       } else {
-        await createSeminar({ cohortId: selectedCohortId || undefined, ...payload });
+        let targetCohortId: Id<"cohorts"> | undefined = undefined;
+        if (selectedCourse === "전문가과정") {
+          targetCohortId = formCohortId ? (formCohortId as Id<"cohorts">) : (effectiveCohortId !== "all" && effectiveCohortId ? effectiveCohortId : undefined);
+        }
+        await createSeminar({ cohortId: targetCohortId, ...payload });
         toast.success("세미나가 추가되었습니다");
       }
       setShowForm(false);
@@ -462,7 +718,8 @@ export default function AdminSeminarsPage() {
   };
 
   const handleCopySeminars = async () => {
-    if (!copySourceId || !copyNewStart || !selectedCohortId) return;
+    const targetCohortId = (effectiveCohortId !== "all" && effectiveCohortId ? effectiveCohortId : null) ?? (selectedCohortId !== "all" ? selectedCohortId : null);
+    if (!copySourceId || !copyNewStart || !targetCohortId) return;
     const sourceCohort = cohorts?.find((c) => c._id === copySourceId);
     if (!sourceCohort) return;
     const dayOffset = differenceInDays(parseISO(copyNewStart), parseISO(sourceCohort.startDate));
@@ -475,7 +732,7 @@ export default function AdminSeminarsPage() {
     try {
       const count = await copySeminars({
         sourceCohortId: copySourceId,
-        targetCohortId: selectedCohortId,
+        targetCohortId: targetCohortId,
         dayOffset,
         seminarTypes,
       });
@@ -495,7 +752,7 @@ export default function AdminSeminarsPage() {
     }
   };
 
-  const groupManageSeminar = seminars?.find((s) => s._id === groupManageSeminarId) ?? null;
+  const groupManageSeminar = allSeminars?.find((s) => s._id === groupManageSeminarId) ?? null;
 
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
@@ -506,61 +763,198 @@ export default function AdminSeminarsPage() {
         </div>
       </div>
 
-      {/* Cohort selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <GraduationCap className="w-4 h-4" />
-            기수 선택
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {cohorts === undefined ? (
-            <Skeleton className="h-10 w-64" />
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedCohortId(null)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
-                  selectedCohortId === null
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background border-border hover:bg-muted"
-                }`}
+      {/* Course & Cohort Selector Card */}
+      <Card className="border-primary/20 shadow-sm">
+        <CardHeader className="pb-3 border-b bg-muted/10">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-primary" />
+              교육과정 선택
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs font-medium border-dashed cursor-pointer gap-1.5 hover:border-primary hover:text-primary"
+                onClick={openCreateCourseDef}
               >
-                공통
-              </button>
-              {cohorts.map((c) => (
+                <Plus className="w-3.5 h-3.5" />
+                교육과정 등록
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-4">
+          {/* Row 1: Course Selection Buttons */}
+          <div className="flex flex-wrap gap-2 items-center">
+            {allCourses.map((c) => {
+              const isSelected = selectedCourse === c.name;
+              return (
                 <button
-                  key={c._id}
-                  onClick={() => setSelectedCohortId(c._id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
-                    selectedCohortId === c._id
+                  key={c.key}
+                  onClick={() => setSelectedCourse(c.name)}
+                  className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-all cursor-pointer flex items-center gap-1.5 ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-background border-border text-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  <span>{c.name}</span>
+                  {c.creditHours > 0 && (
+                    <span
+                      className={`text-[11px] px-1.5 py-0.2 rounded-full ${
+                        isSelected
+                          ? "bg-primary-foreground/20 text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {c.creditHours}h
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setSelectedCourse("공통 / 전체")}
+              className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-all cursor-pointer ${
+                selectedCourse === "공통 / 전체"
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-background border-border text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              공통 / 전체
+            </button>
+          </div>
+
+          {/* Row 2: Sub-row for Cohort Selection (When 전문가과정 is selected) */}
+          {selectedCourse === "전문가과정" && (
+            <div className="p-3 bg-muted/30 rounded-lg border border-border/60 space-y-2">
+              <div className="flex items-center justify-between flex-wrap gap-2 text-xs font-medium text-muted-foreground">
+                <span className="flex items-center gap-1 text-foreground font-semibold">
+                  <GraduationCap className="w-3.5 h-3.5 text-primary" />
+                  전문가과정 기수 선택
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs font-medium text-primary hover:text-primary gap-1 cursor-pointer"
+                  onClick={() => setShowCohortForm(true)}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  새 기수 등록
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-1.5 items-center">
+                <button
+                  onClick={() => setSelectedCohortId("all")}
+                  className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
+                    effectiveCohortId === "all"
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-background border-border hover:bg-muted"
                   }`}
                 >
-                  {c.name}
-                  <span className="ml-1.5 text-xs opacity-70">
-                    {c.term === "first" ? "상반기" : "하반기"}
-                  </span>
+                  전체 기수 (통합)
                 </button>
-              ))}
-              <div className="flex gap-2 ml-auto sm:ml-0 flex-wrap">
+                {cohorts?.map((c) => {
+                  const isSelected = effectiveCohortId === c._id;
+                  return (
+                    <button
+                      key={c._id}
+                      onClick={() => setSelectedCohortId(c._id)}
+                      className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1 ${
+                        isSelected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background border-border hover:bg-muted"
+                      }`}
+                    >
+                      <span>{c.name}</span>
+                      <span className="text-[11px] opacity-75">
+                        {c.term === "first" ? "상반기" : "하반기"}
+                      </span>
+                      {c.status === "active" && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Row 3: Course Overview Banner & PDF / Landing Page Buttons */}
+          {selectedCourse !== "공통 / 전체" && currentCourseInfo && (
+            <div className="p-4 bg-primary/5 rounded-xl border border-primary/15 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1.5 max-w-2xl">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-semibold text-base text-foreground">
+                    {currentCourseInfo.fullName || currentCourseInfo.name}
+                  </h3>
+                  {currentCourseInfo.creditHours > 0 && (
+                    <Badge variant="secondary" className="text-xs bg-primary/10 text-primary hover:bg-primary/15 border-0">
+                      <Award className="w-3 h-3 mr-1 inline" />
+                      인정 {currentCourseInfo.creditHours}시간
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {currentCourseInfo.description || "등록된 과정 소개 내용이 없습니다."}
+                </p>
+              </div>
+
+              {/* Action buttons: PDF, Landing Page, Edit */}
+              <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+                {currentCourseInfo.pdfUrl ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs font-medium border-red-200 text-red-700 bg-red-50/50 hover:bg-red-100/70 dark:border-red-900/60 dark:text-red-400 dark:bg-red-950/30 gap-1.5 shadow-sm cursor-pointer"
+                    onClick={() => window.open(currentCourseInfo.pdfUrl, "_blank", "noopener,noreferrer")}
+                  >
+                    <FileDown className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                    안내 PDF 다운로드
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs font-normal text-muted-foreground hover:text-foreground gap-1.5 cursor-pointer"
+                    onClick={() => openEditCourseDef(currentCourseInfo)}
+                  >
+                    <FileDown className="w-3.5 h-3.5" />
+                    + PDF 링크 등록
+                  </Button>
+                )}
+
+                {currentCourseInfo.landingPageUrl ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs font-medium border-blue-200 text-blue-700 bg-blue-50/50 hover:bg-blue-100/70 dark:border-blue-900/60 dark:text-blue-400 dark:bg-blue-950/30 gap-1.5 shadow-sm cursor-pointer"
+                    onClick={() => window.open(currentCourseInfo.landingPageUrl, "_blank", "noopener,noreferrer")}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    랜딩페이지 바로가기
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs font-normal text-muted-foreground hover:text-foreground gap-1.5 cursor-pointer"
+                    onClick={() => openEditCourseDef(currentCourseInfo)}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    + 랜딩페이지 등록
+                  </Button>
+                )}
+
                 <Button
-                  variant="outline"
-                  className="px-4 py-2 h-auto text-sm font-medium border-dashed cursor-pointer gap-1.5"
-                  onClick={() => setShowCourseDefForm(true)}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs text-muted-foreground hover:text-foreground gap-1 cursor-pointer"
+                  onClick={() => openEditCourseDef(currentCourseInfo)}
                 >
-                  <Plus className="w-4 h-4" />
-                  교육과정 등록
-                </Button>
-                <Button
-                  variant="outline"
-                  className="px-4 py-2 h-auto text-sm font-medium border-dashed cursor-pointer gap-1.5"
-                  onClick={() => setShowCohortForm(true)}
-                >
-                  <Plus className="w-4 h-4" />
-                  새 과정(기수) 등록
+                  <Pencil className="w-3.5 h-3.5" />
+                  과정 정보 편집
                 </Button>
               </div>
             </div>
@@ -571,12 +965,21 @@ export default function AdminSeminarsPage() {
       {cohorts !== undefined && (
         <div className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <h2 className="text-lg font-semibold">
-              {selectedCohortId === null ? "공통 세미나 일정" : `${selectedCohort?.name} 세미나 일정`}
-              {seminars && <Badge variant="secondary" className="ml-2">{seminars.length}개</Badge>}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold">
+                {selectedCourse === "공통 / 전체"
+                  ? "전체 세미나 일정"
+                  : selectedCourse === "전문가과정"
+                    ? effectiveCohortId === "all"
+                      ? "전문가과정 (전체 기수) 일정"
+                      : `${selectedCohort?.name} (${selectedCohort?.term === "first" ? "상반기" : "하반기"}) 세미나 일정`
+                    : `${selectedCourse} 세미나 일정`}
+              </h2>
+              {seminars && <Badge variant="secondary" className="ml-1">{seminars.length}개</Badge>}
+            </div>
+
             <div className="flex gap-2 flex-wrap">
-              {selectedCohortId !== null && (
+              {selectedCourse === "전문가과정" && effectiveCohortId !== "all" && selectedCohort && (
                 <>
                   {seminars !== undefined && seminars.length === 0 && (
                     <Button
@@ -615,11 +1018,15 @@ export default function AdminSeminarsPage() {
               <EmptyHeader>
                 <EmptyMedia variant="icon"><CalendarDays /></EmptyMedia>
                 <EmptyTitle>등록된 세미나 일정이 없습니다</EmptyTitle>
-                <EmptyDescription>직접 추가하거나 자동 일정 생성을 이용하세요</EmptyDescription>
+                <EmptyDescription>
+                  {selectedCourse === "전문가과정" && effectiveCohortId !== "all"
+                    ? "직접 추가하거나 자동 일정 생성을 이용하세요"
+                    : "세미나 추가 버튼을 눌러 일정을 등록하세요"}
+                </EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
                 <div className="flex gap-2 flex-wrap justify-center">
-                  {selectedCohortId !== null && (
+                  {selectedCourse === "전문가과정" && effectiveCohortId !== "all" && (
                     <>
                       <Button size="sm" variant="ghost" onClick={() => setShowCopyDialog(true)} className="gap-1.5">
                         <Copy className="w-3.5 h-3.5" />
@@ -640,6 +1047,7 @@ export default function AdminSeminarsPage() {
               {seminars.map((s) => {
                 const isExpanded = expandedSeminar === s._id;
                 const isMultiDay = s.startDate !== s.endDate;
+                const seminarCohort = s.cohortId ? cohortsMap.get(s.cohortId) : null;
                 return (
                   <Card key={s._id} className="overflow-hidden">
                     <div
@@ -656,6 +1064,11 @@ export default function AdminSeminarsPage() {
                             <Badge variant={SEMINAR_TYPE_COLORS[s.seminarType] as "default" | "secondary" | "outline"} className="text-xs">
                               {SEMINAR_TYPE_LABELS[s.seminarType]}
                             </Badge>
+                            {seminarCohort && (
+                              <Badge variant="outline" className="text-xs bg-muted/40 font-normal">
+                                {seminarCohort.name} {seminarCohort.term === "first" ? "상반기" : "하반기"}
+                              </Badge>
+                            )}
                             {/* Online/offline badge for textbook */}
                             {s.seminarType === "one_day" && (
                               <Badge
@@ -730,7 +1143,48 @@ export default function AdminSeminarsPage() {
             <DialogTitle>{editingSeminar ? "세미나 수정" : "세미나 추가"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            {selectedCohortId === null ? (
+            {selectedCourse === "전문가과정" ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>대상 기수 <span className="text-destructive">*</span></Label>
+                    <Select
+                      value={formCohortId || (effectiveCohortId !== "all" && effectiveCohortId ? effectiveCohortId : (activeCohort?._id ?? ""))}
+                      onValueChange={(v) => setFormCohortId(v as Id<"cohorts">)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="기수 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cohorts?.map((c) => (
+                          <SelectItem key={c._id} value={c._id}>
+                            {c.name} ({c.term === "first" ? "상반기" : "하반기"})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>회차 번호</Label>
+                    <Input
+                      type="number"
+                      placeholder="예: 1"
+                      value={form.sessionNumber}
+                      onChange={(e) => setForm({ ...form, sessionNumber: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>세미나명 <span className="text-destructive">*</span></Label>
+                  <Input
+                    placeholder="예: 1차 세미나"
+                    value={form.title}
+                    onChange={(e) => { setForm({ ...form, title: e.target.value }); setFormErrors((prev) => ({ ...prev, title: false })); }}
+                    className={cn(formErrors.title && "border-destructive focus-visible:ring-destructive")}
+                  />
+                </div>
+              </div>
+            ) : (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -772,27 +1226,6 @@ export default function AdminSeminarsPage() {
                     />
                   </div>
                 )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>세미나명 <span className="text-destructive">*</span></Label>
-                  <Input
-                    placeholder="예: 1차 세미나"
-                    value={form.title}
-                    onChange={(e) => { setForm({ ...form, title: e.target.value }); setFormErrors((prev) => ({ ...prev, title: false })); }}
-                    className={cn(formErrors.title && "border-destructive focus-visible:ring-destructive")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>회차 번호</Label>
-                  <Input
-                    type="number"
-                    placeholder="예: 1"
-                    value={form.sessionNumber}
-                    onChange={(e) => setForm({ ...form, sessionNumber: e.target.value })}
-                  />
-                </div>
               </div>
             )}
             <div className="space-y-2">
@@ -950,10 +1383,10 @@ export default function AdminSeminarsPage() {
       </Dialog>
 
       {/* Group Coaching Assignment Dialog */}
-      {groupManageSeminar && selectedCohortId && (
+      {groupManageSeminar && groupManageSeminar.cohortId && (
         <GroupAssignmentDialog
           seminar={groupManageSeminar}
-          cohortId={selectedCohortId}
+          cohortId={groupManageSeminar.cohortId}
           onClose={() => setGroupManageSeminarId(null)}
         />
       )}
@@ -997,7 +1430,7 @@ export default function AdminSeminarsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {cohorts
-                    ?.filter((c) => c._id !== selectedCohortId)
+                    ?.filter((c) => c._id !== (effectiveCohortId !== "all" && effectiveCohortId ? effectiveCohortId : null))
                     .map((c) => (
                       <SelectItem key={c._id} value={c._id}>
                         {c.name} ({c.startDate})
@@ -1177,13 +1610,13 @@ export default function AdminSeminarsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* 교육과정 등록 다이얼로그 */}
+      {/* 교육과정 등록 및 편집 다이얼로그 */}
       <Dialog open={showCourseDefForm} onOpenChange={setShowCourseDefForm}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <GraduationCap className="w-5 h-5 text-primary" />
-              새 교육과정 등록
+              {isEditingCourseDef ? "교육과정 정보 편집" : "새 교육과정 등록"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -1196,22 +1629,51 @@ export default function AdminSeminarsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>인정 교육시간 (시간) <span className="text-destructive">*</span></Label>
+              <Label>인정 교육시간 (선택, 시간 단위)</Label>
               <Input
                 type="number"
-                min={1}
-                placeholder="예: 20"
+                min={0}
+                placeholder="예: 20 (미입력 시 0)"
                 value={courseDefHours}
                 onChange={(e) => setCourseDefHours(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label>과정 설명 (선택)</Label>
+              <Label>과정 간단 설명 (선택)</Label>
               <Textarea
-                placeholder="과정에 대한 간략한 설명을 입력하세요"
+                rows={3}
+                placeholder="과정에 대한 간략한 설명이나 목표를 입력하세요"
                 value={courseDefDesc}
                 onChange={(e) => setCourseDefDesc(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <FileDown className="w-3.5 h-3.5 text-red-600" />
+                안내 PDF 파일 링크 (선택)
+              </Label>
+              <Input
+                placeholder="예: https://.../guide.pdf"
+                value={courseDefPdfUrl}
+                onChange={(e) => setCourseDefPdfUrl(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                교육과정 소개서 또는 안내 PDF 파일의 웹 링크(URL)를 입력하세요.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+                관련 랜딩페이지 링크 (선택)
+              </Label>
+              <Input
+                placeholder="예: https://mcci.co.kr/courses/expert"
+                value={courseDefLandingUrl}
+                onChange={(e) => setCourseDefLandingUrl(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                신청 또는 세부 정보를 확인할 수 있는 웹사이트 주소를 입력하세요.
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -1219,30 +1681,10 @@ export default function AdminSeminarsPage() {
               취소
             </Button>
             <Button
-              onClick={async () => {
-                setSavingCourseDef(true);
-                try {
-                  const key = "custom_" + Date.now();
-                  await upsertCourseCredit({
-                    courseKey: key,
-                    courseName: courseDefName.trim(),
-                    creditHours: Number(courseDefHours) || 0,
-                    description: courseDefDesc.trim() || undefined,
-                  });
-                  toast.success("교육과정이 성공적으로 등록되었습니다.");
-                  setCourseDefName("");
-                  setCourseDefHours("");
-                  setCourseDefDesc("");
-                  setShowCourseDefForm(false);
-                } catch (err) {
-                  toast.error("교육과정 등록에 실패했습니다.");
-                } finally {
-                  setSavingCourseDef(false);
-                }
-              }}
-              disabled={savingCourseDef || !courseDefName.trim() || !courseDefHours}
+              onClick={handleSaveCourseDef}
+              disabled={savingCourseDef || !courseDefName.trim()}
             >
-              {savingCourseDef ? "저장 중..." : "등록 완료"}
+              {savingCourseDef ? "저장 중..." : (isEditingCourseDef ? "수정 완료" : "등록 완료")}
             </Button>
           </DialogFooter>
         </DialogContent>

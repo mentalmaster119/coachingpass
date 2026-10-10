@@ -541,8 +541,10 @@ export const upsertCourseCredit = mutation({
   args: {
     courseKey: v.string(),
     courseName: v.string(),
-    creditHours: v.number(),
+    creditHours: v.optional(v.number()),
     description: v.optional(v.string()),
+    pdfUrl: v.optional(v.string()),
+    landingPageUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -560,15 +562,37 @@ export const upsertCourseCredit = mutation({
       .withIndex("by_key", (q) => q.eq("courseKey", args.courseKey))
       .unique();
 
+    const data = {
+      courseKey: args.courseKey,
+      courseName: args.courseName,
+      creditHours: args.creditHours ?? 0,
+      description: args.description,
+      pdfUrl: args.pdfUrl,
+      landingPageUrl: args.landingPageUrl,
+      updatedBy: admin._id,
+    };
+
     if (existing) {
-      await ctx.db.patch(existing._id, {
-        courseName: args.courseName,
-        creditHours: args.creditHours,
-        description: args.description,
-        updatedBy: admin._id,
-      });
+      await ctx.db.patch(existing._id, data);
+      return existing._id;
     } else {
-      await ctx.db.insert("courseCredits", { ...args, updatedBy: admin._id });
+      return await ctx.db.insert("courseCredits", data);
     }
+  },
+});
+
+export const removeCourseCredit = mutation({
+  args: { id: v.id("courseCredits") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new ConvexError({ message: "Unauthenticated", code: "UNAUTHENTICATED" });
+    const admin = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+    if (!admin || admin.role !== "admin") {
+      throw new ConvexError({ message: "관리자 권한이 필요합니다.", code: "FORBIDDEN" });
+    }
+    await ctx.db.delete(args.id);
   },
 });

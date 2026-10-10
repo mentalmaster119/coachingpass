@@ -701,6 +701,8 @@ export default defineSchema({
     courseName: v.string(),        // 표시 이름
     creditHours: v.number(),       // 인정 시간
     description: v.optional(v.string()),
+    pdfUrl: v.optional(v.string()),
+    landingPageUrl: v.optional(v.string()),
     updatedBy: v.id("users"),
   })
     .index("by_key", ["courseKey"]),
