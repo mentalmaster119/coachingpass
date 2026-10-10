@@ -377,14 +377,10 @@ export const getMySummary = query({
     const pendingCount = logs.filter((l) => l.approvalStatus === "pending").length;
     const rejectedCount = logs.filter((l) => l.approvalStatus === "rejected").length;
 
-    // NCP: count unique athlete clients (스포츠선수 고객 수)
-    const athleteClientNames = new Set<string>();
-    for (const log of approvedLogs) {
-      if (log.ncpClientCategory === "athlete" && log.coacheeInfo) {
-        athleteClientNames.add(log.coacheeInfo.trim());
-      }
-    }
-    const athleteClientCount = athleteClientNames.size;
+    // NCP: count athlete coaching sessions (스포츠선수 코칭 건수)
+    const athleteClientCount = approvedLogs.filter(
+      (log) => log.ncpClientCategory === "athlete"
+    ).length;
     // NCP: total approved session count (목표: 15회)
     const approvedSessionCount = approvedLogs.length;
 

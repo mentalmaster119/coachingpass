@@ -476,7 +476,7 @@ export default function AdminReportPage() {
                 {[
                   { icon: <Users className="w-4 h-4" />, label: "출석률 80% 이상 (2~6차 완전 결석 불가)", section: "수료" },
                   { icon: <ClipboardList className="w-4 h-4" />, label: "코칭 보고서 10건 이상 (수료 기준)", section: "수료" },
-                  { icon: <ClipboardList className="w-4 h-4" />, label: "코칭 보고서 20건 이상 (동일인 최대 2건)", section: "인증" },
+                  { icon: <ClipboardList className="w-4 h-4" />, label: "코칭 보고서 20건 이상", section: "인증" },
                   { icon: <Dumbbell className="w-4 h-4" />, label: "스포츠선수 대상 코칭 8건 이상", section: "인증" },
                   { icon: <BookOpen className="w-4 h-4" />, label: "독후감 2건 이상", section: "인증" },
                   { icon: <FileText className="w-4 h-4" />, label: "멘탈코칭 에세이 1건 이상", section: "인증" },

@@ -15,10 +15,9 @@ import type { Id } from "./_generated/dataModel.d.ts";
 // 인증 기준 (인증시험 응시 자격):
 //  1. 코칭 실습 보고서 승인 20건 이상
 //  2. 그 중 스포츠 선수 대상 8건 이상
-//  3. 동일인에 대한 보고서는 최대 2건까지만 인정
-//  4. 독후감 승인 2건 이상
-//  5. 멘탈코칭 에세이 승인 1건 이상
-//  6. 슈퍼비전/멘토링 승인 1건 이상 (mentorCoachingLogs)
+//  3. 독후감 승인 2건 이상
+//  4. 멘탈코칭 에세이 승인 1건 이상
+//  5. 슈퍼비전/멘토링 승인 1건 이상 (mentorCoachingLogs)
 
 async function requireAuth(ctx: QueryCtx) {
   const identity = await ctx.auth.getUserIdentity();
@@ -70,29 +69,15 @@ export async function calculateCoachingProgress(ctx: QueryCtx, userId: Id<"users
   const sportsLogs = coachingLogs.filter(
     (l) => l.ncpClientCategory === "athlete" && !["buddy", "mentor", "sv"].includes(l.coachingType)
   );
-  // Group by coachee and cap at 2 each
-  const sportsCoacheeCounts: Record<string, number> = {};
-  for (const log of sportsLogs) {
-    const key = log.coacheeInfo.trim();
-    sportsCoacheeCounts[key] = (sportsCoacheeCounts[key] ?? 0) + 1;
-  }
-  const sportsCount = Object.values(sportsCoacheeCounts)
-    .reduce((sum, count) => sum + Math.min(count, 2), 0);
+  const sportsCount = sportsLogs.length;
 
   // 5. General coaching count (ncpClientCategory === "general" & not buddy/mentor/sv)
   const generalLogs = coachingLogs.filter(
     (l) => l.ncpClientCategory === "general" && !["buddy", "mentor", "sv"].includes(l.coachingType)
   );
-  // Group by coachee and cap at 2 each
-  const generalCoacheeCounts: Record<string, number> = {};
-  for (const log of generalLogs) {
-    const key = log.coacheeInfo.trim();
-    generalCoacheeCounts[key] = (generalCoacheeCounts[key] ?? 0) + 1;
-  }
-  const generalCount = Object.values(generalCoacheeCounts)
-    .reduce((sum, count) => sum + Math.min(count, 2), 0);
+  const generalCount = generalLogs.length;
 
-  // Raw counts
+  // Raw counts (same as sportsCount / generalCount now)
   const rawSportsCount = sportsLogs.length;
   const rawGeneralCount = generalLogs.length;
 

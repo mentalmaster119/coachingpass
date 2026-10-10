@@ -218,11 +218,11 @@ export default function CoachingLogPage() {
           <p className="text-sm font-semibold text-foreground mb-2">NCP 인정 기준 달성 현황</p>
           <div className="grid grid-cols-2 gap-3">
             <NcpProgressCard
-              label="선수 고객 수 (최소 5명)"
+              label="선수 코칭 횟수 (목표 8회)"
               current={summary.athleteClientCount}
-              goal={5}
+              goal={8}
               icon={<UserCheck className="w-4 h-4" />}
-              unit="명"
+              unit="회"
             />
             <NcpProgressCard
               label="총 코칭 횟수 (목표 15회)"

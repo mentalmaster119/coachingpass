@@ -981,7 +981,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
                 <div className="space-y-1.5">
                   <Label>
                     {getCoacheeLabel("NCP 고객 분류")}{" "}
-                    <span className="text-xs text-muted-foreground font-normal">(선수 최소 5명 이상 필요)</span>
+                    <span className="text-xs text-muted-foreground font-normal">(스포츠선수/일반인 분류)</span>
                   </Label>
                   <div className="flex gap-2">
                     {(["athlete", "general"] as const).map((cat) => (

@@ -29,3 +29,5 @@ tsconfig.tsbuildinfo
 # Environment variables
 .env*
 .vercel
+
+scratch/
