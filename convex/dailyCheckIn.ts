@@ -47,13 +47,73 @@ export const getMyHistory = query({
   },
 });
 
-// 체크인 제출 (오늘 이미 있으면 업데이트)
+// 내 체크인 & 감사일기 통계 및 최근 기록 (연속 일수, 총 횟수, 감사 모아보기)
+export const getMyCheckInStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireAuth(ctx);
+    const records = await ctx.db
+      .query("dailyCheckIns")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    records.sort((a, b) => a.checkInDate.localeCompare(b.checkInDate));
+    const totalCount = records.length;
+
+    // 연속 작성일수 (Streak) 계산
+    const dateSet = new Set(records.map((r) => r.checkInDate));
+    const today = new Date();
+    const formatDate = (d: Date) => d.toISOString().slice(0, 10);
+    const todayStr = formatDate(today);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = formatDate(yesterday);
+
+    let currentStreak = 0;
+    let checkDate = dateSet.has(todayStr)
+      ? new Date(today)
+      : dateSet.has(yesterdayStr)
+      ? new Date(yesterday)
+      : null;
+
+    if (checkDate) {
+      while (dateSet.has(formatDate(checkDate))) {
+        currentStreak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+    }
+
+    // 감사가 포함된 기록 추출 (최근 30개 내림차순)
+    const gratitudeEntries = records
+      .filter(
+        (r) =>
+          (r.gratitude1 && r.gratitude1.trim()) ||
+          (r.gratitude2 && r.gratitude2.trim()) ||
+          (r.gratitude3 && r.gratitude3.trim()) ||
+          (r.message && r.message.trim())
+      )
+      .slice(-30)
+      .reverse();
+
+    return {
+      totalCount,
+      currentStreak,
+      gratitudeEntries,
+    };
+  },
+});
+
+// 체크인 & 감사일기 제출 (오늘 이미 있으면 업데이트)
 export const submitCheckIn = mutation({
   args: {
     bodyScore: v.number(),
     mindScore: v.number(),
     passionScore: v.number(),
     message: v.optional(v.string()),
+    gratitude1: v.optional(v.string()),
+    gratitude2: v.optional(v.string()),
+    gratitude3: v.optional(v.string()),
+    gratitudeTags: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     const user = await requireAuth(ctx);
@@ -73,6 +133,10 @@ export const submitCheckIn = mutation({
         mindScore: args.mindScore,
         passionScore: args.passionScore,
         message: args.message,
+        gratitude1: args.gratitude1,
+        gratitude2: args.gratitude2,
+        gratitude3: args.gratitude3,
+        gratitudeTags: args.gratitudeTags,
       });
       return existing._id;
     }
@@ -83,6 +147,10 @@ export const submitCheckIn = mutation({
       mindScore: args.mindScore,
       passionScore: args.passionScore,
       message: args.message,
+      gratitude1: args.gratitude1,
+      gratitude2: args.gratitude2,
+      gratitude3: args.gratitude3,
+      gratitudeTags: args.gratitudeTags,
     });
   },
 });

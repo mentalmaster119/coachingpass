@@ -39,6 +39,7 @@ async function notifyCoachOfReflection(
 const relatedTypeValidator = v.optional(
   v.union(
     v.literal("general"),
+    v.literal("gratitude"),
     v.literal("coaching"),
     v.literal("mentor_coaching"),
     v.literal("education"),

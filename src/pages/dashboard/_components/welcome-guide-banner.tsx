@@ -18,7 +18,7 @@ const QUICK_LINKS = [
   {
     icon: <Heart className="w-5 h-5" />,
     color: "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400",
-    label: "자기 체크인",
+    label: "감사·체크인",
     href: "/daily-checkin",
   },
   {

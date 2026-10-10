@@ -3,7 +3,7 @@ import { useMutation } from "convex/react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { Pencil, Trash2, BookOpen, Users, MessageSquare, GraduationCap, ChevronDown, ChevronUp } from "lucide-react";
+import { Pencil, Trash2, BookOpen, Users, MessageSquare, GraduationCap, ChevronDown, ChevronUp, Heart } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
 import type { Doc } from "@/convex/_generated/dataModel.d.ts";
 import { Card, CardContent } from "@/components/ui/card.tsx";
@@ -25,6 +25,7 @@ type ReflectionDoc = Doc<"reflectionJournals">;
 
 const RELATED_TYPE_CONFIG = {
   general:         { label: "일반 성찰",      icon: BookOpen,      color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  gratitude:       { label: "감사 일기",      icon: Heart,         color: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400" },
   coaching:        { label: "코칭 실습",       icon: Users,         color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
   mentor_coaching: { label: "멘토코칭/코더코", icon: MessageSquare, color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
   education:       { label: "교육 이수",       icon: GraduationCap, color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },

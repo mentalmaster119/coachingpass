@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "convex/react";
 import { motion } from "motion/react";
-import { Plus, NotebookPen, BookOpen, TrendingUp, Calendar } from "lucide-react";
+import { Plus, NotebookPen, BookOpen, TrendingUp, Calendar, Heart } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
 import { Button } from "@/components/ui/button.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
@@ -18,10 +18,11 @@ import {
 import ReflectionForm from "./_components/reflection-form.tsx";
 import ReflectionCard from "./_components/reflection-card.tsx";
 
-type RelatedType = "general" | "coaching" | "mentor_coaching" | "education";
+type RelatedType = "general" | "gratitude" | "coaching" | "mentor_coaching" | "education";
 
 const TYPE_LABELS: Record<RelatedType, string> = {
   general: "일반 성찰",
+  gratitude: "감사 일기",
   coaching: "코칭 실습",
   mentor_coaching: "멘토코칭/코더코",
   education: "교육 이수",
@@ -139,6 +140,10 @@ export default function ReflectionPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4 flex-wrap h-auto gap-1">
             <TabsTrigger value="all">전체</TabsTrigger>
+            <TabsTrigger value="gratitude" className="gap-1.5 data-[state=active]:text-rose-600 dark:data-[state=active]:text-rose-400">
+              <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20" />
+              감사 일기
+            </TabsTrigger>
             <TabsTrigger value="general">일반 성찰</TabsTrigger>
             <TabsTrigger value="coaching">코칭 실습</TabsTrigger>
             <TabsTrigger value="mentor_coaching">멘토코칭</TabsTrigger>

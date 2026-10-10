@@ -79,7 +79,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
   if ((role === "admin" || role === "admin3") && isPreviewMode) {
     return [
       { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
-      { label: "매일 자기 체크인", href: "/daily-checkin", icon: <Heart className="w-4 h-4" /> },
+      { label: "매일 체크인 & 감사일기", href: "/daily-checkin", icon: <Heart className="w-4 h-4" /> },
       { label: "출석 체크", href: "/attendance", icon: <CalendarDays className="w-4 h-4" /> },
       { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
       { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
@@ -181,7 +181,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
   // trainee
   return [
     { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
-    { label: "매일 자기 체크인", href: "/daily-checkin", icon: <Heart className="w-4 h-4" /> },
+    { label: "매일 체크인 & 감사일기", href: "/daily-checkin", icon: <Heart className="w-4 h-4" /> },
     { label: "출석 체크", href: "/attendance", icon: <CalendarDays className="w-4 h-4" /> },
     { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
     { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
@@ -602,7 +602,7 @@ function getBottomNavItems(role: string, isPreviewMode?: boolean): BottomNavItem
   if ((role === "admin" || role === "senior_coach") && isPreviewMode) {
     return [
       { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-      { label: "체크인", href: "/daily-checkin", icon: <Heart className="w-5 h-5" /> },
+      { label: "감사·체크인", href: "/daily-checkin", icon: <Heart className="w-5 h-5" /> },
       { label: "코칭", href: "/coaching-log", icon: <ClipboardList className="w-5 h-5" /> },
       { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-5 h-5" /> },
       { label: "더보기", href: "#menu", icon: <Menu className="w-5 h-5" /> },
@@ -628,7 +628,7 @@ function getBottomNavItems(role: string, isPreviewMode?: boolean): BottomNavItem
   }
   return [
     { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-    { label: "체크인", href: "/daily-checkin", icon: <Heart className="w-5 h-5" /> },
+    { label: "감사·체크인", href: "/daily-checkin", icon: <Heart className="w-5 h-5" /> },
     { label: "코칭", href: "/coaching-log", icon: <ClipboardList className="w-5 h-5" /> },
     { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-5 h-5" /> },
     { label: "더보기", href: "#menu", icon: <Menu className="w-5 h-5" /> },

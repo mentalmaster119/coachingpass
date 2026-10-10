@@ -71,8 +71,8 @@ export default function QuickActionWidget() {
     {
       id: "checkin",
       icon: <Heart className="w-5 h-5" />,
-      label: "오늘 자기 체크인",
-      sub: status.checkedInToday ? "오늘 완료!" : "오늘 아직 안 했어요",
+      label: "오늘 체크인 & 감사일기",
+      sub: status.checkedInToday ? "오늘 완료! (기록 보기)" : "오늘의 마음 점수와 감사 기록",
       done: status.checkedInToday,
       doneLabel: "완료",
       accent: "text-rose-500 bg-rose-50 dark:bg-rose-900/20",

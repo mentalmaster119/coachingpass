@@ -208,6 +208,7 @@ export default defineSchema({
     relatedType: v.optional(
       v.union(
         v.literal("general"),       // 일반 성찰
+        v.literal("gratitude"),     // 감사 일기
         v.literal("coaching"),      // 코칭 실습 관련
         v.literal("mentor_coaching"), // 멘토코칭/코더코 관련
         v.literal("education"),     // 교육 이수 관련
@@ -646,14 +647,18 @@ export default defineSchema({
     .index("by_user_and_status", ["userId", "status"])
     .index("by_forum_and_user", ["forumId", "userId"]),
 
-  // 매일 자기 체크인
+  // 매일 자기 체크인 & 감사일기
   dailyCheckIns: defineTable({
     userId: v.id("users"),
     checkInDate: v.string(),       // ISO 8601 (YYYY-MM-DD)
     bodyScore: v.number(),         // 1~10
     mindScore: v.number(),         // 1~10
     passionScore: v.number(),      // 1~10
-    message: v.optional(v.string()), // 오늘 자신에게 힘을 주는 한 마디
+    message: v.optional(v.string()), // 오늘 자신에게 힘을 주는 한 마디 / 종합 메모
+    gratitude1: v.optional(v.string()), // 오늘 감사한 일 1
+    gratitude2: v.optional(v.string()), // 오늘 감사한 일 2
+    gratitude3: v.optional(v.string()), // 오늘 감사한 일 3
+    gratitudeTags: v.optional(v.array(v.string())), // 감사 키워드 태그 (#배움, #일상 등)
   })
     .index("by_user", ["userId"])
     .index("by_user_and_date", ["userId", "checkInDate"])
