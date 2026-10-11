@@ -119,6 +119,107 @@ export const EDUCATION_CATEGORIES: EducationCategory[] = [
 ];
 
 /**
+ * Dynamically merges DB-stored courseCredits into the static EDUCATION_CATEGORIES.
+ * Custom courses added by admins (e.g. 멘탈트레이닝기본과정, 멘탈 포럼) are attached to their
+ * respective educationCategory, and existing course overrides (creditHours, description, URLs)
+ * are cleanly applied.
+ */
+export function getMergedCurriculum(
+  courseCredits?: Array<{
+    courseKey: string;
+    courseName: string;
+    creditHours: number;
+    description?: string;
+    pdfUrl?: string;
+    landingPageUrl?: string;
+    educationCategory?: string;
+    isLongTerm?: boolean;
+  }> | null
+): EducationCategory[] {
+  const categories: EducationCategory[] = EDUCATION_CATEGORIES.map((cat) => ({
+    ...cat,
+    courses: cat.courses.map((c) => ({ ...c })),
+  }));
+
+  if (!courseCredits || courseCredits.length === 0) {
+    return categories;
+  }
+
+  for (const cc of courseCredits) {
+    // 1. Determine target education category
+    let targetCatKey: EducationCategoryKey = "common";
+    if (
+      cc.educationCategory === "expert" ||
+      cc.educationCategory === "common" ||
+      cc.educationCategory === "kca"
+    ) {
+      targetCatKey = cc.educationCategory;
+    } else {
+      const name = (cc.courseName || "").trim();
+      if (
+        name.includes("KAC") ||
+        name.includes("KPC") ||
+        name.includes("코치협회") ||
+        name.includes("KCA")
+      ) {
+        targetCatKey = "kca";
+      } else if (
+        (name.includes("전문가") || name.includes("SMPCC")) &&
+        !name.includes("기본과정")
+      ) {
+        targetCatKey = "expert";
+      } else {
+        targetCatKey = "common";
+      }
+    }
+
+    const cat = categories.find((c) => c.key === targetCatKey);
+    if (!cat) continue;
+
+    // 2. Check if it matches an existing predefined course
+    const existingIdx = cat.courses.findIndex(
+      (c) =>
+        c.key === cc.courseKey ||
+        c.name === cc.courseName ||
+        c.fullName === cc.courseName ||
+        (c.aliases &&
+          c.aliases.some((a) => cc.courseName.includes(a) || a.includes(cc.courseName)))
+    );
+
+    if (existingIdx >= 0) {
+      const existing = cat.courses[existingIdx];
+      cat.courses[existingIdx] = {
+        ...existing,
+        fullName: existing.fullName || cc.courseName,
+        creditHours: cc.creditHours || existing.creditHours,
+        description: cc.description || existing.description,
+        pdfUrl: cc.pdfUrl || existing.pdfUrl,
+        landingPageUrl: cc.landingPageUrl || existing.landingPageUrl,
+      };
+    } else {
+      // 3. Insert as a new custom course in this category!
+      cat.courses.push({
+        key: cc.courseKey,
+        name: cc.courseName,
+        fullName: cc.courseName,
+        educationCategory: targetCatKey,
+        isLongTerm:
+          cc.isLongTerm !== undefined
+            ? cc.isLongTerm
+            : targetCatKey === "expert",
+        creditHours: cc.creditHours ?? 0,
+        description: cc.description || "",
+        badgeLabel: cc.creditHours ? `${cc.creditHours}시간` : "단기 과정",
+        pdfUrl: cc.pdfUrl,
+        landingPageUrl: cc.landingPageUrl,
+      });
+    }
+  }
+
+  return categories;
+}
+
+/**
  * Determine the Education Category and Course for a Cohort.
  * If cohort was created with an explicit educationCategory, use it.
  * Otherwise, fall back cleanly using its name so existing DB data (e.g. 18기, 심리학강독)
@@ -177,6 +278,11 @@ export function resolveCohortCategory(cohort: {
   // 4. Check KPC
   if (name.includes("KPC") || name.includes("kpc")) {
     return { category: "kca", courseKey: "kpc", isLongTerm: false };
+  }
+
+  // 5. Check Mental Training
+  if (name.includes("트레이닝") || name.includes("멘탈트레이닝")) {
+    return { category: "common", courseKey: "course_1791683370051", isLongTerm: false };
   }
 
   // Default: Regular Expert Cohort (18기, 19기, 17기, 16기...)
@@ -247,6 +353,9 @@ export function resolveSeminarCategory(
     text.includes("CP")
   ) {
     return { category: "common", courseKey: "sp_cp", isLongTerm: false };
+  }
+  if (text.includes("트레이닝") || text.includes("멘탈트레이닝")) {
+    return { category: "common", courseKey: "course_1791683370051", isLongTerm: false };
   }
 
   // Forum check

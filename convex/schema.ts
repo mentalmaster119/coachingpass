@@ -724,9 +724,12 @@ export default defineSchema({
     description: v.optional(v.string()),
     pdfUrl: v.optional(v.string()),
     landingPageUrl: v.optional(v.string()),
+    educationCategory: v.optional(v.union(v.literal("expert"), v.literal("common"), v.literal("kca"))),
+    isLongTerm: v.optional(v.boolean()),
     updatedBy: v.id("users"),
   })
-    .index("by_key", ["courseKey"]),
+    .index("by_key", ["courseKey"])
+    .index("by_category", ["educationCategory"]),
 
   // Push notification identity mapping (Hercules SDK)
   pushIdentities: defineTable({

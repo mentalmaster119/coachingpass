@@ -545,6 +545,8 @@ export const upsertCourseCredit = mutation({
     description: v.optional(v.string()),
     pdfUrl: v.optional(v.string()),
     landingPageUrl: v.optional(v.string()),
+    educationCategory: v.optional(v.union(v.literal("expert"), v.literal("common"), v.literal("kca"))),
+    isLongTerm: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -569,6 +571,8 @@ export const upsertCourseCredit = mutation({
       description: args.description,
       pdfUrl: args.pdfUrl,
       landingPageUrl: args.landingPageUrl,
+      educationCategory: args.educationCategory,
+      isLongTerm: args.isLongTerm,
       updatedBy: admin._id,
     };
 

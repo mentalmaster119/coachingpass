@@ -35,6 +35,7 @@ function getResolvedCohortCategory(cohort: any): "expert" | "common" | "kca" {
   const name = (cohort.name || "").trim();
   if (name.includes("심리학") || name.includes("강독") || name.includes("SP") || name.includes("CP")) return "common";
   if (name.includes("MSPE") || name.includes("mspe") || name.includes("명상")) return "common";
+  if (name.includes("트레이닝") || name.includes("멘탈트레이닝")) return "common";
   if (name.includes("KAC") || name.includes("kac")) return "kca";
   if (name.includes("KPC") || name.includes("kpc")) return "kca";
   return "expert";
@@ -45,6 +46,7 @@ function getResolvedCourseCode(cohort: any): string {
   const name = (cohort.name || "").trim();
   if (name.includes("심리학") || name.includes("강독") || name.includes("SP") || name.includes("CP")) return "sp_cp";
   if (name.includes("MSPE") || name.includes("mspe") || name.includes("명상")) return "mspe";
+  if (name.includes("트레이닝") || name.includes("멘탈트레이닝")) return "course_1791683370051";
   if (name.includes("KAC") || name.includes("kac")) return "kac";
   if (name.includes("KPC") || name.includes("kpc")) return "kpc";
   return "expert";

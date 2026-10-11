@@ -34,6 +34,7 @@ function getResolvedCohortCategory(cohort: any): "expert" | "common" | "kca" {
   const name = (cohort.name || "").trim();
   if (name.includes("심리학") || name.includes("강독") || name.includes("SP") || name.includes("CP")) return "common";
   if (name.includes("MSPE") || name.includes("mspe") || name.includes("명상")) return "common";
+  if (name.includes("트레이닝") || name.includes("멘탈트레이닝")) return "common";
   if (name.includes("KAC") || name.includes("kac")) return "kca";
   if (name.includes("KPC") || name.includes("kpc")) return "kca";
   return "expert";
@@ -49,7 +50,7 @@ function getResolvedSeminarCategory(seminar: any, cohortMap: Map<string, any>): 
   if (seminar.cohortId && cohortMap.has(seminar.cohortId)) {
     const c = cohortMap.get(seminar.cohortId)!;
     const cat = getResolvedCohortCategory(c);
-    const code = c.courseCode || (cat === "common" ? (c.name.includes("심리학") || c.name.includes("강독") ? "sp_cp" : "mspe") : cat === "kca" ? (c.name.includes("KPC") ? "kpc" : "kac") : "expert");
+    const code = c.courseCode || (cat === "common" ? (c.name.includes("심리학") || c.name.includes("강독") ? "sp_cp" : c.name.includes("트레이닝") ? "course_1791683370051" : "mspe") : cat === "kca" ? (c.name.includes("KPC") ? "kpc" : "kac") : "expert");
     return { category: cat, courseCode: code };
   }
   const text = `${seminar.title} ${seminar.description || ""}`;
@@ -57,6 +58,7 @@ function getResolvedSeminarCategory(seminar: any, cohortMap: Map<string, any>): 
   if (text.includes("KPC") || text.includes("kpc")) return { category: "kca", courseCode: "kpc" };
   if (text.includes("MSPE") || text.includes("mspe") || text.includes("명상")) return { category: "common", courseCode: "mspe" };
   if (text.includes("심리학") || text.includes("강독") || text.includes("SP") || text.includes("CP")) return { category: "common", courseCode: "sp_cp" };
+  if (text.includes("트레이닝") || text.includes("멘탈트레이닝")) return { category: "common", courseCode: "course_1791683370051" };
   if (text.includes("포럼") || text.includes("멘탈 포럼")) return { category: "common", courseCode: "mspe" };
   return { category: "expert", courseCode: "expert" };
 }

@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import {
   EDUCATION_CATEGORIES,
+  getMergedCurriculum,
   resolveCohortCategory,
   resolveSeminarCategory,
   type EducationCategoryKey,
@@ -312,36 +313,21 @@ export default function AdminSeminarsPage() {
     );
   }, [cohorts]);
 
+  const categories = useMemo(() => getMergedCurriculum(courseCredits), [courseCredits]);
+
   const currentCategoryDef = useMemo(() => {
     if (selectedCategory === "all") return null;
-    return EDUCATION_CATEGORIES.find((c) => c.key === selectedCategory) ?? null;
-  }, [selectedCategory]);
+    return categories.find((c) => c.key === selectedCategory) ?? null;
+  }, [categories, selectedCategory]);
 
   const currentCourseDef = useMemo(() => {
     if (!currentCategoryDef) return null;
-    const base =
+    return (
       currentCategoryDef.courses.find((c) => c.key === selectedCourseKey) ??
-      currentCategoryDef.courses[0];
-    if (!base) return null;
-
-    // Check if there are overrides in courseCredits table
-    const dbCredit = (courseCredits ?? []).find(
-      (cc) =>
-        cc.courseKey === base.key ||
-        cc.courseName === base.name ||
-        cc.courseName === base.fullName
+      currentCategoryDef.courses[0] ??
+      null
     );
-    if (dbCredit) {
-      return {
-        ...base,
-        creditHours: dbCredit.creditHours ?? base.creditHours,
-        description: dbCredit.description || base.description,
-        pdfUrl: dbCredit.pdfUrl || base.pdfUrl,
-        landingPageUrl: dbCredit.landingPageUrl || base.landingPageUrl,
-      };
-    }
-    return base;
-  }, [currentCategoryDef, selectedCourseKey, courseCredits]);
+  }, [currentCategoryDef, selectedCourseKey]);
 
   const availableCohorts = useMemo(() => {
     if (!cohorts) return [];
@@ -370,7 +356,7 @@ export default function AdminSeminarsPage() {
       setSelectedCourseKey("");
       setSelectedCohortId("all");
     } else {
-      const catDef = EDUCATION_CATEGORIES.find((c) => c.key === catKey);
+      const catDef = categories.find((c) => c.key === catKey);
       const defaultCourse = catDef?.courses[0]?.key ?? "";
       setSelectedCourseKey(defaultCourse);
 
@@ -455,12 +441,15 @@ export default function AdminSeminarsPage() {
         description: courseDefDesc.trim() || undefined,
         pdfUrl: courseDefPdfUrl.trim() || undefined,
         landingPageUrl: courseDefLandingUrl.trim() || undefined,
+        educationCategory: courseDefCategory,
+        isLongTerm: courseDefCategory === "expert",
       });
       toast.success(
         isEditingCourseDef
           ? "과정 정보가 성공적으로 수정되었습니다."
           : "교육과정이 성공적으로 등록되었습니다."
       );
+      setSelectedCategory(courseDefCategory);
       setSelectedCourseKey(key);
       setShowCourseDefForm(false);
     } catch (err) {
@@ -474,18 +463,18 @@ export default function AdminSeminarsPage() {
   const courseOptions = useMemo(() => {
     let courses: string[] = [];
     if (selectedCategory === "common") {
-      courses = EDUCATION_CATEGORIES.find((c) => c.key === "common")?.courses.map((c) => c.name) ?? [];
+      courses = categories.find((c) => c.key === "common")?.courses.map((c) => c.name) ?? [];
     } else if (selectedCategory === "kca") {
-      courses = EDUCATION_CATEGORIES.find((c) => c.key === "kca")?.courses.map((c) => c.name) ?? [];
+      courses = categories.find((c) => c.key === "kca")?.courses.map((c) => c.name) ?? [];
     } else {
-      courses = EDUCATION_CATEGORIES.flatMap((cat) => cat.courses.map((c) => c.name));
+      courses = categories.flatMap((cat) => cat.courses.map((c) => c.name));
     }
     const dbCourseNames = (courseCredits ?? []).map((c) => c.courseName);
     const combined = Array.from(
       new Set([...courses, ...dbCourseNames, ...COMMON_COURSE_OPTIONS.filter((o) => o !== "기타(직접입력)")])
     );
     return [...combined, "기타(직접입력)"];
-  }, [selectedCategory, courseCredits]);
+  }, [categories, selectedCategory, courseCredits]);
 
   const openEditCourseDef = (course: CourseInfo | CourseDefinition) => {
     setIsEditingCourseDef(true);
@@ -851,7 +840,7 @@ export default function AdminSeminarsPage() {
               <span>1단계 · 교육 분류</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {EDUCATION_CATEGORIES.map((cat) => {
+              {categories.map((cat) => {
                 const isSelected = selectedCategory === cat.key;
                 return (
                   <button
@@ -894,14 +883,25 @@ export default function AdminSeminarsPage() {
             </div>
           </div>
 
-          {/* Tier 2: 과정 선택 (멘탈공통교육 / KCA교육) */}
-          {selectedCategory !== "all" && currentCategoryDef && currentCategoryDef.courses.length > 1 && (
+          {/* Tier 2: 과정 선택 */}
+          {selectedCategory !== "all" && currentCategoryDef && (
             <div className="p-3 bg-muted/20 rounded-lg border border-border/60 space-y-2">
-              <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <span>2단계 · 과정 선택</span>
-                <span className="text-muted-foreground font-normal">
-                  ({currentCategoryDef.name} 하위 과정)
-                </span>
+              <div className="flex items-center justify-between flex-wrap gap-2 text-xs font-semibold text-foreground">
+                <div className="flex items-center gap-1.5">
+                  <span>2단계 · 과정 선택</span>
+                  <span className="text-muted-foreground font-normal">
+                    ({currentCategoryDef.name} 하위 {currentCategoryDef.courses.length}개 과정)
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-1.5 text-xs text-primary hover:text-primary gap-1 cursor-pointer"
+                  onClick={openCreateCourseDef}
+                >
+                  <Plus className="w-3 h-3" />
+                  새 과정 추가
+                </Button>
               </div>
               <div className="flex flex-wrap gap-2">
                 {currentCategoryDef.courses.map((course) => {
@@ -914,7 +914,7 @@ export default function AdminSeminarsPage() {
                       className={cn(
                         "px-3.5 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5",
                         isSelected
-                          ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                          ? "bg-primary text-primary-foreground border-primary shadow-xs font-semibold"
                           : "bg-background border-border text-foreground hover:bg-muted"
                       )}
                     >
@@ -927,7 +927,7 @@ export default function AdminSeminarsPage() {
                             : "bg-muted text-muted-foreground"
                         )}
                       >
-                        {course.badgeLabel ?? `${course.creditHours}h`}
+                        {course.badgeLabel ?? (course.creditHours > 0 ? `${course.creditHours}시간` : "단기")}
                       </span>
                     </button>
                   );
@@ -1741,24 +1741,22 @@ export default function AdminSeminarsPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            {!isEditingCourseDef && (
-              <div className="space-y-2">
-                <Label>교육 분류 <span className="text-destructive">*</span></Label>
-                <Select
-                  value={courseDefCategory}
-                  onValueChange={(v) => setCourseDefCategory(v as EducationCategoryKey)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="교육 분류 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="expert">멘탈전문가과정 (정규 장기과정)</SelectItem>
-                    <SelectItem value="common">멘탈공통교육 (단기 과정)</SelectItem>
-                    <SelectItem value="kca">KCA교육 (한국코치협회 단기과정)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label>교육 분류 <span className="text-destructive">*</span></Label>
+              <Select
+                value={courseDefCategory}
+                onValueChange={(v) => setCourseDefCategory(v as EducationCategoryKey)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="교육 분류 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="expert">멘탈전문가과정 (정규 장기과정)</SelectItem>
+                  <SelectItem value="common">멘탈공통교육 (단기 과정)</SelectItem>
+                  <SelectItem value="kca">KCA교육 (한국코치협회 단기과정)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label>과정명 <span className="text-destructive">*</span></Label>
               <Input

@@ -65,6 +65,7 @@ function seminarTypeIcon(type: string) {
 
 import {
   EDUCATION_CATEGORIES,
+  getMergedCurriculum,
   resolveCohortCategory,
   resolveSeminarCategory,
   type EducationCategoryKey,
@@ -73,15 +74,18 @@ import {
 
 export default function AdminAttendancePage() {
   const cohorts = useQuery(api.cohorts.list, {});
+  const courseCredits = useQuery(api.smpcc.listCourseCredits);
   const [selectedCategory, setSelectedCategory] = useState<EducationCategoryKey | "all">("expert");
   const [selectedCourseKey, setSelectedCourseKey] = useState<string>("expert");
   const [selectedCohortId, setSelectedCohortId] = useState<Id<"cohorts"> | null>(null);
   const [activeTab, setActiveTab] = useState("record");
 
+  const categories = useMemo(() => getMergedCurriculum(courseCredits), [courseCredits]);
+
   const currentCategoryDef = useMemo(() => {
     if (selectedCategory === "all") return null;
-    return EDUCATION_CATEGORIES.find((c) => c.key === selectedCategory) ?? null;
-  }, [selectedCategory]);
+    return categories.find((c) => c.key === selectedCategory) ?? null;
+  }, [categories, selectedCategory]);
 
   const currentCourseDef = useMemo(() => {
     if (!currentCategoryDef) return null;
@@ -135,7 +139,7 @@ export default function AdminAttendancePage() {
       setSelectedCourseKey("");
       setSelectedCohortId(null);
     } else {
-      const catDef = EDUCATION_CATEGORIES.find((c) => c.key === catKey);
+      const catDef = categories.find((c) => c.key === catKey);
       const defaultCourse = catDef?.courses[0]?.key ?? "";
       setSelectedCourseKey(defaultCourse);
 
@@ -198,7 +202,7 @@ export default function AdminAttendancePage() {
               <span>1단계 · 교육 분류</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {EDUCATION_CATEGORIES.map((cat) => {
+              {categories.map((cat) => {
                 const isSelected = selectedCategory === cat.key;
                 return (
                   <button
@@ -241,13 +245,13 @@ export default function AdminAttendancePage() {
             </div>
           </div>
 
-          {/* Tier 2: 과정 선택 (멘탈공통교육 / KCA교육인 경우 세부 과정 버튼 표시) */}
-          {selectedCategory !== "all" && currentCategoryDef && currentCategoryDef.courses.length > 1 && (
+          {/* Tier 2: 과정 선택 */}
+          {selectedCategory !== "all" && currentCategoryDef && (
             <div className="p-3 bg-muted/20 rounded-lg border border-border/60 space-y-2">
               <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                 <span>2단계 · 과정 선택</span>
                 <span className="text-muted-foreground font-normal">
-                  ({currentCategoryDef.name} 하위 과정)
+                  ({currentCategoryDef.name} 하위 {currentCategoryDef.courses.length}개 과정)
                 </span>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -261,7 +265,7 @@ export default function AdminAttendancePage() {
                       className={cn(
                         "px-3.5 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5",
                         isSelected
-                          ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                          ? "bg-primary text-primary-foreground border-primary shadow-xs font-semibold"
                           : "bg-background border-border text-foreground hover:bg-muted"
                       )}
                     >
@@ -274,7 +278,7 @@ export default function AdminAttendancePage() {
                             : "bg-muted text-muted-foreground"
                         )}
                       >
-                        {course.badgeLabel ?? `${course.creditHours}h`}
+                        {course.badgeLabel ?? (course.creditHours > 0 ? `${course.creditHours}시간` : "단기")}
                       </span>
                     </button>
                   );
