@@ -46,7 +46,7 @@ function CohortSelector({
   cohortId: Id<"cohorts"> | "";
   onChange: (id: Id<"cohorts">) => void;
 }) {
-  const cohorts = useQuery(api.cohorts.list);
+  const cohorts = useQuery(api.cohorts.list, {});
 
   if (!cohorts) return <Skeleton className="h-9 w-48" />;
 
@@ -74,7 +74,7 @@ function CohortSelector({
 
 // Helper hook to resolve the default cohort (active or first)
 function useDefaultCohort() {
-  const cohorts = useQuery(api.cohorts.list);
+  const cohorts = useQuery(api.cohorts.list, {});
   const activeCohort = cohorts?.find((c) => c.status === "active") ?? cohorts?.[0];
   return { cohorts, defaultCohortId: activeCohort?._id ?? "" as Id<"cohorts"> | "" };
 }
@@ -391,7 +391,7 @@ function CoachingFilteredExportCard({ cohortId }: { cohortId: Id<"cohorts"> | ""
 }
 
 function AttendanceExportCard({ cohortId }: { cohortId: Id<"cohorts"> | "" }) {
-  const cohorts = useQuery(api.cohorts.list);
+  const cohorts = useQuery(api.cohorts.list, {});
   const data = useQuery(
     api.export.exportAttendanceByCohort,
     cohortId ? { cohortId } : "skip"

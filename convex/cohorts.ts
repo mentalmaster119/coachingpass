@@ -30,16 +30,51 @@ async function requireAdmin(ctx: QueryCtx | MutationCtx) {
   return user;
 }
 
+function getResolvedCohortCategory(cohort: any): "expert" | "common" | "kca" {
+  if (cohort.educationCategory) return cohort.educationCategory;
+  const name = (cohort.name || "").trim();
+  if (name.includes("심리학") || name.includes("강독") || name.includes("SP") || name.includes("CP")) return "common";
+  if (name.includes("MSPE") || name.includes("mspe") || name.includes("명상")) return "common";
+  if (name.includes("KAC") || name.includes("kac")) return "kca";
+  if (name.includes("KPC") || name.includes("kpc")) return "kca";
+  return "expert";
+}
+
+function getResolvedCourseCode(cohort: any): string {
+  if (cohort.courseCode) return cohort.courseCode;
+  const name = (cohort.name || "").trim();
+  if (name.includes("심리학") || name.includes("강독") || name.includes("SP") || name.includes("CP")) return "sp_cp";
+  if (name.includes("MSPE") || name.includes("mspe") || name.includes("명상")) return "mspe";
+  if (name.includes("KAC") || name.includes("kac")) return "kac";
+  if (name.includes("KPC") || name.includes("kpc")) return "kpc";
+  return "expert";
+}
+
 // List all cohorts
 export const list = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    educationCategory: v.optional(v.union(v.literal("expert"), v.literal("common"), v.literal("kca"))),
+  },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError({ message: "로그인이 필요합니다", code: "UNAUTHENTICATED" });
-    const cohorts = await ctx.db.query("cohorts").collect();
+    let cohorts = await ctx.db.query("cohorts").collect();
+
+    // Enrich each cohort with resolved categories
+    let enriched = cohorts.map((c) => ({
+      ...c,
+      educationCategory: getResolvedCohortCategory(c),
+      courseCode: getResolvedCourseCode(c),
+      isLongTerm: c.isLongTerm !== undefined ? c.isLongTerm : getResolvedCohortCategory(c) === "expert",
+    }));
+
+    if (args.educationCategory) {
+      enriched = enriched.filter((c) => c.educationCategory === args.educationCategory);
+    }
+
     // Sort: active first, then upcoming, then completed
     const statusOrder: Record<string, number> = { active: 0, upcoming: 1, completed: 2 };
-    return cohorts.sort((a, b) => {
+    return enriched.sort((a, b) => {
       const statusDiff = (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3);
       if (statusDiff !== 0) return statusDiff;
       
@@ -151,6 +186,9 @@ export const create = mutation({
     status: v.union(v.literal("upcoming"), v.literal("active"), v.literal("completed")),
     description: v.optional(v.string()),
     maxMentors: v.optional(v.number()),
+    educationCategory: v.optional(v.union(v.literal("expert"), v.literal("common"), v.literal("kca"))),
+    courseCode: v.optional(v.string()),
+    isLongTerm: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const admin = await requireAdmin(ctx);
@@ -174,6 +212,9 @@ export const update = mutation({
     status: v.optional(v.union(v.literal("upcoming"), v.literal("active"), v.literal("completed"))),
     description: v.optional(v.string()),
     maxMentors: v.optional(v.number()),
+    educationCategory: v.optional(v.union(v.literal("expert"), v.literal("common"), v.literal("kca"))),
+    courseCode: v.optional(v.string()),
+    isLongTerm: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);

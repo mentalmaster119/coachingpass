@@ -29,17 +29,62 @@ async function requireAdmin(ctx: QueryCtx | MutationCtx) {
   return user;
 }
 
-// List seminars for a cohort
+function getResolvedCohortCategory(cohort: any): "expert" | "common" | "kca" {
+  if (cohort.educationCategory) return cohort.educationCategory;
+  const name = (cohort.name || "").trim();
+  if (name.includes("심리학") || name.includes("강독") || name.includes("SP") || name.includes("CP")) return "common";
+  if (name.includes("MSPE") || name.includes("mspe") || name.includes("명상")) return "common";
+  if (name.includes("KAC") || name.includes("kac")) return "kca";
+  if (name.includes("KPC") || name.includes("kpc")) return "kca";
+  return "expert";
+}
+
+function getResolvedSeminarCategory(seminar: any, cohortMap: Map<string, any>): { category: "expert" | "common" | "kca"; courseCode: string } {
+  if (seminar.educationCategory) {
+    return {
+      category: seminar.educationCategory,
+      courseCode: seminar.courseCode || (seminar.educationCategory === "expert" ? "expert" : seminar.educationCategory === "common" ? "mspe" : "kac")
+    };
+  }
+  if (seminar.cohortId && cohortMap.has(seminar.cohortId)) {
+    const c = cohortMap.get(seminar.cohortId)!;
+    const cat = getResolvedCohortCategory(c);
+    const code = c.courseCode || (cat === "common" ? (c.name.includes("심리학") || c.name.includes("강독") ? "sp_cp" : "mspe") : cat === "kca" ? (c.name.includes("KPC") ? "kpc" : "kac") : "expert");
+    return { category: cat, courseCode: code };
+  }
+  const text = `${seminar.title} ${seminar.description || ""}`;
+  if (text.includes("KAC") || text.includes("kac")) return { category: "kca", courseCode: "kac" };
+  if (text.includes("KPC") || text.includes("kpc")) return { category: "kca", courseCode: "kpc" };
+  if (text.includes("MSPE") || text.includes("mspe") || text.includes("명상")) return { category: "common", courseCode: "mspe" };
+  if (text.includes("심리학") || text.includes("강독") || text.includes("SP") || text.includes("CP")) return { category: "common", courseCode: "sp_cp" };
+  if (text.includes("포럼") || text.includes("멘탈 포럼")) return { category: "common", courseCode: "mspe" };
+  return { category: "expert", courseCode: "expert" };
+}
+
+// List seminars for a cohort or curriculum category
 export const listByCohort = query({
-  args: { cohortId: v.optional(v.id("cohorts")) },
+  args: {
+    cohortId: v.optional(v.id("cohorts")),
+    educationCategory: v.optional(v.union(v.literal("expert"), v.literal("common"), v.literal("kca"))),
+    courseCode: v.optional(v.string()),
+    includeCommon: v.optional(v.boolean()),
+  },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError({ message: "로그인이 필요합니다", code: "UNAUTHENTICATED" });
     
     const allSeminars = await ctx.db.query("seminars").collect();
-    const commonSeminars = allSeminars.filter((s) => s.cohortId === undefined || s.cohortId === null);
     const cohorts = await ctx.db.query("cohorts").collect();
     const cohortMap = new Map(cohorts.map((c) => [c._id, c]));
+
+    const enrichedSeminars = allSeminars.map((s) => {
+      const res = getResolvedSeminarCategory(s, cohortMap);
+      return {
+        ...s,
+        educationCategory: res.category,
+        courseCode: res.courseCode,
+      };
+    });
 
     const sortSeminars = (a: any, b: any) => {
       const aIsCohort = a.cohortId !== undefined && a.cohortId !== null;
@@ -49,8 +94,6 @@ export const listByCohort = query({
       if (!aIsCohort && bIsCohort) return 1;
 
       if (aIsCohort && bIsCohort) {
-        // Both are cohort-specific (전문가과정)
-        // 1. 기수별로 (Cohort number ascending)
         const aCohort = cohortMap.get(a.cohortId);
         const bCohort = cohortMap.get(b.cohortId);
         const aNum = aCohort ? aCohort.number : 0;
@@ -58,26 +101,39 @@ export const listByCohort = query({
         if (aNum !== bNum) {
           return aNum - bNum;
         }
-        // 2. 차수 순 (sessionNumber)
         if (a.sessionNumber !== b.sessionNumber) {
           return a.sessionNumber - b.sessionNumber;
         }
-        // 3. 날짜 순 (startDate)
         return a.startDate.localeCompare(b.startDate);
       } else {
-        // Both are common/other courses (다른 과정)
-        // 1. 날짜 순 (startDate)
+        if (a.sessionNumber !== b.sessionNumber) {
+          return a.sessionNumber - b.sessionNumber;
+        }
         return a.startDate.localeCompare(b.startDate);
       }
     };
 
-    if (!args.cohortId) {
-      return commonSeminars.sort((a, b) => a.startDate.localeCompare(b.startDate));
+    let result = enrichedSeminars;
+
+    if (args.cohortId) {
+      const cohortSeminars = enrichedSeminars.filter((s) => s.cohortId === args.cohortId);
+      if (args.includeCommon) {
+        const commonSeminars = enrichedSeminars.filter((s) => s.cohortId === undefined || s.cohortId === null);
+        result = [...cohortSeminars, ...commonSeminars];
+      } else {
+        result = cohortSeminars;
+      }
+    } else {
+      // No specific cohortId: filter by educationCategory / courseCode if requested
+      if (args.educationCategory) {
+        result = result.filter((s) => s.educationCategory === args.educationCategory);
+      }
+      if (args.courseCode) {
+        result = result.filter((s) => s.courseCode === args.courseCode);
+      }
     }
 
-    const cohortSeminars = allSeminars.filter((s) => s.cohortId === args.cohortId);
-    const combined = [...cohortSeminars, ...commonSeminars];
-    return combined.sort(sortSeminars);
+    return result.sort(sortSeminars);
   },
 });
 
@@ -87,7 +143,17 @@ export const listAll = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError({ message: "로그인이 필요합니다", code: "UNAUTHENTICATED" });
-    return await ctx.db.query("seminars").collect();
+    const all = await ctx.db.query("seminars").collect();
+    const cohorts = await ctx.db.query("cohorts").collect();
+    const cohortMap = new Map(cohorts.map((c) => [c._id, c]));
+    return all.map((s) => {
+      const res = getResolvedSeminarCategory(s, cohortMap);
+      return {
+        ...s,
+        educationCategory: res.category,
+        courseCode: res.courseCode,
+      };
+    });
   },
 });
 
@@ -109,6 +175,8 @@ export const create = mutation({
     location: v.optional(v.string()),
     description: v.optional(v.string()),
     isOnline: v.optional(v.boolean()),
+    educationCategory: v.optional(v.union(v.literal("expert"), v.literal("common"), v.literal("kca"))),
+    courseCode: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const admin = await requireAdmin(ctx);
@@ -134,6 +202,8 @@ export const update = mutation({
     location: v.optional(v.string()),
     description: v.optional(v.string()),
     isOnline: v.optional(v.boolean()),
+    educationCategory: v.optional(v.union(v.literal("expert"), v.literal("common"), v.literal("kca"))),
+    courseCode: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);

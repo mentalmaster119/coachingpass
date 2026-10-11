@@ -63,69 +63,313 @@ function seminarTypeIcon(type: string) {
   return <Users className="w-4 h-4" />;
 }
 
+import {
+  EDUCATION_CATEGORIES,
+  resolveCohortCategory,
+  resolveSeminarCategory,
+  type EducationCategoryKey,
+  type CourseDefinition,
+} from "@/lib/curriculum.ts";
+
 export default function AdminAttendancePage() {
   const cohorts = useQuery(api.cohorts.list, {});
+  const [selectedCategory, setSelectedCategory] = useState<EducationCategoryKey | "all">("expert");
+  const [selectedCourseKey, setSelectedCourseKey] = useState<string>("expert");
   const [selectedCohortId, setSelectedCohortId] = useState<Id<"cohorts"> | null>(null);
   const [activeTab, setActiveTab] = useState("record");
+
+  const currentCategoryDef = useMemo(() => {
+    if (selectedCategory === "all") return null;
+    return EDUCATION_CATEGORIES.find((c) => c.key === selectedCategory) ?? null;
+  }, [selectedCategory]);
+
+  const currentCourseDef = useMemo(() => {
+    if (!currentCategoryDef) return null;
+    return (
+      currentCategoryDef.courses.find((c) => c.key === selectedCourseKey) ??
+      currentCategoryDef.courses[0] ??
+      null
+    );
+  }, [currentCategoryDef, selectedCourseKey]);
+
+  // Cohorts filtered strictly by the current Education Category & Course
+  const availableCohorts = useMemo(() => {
+    if (!cohorts) return [];
+    if (selectedCategory === "all") return cohorts;
+
+    return cohorts.filter((c) => {
+      const resolved = resolveCohortCategory(c);
+      if (resolved.category !== selectedCategory) return false;
+      if (selectedCategory === "expert") return true;
+      // For common and kca, if a course is chosen, match that course
+      if (selectedCourseKey) {
+        return resolved.courseKey === selectedCourseKey;
+      }
+      return true;
+    });
+  }, [cohorts, selectedCategory, selectedCourseKey]);
+
+  // Active / default cohort initialization
+  const activeExpertCohort = useMemo(() => {
+    if (!cohorts) return null;
+    return (
+      cohorts.find(
+        (c) =>
+          resolveCohortCategory(c).category === "expert" && c.status === "active"
+      ) ??
+      cohorts.find((c) => resolveCohortCategory(c).category === "expert") ??
+      null
+    );
+  }, [cohorts]);
+
+  // Initialize selected cohort when cohorts load or category changes
+  const [hasInitializedCohort, setHasInitializedCohort] = useState(false);
+  if (!hasInitializedCohort && activeExpertCohort && selectedCohortId === null && selectedCategory === "expert") {
+    setSelectedCohortId(activeExpertCohort._id);
+    setHasInitializedCohort(true);
+  }
+
+  const handleCategoryChange = (catKey: EducationCategoryKey | "all") => {
+    setSelectedCategory(catKey);
+    if (catKey === "all") {
+      setSelectedCourseKey("");
+      setSelectedCohortId(null);
+    } else {
+      const catDef = EDUCATION_CATEGORIES.find((c) => c.key === catKey);
+      const defaultCourse = catDef?.courses[0]?.key ?? "";
+      setSelectedCourseKey(defaultCourse);
+
+      if (catKey === "expert") {
+        setSelectedCohortId(activeExpertCohort?._id ?? null);
+      } else {
+        // Find if there is an existing cohort for this course
+        const matchingCohort = (cohorts ?? []).find((c) => {
+          const res = resolveCohortCategory(c);
+          return res.category === catKey && res.courseKey === defaultCourse;
+        });
+        setSelectedCohortId(matchingCohort ? matchingCohort._id : null);
+      }
+    }
+  };
+
+  const handleCourseChange = (courseKey: string) => {
+    setSelectedCourseKey(courseKey);
+    // Find matching cohort for this course
+    const matchingCohort = (cohorts ?? []).find((c) => {
+      const res = resolveCohortCategory(c);
+      return res.category === selectedCategory && res.courseKey === courseKey;
+    });
+    setSelectedCohortId(matchingCohort ? matchingCohort._id : null);
+  };
+
+  const selectedCohort = cohorts?.find((c) => c._id === selectedCohortId);
 
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold">출석 관리</h1>
-        <p className="text-muted-foreground text-sm mt-1">세미나별 교육생 출석을 기록하고 현황을 확인합니다</p>
+        <p className="text-muted-foreground text-sm mt-1">
+          커리큘럼 체계(교육 분류 ➔ 과정 ➔ 기수)에 따라 세미나별 교육생 출석을 기록하고 현황을 확인합니다
+        </p>
       </div>
 
-      {/* Cohort selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <GraduationCap className="w-4 h-4" />
-            기수 선택
-          </CardTitle>
+      {/* 3-Tier Curriculum Selector Card */}
+      <Card className="border-primary/20 shadow-sm overflow-hidden">
+        <CardHeader className="pb-3 border-b bg-muted/10">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-primary" />
+              교육과정 및 기수 선택
+            </CardTitle>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground/80">체계:</span>
+              <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold">교육</span>
+              <span>➔</span>
+              <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold">과정</span>
+              <span>➔</span>
+              <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold">기수</span>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
-          {cohorts === undefined ? (
-            <Skeleton className="h-10 w-64" />
-          ) : (
+        <CardContent className="pt-4 space-y-4">
+          {/* Tier 1: 교육 분류 (Education Category) */}
+          <div className="space-y-1.5">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              <span>1단계 · 교육 분류</span>
+            </div>
             <div className="flex flex-wrap gap-2">
+              {EDUCATION_CATEGORIES.map((cat) => {
+                const isSelected = selectedCategory === cat.key;
+                return (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    onClick={() => handleCategoryChange(cat.key)}
+                    className={cn(
+                      "px-4 py-2 rounded-lg text-sm font-semibold border transition-all cursor-pointer flex items-center gap-2",
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                        : "bg-background border-border text-foreground hover:bg-muted/80"
+                    )}
+                  >
+                    <span>{cat.name}</span>
+                    <span
+                      className={cn(
+                        "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                        isSelected
+                          ? "bg-primary-foreground/20 text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {cat.badge}
+                    </span>
+                  </button>
+                );
+              })}
               <button
-                onClick={() => setSelectedCohortId(null)}
+                type="button"
+                onClick={() => handleCategoryChange("all")}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer",
-                  selectedCohortId === null
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background border-border hover:bg-muted"
+                  "px-4 py-2 rounded-lg text-sm font-semibold border transition-all cursor-pointer",
+                  selectedCategory === "all"
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-background border-border text-muted-foreground hover:bg-muted/80"
                 )}
               >
-                공통
+                전체 보기
               </button>
-              {cohorts.map((c) => (
+            </div>
+          </div>
+
+          {/* Tier 2: 과정 선택 (멘탈공통교육 / KCA교육인 경우 세부 과정 버튼 표시) */}
+          {selectedCategory !== "all" && currentCategoryDef && currentCategoryDef.courses.length > 1 && (
+            <div className="p-3 bg-muted/20 rounded-lg border border-border/60 space-y-2">
+              <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <span>2단계 · 과정 선택</span>
+                <span className="text-muted-foreground font-normal">
+                  ({currentCategoryDef.name} 하위 과정)
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {currentCategoryDef.courses.map((course) => {
+                  const isSelected = selectedCourseKey === course.key;
+                  return (
+                    <button
+                      key={course.key}
+                      type="button"
+                      onClick={() => handleCourseChange(course.key)}
+                      className={cn(
+                        "px-3.5 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5",
+                        isSelected
+                          ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                          : "bg-background border-border text-foreground hover:bg-muted"
+                      )}
+                    >
+                      <span>{course.name}</span>
+                      <span
+                        className={cn(
+                          "text-[10px] px-1.5 py-0.2 rounded-full",
+                          isSelected
+                            ? "bg-primary-foreground/20 text-primary-foreground"
+                            : "bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {course.badgeLabel ?? `${course.creditHours}h`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Tier 3: 기수 선택 (Cohort / Round) */}
+          <div className="p-3 bg-muted/40 rounded-lg border border-border/80 space-y-2">
+            <div className="flex items-center justify-between flex-wrap gap-2 text-xs font-medium">
+              <span className="flex items-center gap-1.5 text-foreground font-semibold">
+                <GraduationCap className="w-4 h-4 text-primary" />
+                {selectedCategory === "expert"
+                  ? "3단계 · 멘탈전문가과정 기수 선택"
+                  : selectedCategory === "common"
+                  ? `3단계 · ${currentCourseDef?.name ?? "멘탈공통"} 기수 및 일정 선택`
+                  : selectedCategory === "kca"
+                  ? `3단계 · ${currentCourseDef?.name ?? "KCA"} 기수 및 일정 선택`
+                  : "3단계 · 기수 선택"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {selectedCategory === "expert"
+                  ? "장기 정규과정 (기수별 6회차 세미나 및 실습)"
+                  : "단기 과정 (과정별 기수/일정)"}
+              </span>
+            </div>
+
+            {cohorts === undefined ? (
+              <Skeleton className="h-10 w-full" />
+            ) : (
+              <div className="flex flex-wrap gap-1.5 items-center">
+                {/* All / Common option */}
                 <button
-                  key={c._id}
-                  onClick={() => setSelectedCohortId(c._id)}
+                  type="button"
+                  onClick={() => setSelectedCohortId(null)}
                   className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer",
-                    selectedCohortId === c._id
-                      ? "bg-primary text-primary-foreground border-primary"
+                    "px-3 py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer",
+                    selectedCohortId === null
+                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
                       : "bg-background border-border hover:bg-muted"
                   )}
                 >
-                  {c.name}
-                  <span className="ml-1.5 text-xs opacity-70">
-                    {c.term === "first" ? "상반기" : "하반기"}
-                  </span>
+                  {selectedCategory === "expert" ? "전체 기수" : "공통 / 기본"}
                 </button>
-              ))}
-            </div>
-          )}
+
+                {availableCohorts.map((c) => {
+                  const isSelected = selectedCohortId === c._id;
+                  const isActive = c.status === "active";
+                  const isUpcoming = c.status === "upcoming";
+                  return (
+                    <button
+                      key={c._id}
+                      type="button"
+                      onClick={() => setSelectedCohortId(c._id)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1.5",
+                        isSelected
+                          ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                          : "bg-background border-border hover:bg-muted"
+                      )}
+                    >
+                      <span>{c.name}</span>
+                      <span className="text-[10px] opacity-75">
+                        {c.term === "first" ? "상반기" : "하반기"}
+                      </span>
+                      {isActive && (
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-green-500/20 text-green-700 dark:text-green-300 font-semibold">
+                          진행중
+                        </span>
+                      )}
+                      {isUpcoming && (
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-blue-500/20 text-blue-700 dark:text-blue-300 font-semibold">
+                          예정
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
+      {/* Main Tabs / Content */}
       {cohorts !== undefined && (
         <>
           {selectedCohortId === null ? (
             <div className="mt-4">
-              <AttendanceRecordTab cohortId={null} />
+              <AttendanceRecordTab
+                cohortId={null}
+                educationCategory={selectedCategory !== "all" ? selectedCategory : undefined}
+                courseCode={selectedCourseKey || undefined}
+              />
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -136,11 +380,15 @@ export default function AdminAttendancePage() {
                 </TabsTrigger>
                 <TabsTrigger value="summary" className="gap-2">
                   <BarChart3 className="w-4 h-4" />
-                  출석 현황
+                  출석 현황 {selectedCohort ? `(${selectedCohort.name})` : ""}
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="record" className="mt-4">
-                <AttendanceRecordTab cohortId={selectedCohortId} />
+                <AttendanceRecordTab
+                  cohortId={selectedCohortId}
+                  educationCategory={selectedCategory !== "all" ? selectedCategory : undefined}
+                  courseCode={selectedCourseKey || undefined}
+                />
               </TabsContent>
               <TabsContent value="summary" className="mt-4">
                 <AttendanceSummaryTab cohortId={selectedCohortId} />
@@ -155,8 +403,21 @@ export default function AdminAttendancePage() {
 
 // ── Attendance Record Tab ─────────────────────────────────────────────────────
 
-function AttendanceRecordTab({ cohortId }: { cohortId: Id<"cohorts"> | null }) {
-  const seminars = useQuery(api.seminars.listByCohort, cohortId ? { cohortId } : {});
+function AttendanceRecordTab({
+  cohortId,
+  educationCategory,
+  courseCode,
+}: {
+  cohortId: Id<"cohorts"> | null;
+  educationCategory?: "expert" | "common" | "kca";
+  courseCode?: string;
+}) {
+  const seminars = useQuery(api.seminars.listByCohort, {
+    cohortId: cohortId || undefined,
+    educationCategory: cohortId ? undefined : educationCategory,
+    courseCode: cohortId ? undefined : courseCode,
+    includeCommon: cohortId ? false : undefined,
+  });
   const [selectedSeminarId, setSelectedSeminarId] = useState<Id<"seminars"> | null>(null);
 
   const selectedSeminar = seminars?.find((s) => s._id === selectedSeminarId);

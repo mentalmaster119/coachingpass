@@ -481,6 +481,13 @@ export default defineSchema({
     description: v.optional(v.string()),
     isOnline: v.optional(v.boolean()), // 교재학습 온/오프라인 구분
     createdBy: v.id("users"),
+    // ── 커리큘럼 3단계 분류 지원 ──
+    educationCategory: v.optional(v.union(
+      v.literal("expert"),
+      v.literal("common"),
+      v.literal("kca"),
+    )),
+    courseCode: v.optional(v.string()), // e.g. "expert", "mspe", "sp_cp", "kac", "kpc"
   })
     .index("by_cohort", ["cohortId"])
     .index("by_cohort_and_date", ["cohortId", "startDate"]),
@@ -516,9 +523,18 @@ export default defineSchema({
     description: v.optional(v.string()),
     createdBy: v.id("users"),
     maxMentors: v.optional(v.number()), // 최대 멘토 매칭 수 설정 (1~5)
+    // ── 커리큘럼 3단계 분류 지원 (교육 - 과정 - 기수) ──
+    educationCategory: v.optional(v.union(
+      v.literal("expert"), // 멘탈전문가과정 (장기)
+      v.literal("common"), // 멘탈공통교육 (단기)
+      v.literal("kca"),    // KCA교육 (단기)
+    )),
+    courseCode: v.optional(v.string()), // e.g. "expert", "mspe", "sp_cp", "kac", "kpc"
+    isLongTerm: v.optional(v.boolean()), // 장기과정 여부 (true: 전문가과정, false: 단기과정)
   })
     .index("by_number", ["number"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_category", ["educationCategory"]),
 
   // 기수-교육생 연결
   cohortMembers: defineTable({
