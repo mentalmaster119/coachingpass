@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api.js";
 import type { Id } from "@/convex/_generated/dataModel.d.ts";
@@ -49,6 +49,11 @@ import {
 } from "@/components/ui/alert-dialog.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty.tsx";
+import {
+  getMergedCurriculum,
+  resolveCohortCategory,
+  type EducationCategoryKey,
+} from "@/lib/curriculum.ts";
 
 type CohortStatus = "upcoming" | "active" | "completed";
 type MemberStatus = "active" | "completed" | "withdrawn";
@@ -82,6 +87,8 @@ type CohortFormData = {
   status: CohortStatus;
   description: string;
   maxMentors: string;
+  educationCategory: EducationCategoryKey;
+  courseCode: string;
 };
 
 const defaultForm: CohortFormData = {
@@ -93,6 +100,8 @@ const defaultForm: CohortFormData = {
   status: "upcoming",
   description: "",
   maxMentors: "2",
+  educationCategory: "expert",
+  courseCode: "expert",
 };
 
 type Cohort = {
@@ -107,13 +116,19 @@ type Cohort = {
   createdBy: Id<"users">;
   _creationTime: number;
   maxMentors?: number;
+  educationCategory?: string;
+  courseCode?: string;
+  isLongTerm?: boolean;
 };
 
 export default function AdminCohortsPage() {
   const cohorts = useQuery(api.cohorts.list, {});
+  const courseCredits = useQuery(api.smpcc.listCourseCredits);
   const createCohort = useMutation(api.cohorts.create);
   const updateCohort = useMutation(api.cohorts.update);
   const removeCohort = useMutation(api.cohorts.remove);
+
+  const categories = useMemo(() => getMergedCurriculum(courseCredits), [courseCredits]);
 
   const [showForm, setShowForm] = useState(false);
   const [editingCohort, setEditingCohort] = useState<Cohort | null>(null);
@@ -130,6 +145,7 @@ export default function AdminCohortsPage() {
 
   const openEdit = (cohort: Cohort) => {
     setEditingCohort(cohort);
+    const resolved = resolveCohortCategory(cohort as any);
     setForm({
       name: cohort.name,
       number: String(cohort.number),
@@ -139,6 +155,8 @@ export default function AdminCohortsPage() {
       status: cohort.status,
       description: cohort.description ?? "",
       maxMentors: String(cohort.maxMentors ?? 2),
+      educationCategory: (cohort.educationCategory as EducationCategoryKey) || resolved.category || "expert",
+      courseCode: cohort.courseCode || resolved.courseKey || "expert",
     });
     setShowForm(true);
   };
@@ -161,6 +179,9 @@ export default function AdminCohortsPage() {
           status: form.status,
           description: form.description || undefined,
           maxMentors: Number(form.maxMentors),
+          educationCategory: form.educationCategory,
+          courseCode: form.courseCode || undefined,
+          isLongTerm: form.educationCategory === "expert",
         });
         toast.success("기수 정보가 수정되었습니다");
       } else {
@@ -173,6 +194,9 @@ export default function AdminCohortsPage() {
           status: form.status,
           description: form.description || undefined,
           maxMentors: Number(form.maxMentors),
+          educationCategory: form.educationCategory,
+          courseCode: form.courseCode || undefined,
+          isLongTerm: form.educationCategory === "expert",
         });
         toast.success("기수가 생성되었습니다");
       }
@@ -299,9 +323,55 @@ export default function AdminCohortsPage() {
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingCohort ? "기수 수정" : "기수 추가"}</DialogTitle>
+            <DialogTitle>{editingCohort ? "기수(과정) 수정" : "새 기수(과정) 추가"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>커리큘럼 분류 <span className="text-destructive">*</span></Label>
+                <Select
+                  value={form.educationCategory}
+                  onValueChange={(v: EducationCategoryKey) => {
+                    const catDef = categories.find((c) => c.key === v);
+                    const firstCourse = catDef?.courses[0]?.key || "";
+                    setForm({
+                      ...form,
+                      educationCategory: v,
+                      courseCode: firstCourse,
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="커리큘럼 분류 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="expert">멘탈전문가과정 (정규 장기)</SelectItem>
+                    <SelectItem value="common">멘탈공통교육 (단기 과정)</SelectItem>
+                    <SelectItem value="kca">KCA교육 (한국코치협회)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>소속 과정 <span className="text-destructive">*</span></Label>
+                <Select
+                  value={form.courseCode}
+                  onValueChange={(v) => setForm({ ...form, courseCode: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="소속 과정 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories
+                      .find((c) => c.key === form.educationCategory)
+                      ?.courses.map((course) => (
+                        <SelectItem key={course.key} value={course.key}>
+                          {course.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>기수명 <span className="text-destructive">*</span></Label>

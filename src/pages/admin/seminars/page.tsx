@@ -538,8 +538,28 @@ export default function AdminSeminarsPage() {
     startDate: "",
     endDate: "",
     description: "",
+    educationCategory: "expert" as EducationCategoryKey,
+    courseCode: "expert",
   });
   const [cohortSaving, setCohortSaving] = useState(false);
+
+  const openCreateCohort = () => {
+    const cat = selectedCategory !== "all" ? selectedCategory : "expert";
+    const catDef = categories.find((c) => c.key === cat);
+    const crs = selectedCourseKey || catDef?.courses[0]?.key || "expert";
+    setCohortForm({
+      name: "",
+      number: "",
+      term: "first",
+      status: "active",
+      startDate: "",
+      endDate: "",
+      description: "",
+      educationCategory: cat,
+      courseCode: crs,
+    });
+    setShowCohortForm(true);
+  };
 
   const handleSaveCohort = async () => {
     if (!cohortForm.name.trim()) {
@@ -569,13 +589,17 @@ export default function AdminSeminarsPage() {
         startDate: cohortForm.startDate,
         endDate: cohortForm.endDate,
         description: cohortForm.description || undefined,
-        educationCategory: selectedCategory !== "all" ? selectedCategory : "expert",
-        courseCode: selectedCourseKey || undefined,
-        isLongTerm: selectedCategory === "expert",
+        educationCategory: cohortForm.educationCategory,
+        courseCode: cohortForm.courseCode || undefined,
+        isLongTerm: cohortForm.educationCategory === "expert",
       });
       toast.success("새 과정(기수)이 등록되었습니다");
-      setShowCohortForm(false);
+      setSelectedCategory(cohortForm.educationCategory);
+      if (cohortForm.courseCode) {
+        setSelectedCourseKey(cohortForm.courseCode);
+      }
       setSelectedCohortId(newCohortId);
+      setShowCohortForm(false);
       setCohortForm({
         name: "",
         number: "",
@@ -584,6 +608,8 @@ export default function AdminSeminarsPage() {
         startDate: "",
         endDate: "",
         description: "",
+        educationCategory: "expert",
+        courseCode: "expert",
       });
     } catch (err) {
       console.error(err);
@@ -953,7 +979,7 @@ export default function AdminSeminarsPage() {
                 variant="ghost"
                 size="sm"
                 className="h-7 px-2 text-xs font-medium text-primary hover:text-primary gap-1 cursor-pointer"
-                onClick={() => setShowCohortForm(true)}
+                onClick={openCreateCohort}
               >
                 <Plus className="w-3.5 h-3.5" />
                 새 기수 등록
@@ -1650,6 +1676,52 @@ export default function AdminSeminarsPage() {
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label>커리큘럼 분류 <span className="text-destructive">*</span></Label>
+                <Select
+                  value={cohortForm.educationCategory}
+                  onValueChange={(v: EducationCategoryKey) => {
+                    const catDef = categories.find((c) => c.key === v);
+                    const firstCourse = catDef?.courses[0]?.key || "";
+                    setCohortForm({
+                      ...cohortForm,
+                      educationCategory: v,
+                      courseCode: firstCourse,
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="커리큘럼 분류 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="expert">멘탈전문가과정 (정규 장기)</SelectItem>
+                    <SelectItem value="common">멘탈공통교육 (단기 과정)</SelectItem>
+                    <SelectItem value="kca">KCA교육 (한국코치협회)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>소속 과정 <span className="text-destructive">*</span></Label>
+                <Select
+                  value={cohortForm.courseCode}
+                  onValueChange={(v) => setCohortForm({ ...cohortForm, courseCode: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="소속 과정 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories
+                      .find((c) => c.key === cohortForm.educationCategory)
+                      ?.courses.map((course) => (
+                        <SelectItem key={course.key} value={course.key}>
+                          {course.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label>과정/기수명 <span className="text-destructive">*</span></Label>
                 <Input
                   placeholder="예: 19기"
@@ -1742,7 +1814,7 @@ export default function AdminSeminarsPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>교육 분류 <span className="text-destructive">*</span></Label>
+              <Label>커리큘럼 분류 (교육 분류) <span className="text-destructive">*</span></Label>
               <Select
                 value={courseDefCategory}
                 onValueChange={(v) => setCourseDefCategory(v as EducationCategoryKey)}
