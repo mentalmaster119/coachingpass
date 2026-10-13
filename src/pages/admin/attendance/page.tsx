@@ -78,7 +78,7 @@ export default function AdminAttendancePage() {
   const [selectedCategory, setSelectedCategory] = useState<EducationCategoryKey | "all">("expert");
   const [selectedCourseKey, setSelectedCourseKey] = useState<string>("expert");
   const [selectedCohortId, setSelectedCohortId] = useState<Id<"cohorts"> | null>(null);
-  const [activeTab, setActiveTab] = useState("record");
+  const [activeTab, setActiveTab] = useState("summary");
 
   const categories = useMemo(() => getMergedCurriculum(courseCredits), [courseCredits]);
 
@@ -135,6 +135,7 @@ export default function AdminAttendancePage() {
 
   const handleCategoryChange = (catKey: EducationCategoryKey | "all") => {
     setSelectedCategory(catKey);
+    setActiveTab("summary");
     if (catKey === "all") {
       setSelectedCourseKey("");
       setSelectedCohortId(null);
@@ -158,6 +159,7 @@ export default function AdminAttendancePage() {
 
   const handleCourseChange = (courseKey: string) => {
     setSelectedCourseKey(courseKey);
+    setActiveTab("summary");
     // Find matching cohort for this course
     const matchingCohort = (cohorts ?? []).find((c) => {
       const res = resolveCohortCategory(c);
@@ -314,7 +316,10 @@ export default function AdminAttendancePage() {
                 {/* All / Common option */}
                 <button
                   type="button"
-                  onClick={() => setSelectedCohortId(null)}
+                  onClick={() => {
+                    setSelectedCohortId(null);
+                    setActiveTab("summary");
+                  }}
                   className={cn(
                     "px-3 py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer",
                     selectedCohortId === null
@@ -333,7 +338,10 @@ export default function AdminAttendancePage() {
                     <button
                       key={c._id}
                       type="button"
-                      onClick={() => setSelectedCohortId(c._id)}
+                      onClick={() => {
+                        setSelectedCohortId(c._id);
+                        setActiveTab("summary");
+                      }}
                       className={cn(
                         "px-3 py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1.5",
                         isSelected
@@ -366,40 +374,63 @@ export default function AdminAttendancePage() {
 
       {/* Main Tabs / Content */}
       {cohorts !== undefined && (
-        <>
-          {selectedCohortId === null ? (
-            <div className="mt-4">
-              <AttendanceRecordTab
-                cohortId={null}
-                educationCategory={selectedCategory !== "all" ? selectedCategory : undefined}
-                courseCode={selectedCourseKey || undefined}
-              />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <TabsList>
+              <TabsTrigger value="summary" className="gap-2">
+                <BarChart3 className="w-4 h-4" />
+                출석 현황
+                <Badge variant="secondary" className="text-[10px] ml-1 px-1.5 py-0 font-normal">
+                  {currentCourseDef?.name ?? (selectedCategory === "all" ? "전체" : currentCategoryDef?.name)}
+                  {selectedCohort ? ` · ${selectedCohort.name}` : ""}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="record" className="gap-2">
+                <CalendarDays className="w-4 h-4" />
+                출석 입력
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5 bg-muted/40 px-3 py-1.5 rounded-lg border border-border/60">
+              <span className="font-medium text-foreground">선택:</span>
+              <span className="font-semibold text-primary">
+                {currentCategoryDef?.name ?? "전체 교육"}
+              </span>
+              {currentCourseDef && (
+                <>
+                  <span>➔</span>
+                  <span className="font-semibold text-primary">{currentCourseDef.name}</span>
+                </>
+              )}
+              {selectedCohort && (
+                <>
+                  <span>➔</span>
+                  <span className="font-semibold text-primary">{selectedCohort.name}</span>
+                </>
+              )}
             </div>
-          ) : (
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList>
-                <TabsTrigger value="record" className="gap-2">
-                  <CalendarDays className="w-4 h-4" />
-                  출석 입력
-                </TabsTrigger>
-                <TabsTrigger value="summary" className="gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  출석 현황 {selectedCohort ? `(${selectedCohort.name})` : ""}
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="record" className="mt-4">
-                <AttendanceRecordTab
-                  cohortId={selectedCohortId}
-                  educationCategory={selectedCategory !== "all" ? selectedCategory : undefined}
-                  courseCode={selectedCourseKey || undefined}
-                />
-              </TabsContent>
-              <TabsContent value="summary" className="mt-4">
-                <AttendanceSummaryTab cohortId={selectedCohortId} />
-              </TabsContent>
-            </Tabs>
-          )}
-        </>
+          </div>
+
+          <TabsContent value="summary" className="mt-2 space-y-4">
+            <AttendanceSummaryTab
+              cohortId={selectedCohortId}
+              educationCategory={selectedCategory !== "all" ? selectedCategory : undefined}
+              courseCode={selectedCourseKey || undefined}
+              courseName={currentCourseDef?.name}
+              categoryName={currentCategoryDef?.name}
+              cohortName={selectedCohort?.name}
+              onGoToRecord={() => setActiveTab("record")}
+            />
+          </TabsContent>
+
+          <TabsContent value="record" className="mt-2">
+            <AttendanceRecordTab
+              cohortId={selectedCohortId}
+              educationCategory={selectedCategory !== "all" ? selectedCategory : undefined}
+              courseCode={selectedCourseKey || undefined}
+            />
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );
@@ -860,37 +891,162 @@ function AttendanceSheet({ seminar, cohortId }: { seminar: Seminar; cohortId: Id
 
 // ── Attendance Summary Tab ────────────────────────────────────────────────────
 
-function AttendanceSummaryTab({ cohortId }: { cohortId: Id<"cohorts"> }) {
-  const summary = useQuery(api.attendance.getCohortSummary, { cohortId });
+function AttendanceSummaryTab({
+  cohortId,
+  educationCategory,
+  courseCode,
+  courseName,
+  categoryName,
+  cohortName,
+  onGoToRecord,
+}: {
+  cohortId: Id<"cohorts"> | null;
+  educationCategory?: "expert" | "common" | "kca";
+  courseCode?: string;
+  courseName?: string;
+  categoryName?: string;
+  cohortName?: string;
+  onGoToRecord?: () => void;
+}) {
+  const summary = useQuery(api.attendance.getCohortSummary, {
+    cohortId: cohortId || undefined,
+    educationCategory: cohortId ? undefined : educationCategory,
+    courseCode: cohortId ? undefined : courseCode,
+  });
+
+  const titleText = useMemo(() => {
+    const parts: string[] = [];
+    if (categoryName) parts.push(categoryName);
+    if (courseName && courseName !== categoryName) parts.push(courseName);
+    if (cohortName) parts.push(cohortName);
+    return parts.length > 0 ? parts.join(" · ") : "전체 과정";
+  }, [categoryName, courseName, cohortName]);
 
   if (summary === undefined) {
     return (
       <div className="space-y-3">
-        {[1,2,3,4].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+        <Skeleton className="h-14 w-full" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))}
+        </div>
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
 
   if (summary.length === 0) {
     return (
-      <Empty>
-        <EmptyHeader>
-          <EmptyMedia variant="icon"><Users /></EmptyMedia>
-          <EmptyTitle>등록된 교육생이 없습니다</EmptyTitle>
-        </EmptyHeader>
-      </Empty>
+      <div className="space-y-4">
+        <Card className="bg-muted/10 border-border/60">
+          <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                <h3 className="font-bold text-base">{titleText} 출석 현황</h3>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                등록된 세미나 일정 및 출석 현황을 열람합니다.
+              </p>
+            </div>
+            {onGoToRecord && (
+              <Button size="sm" variant="outline" onClick={onGoToRecord} className="gap-1.5 text-xs">
+                <CalendarDays className="w-3.5 h-3.5" />
+                출석 입력 바로가기
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon"><Users /></EmptyMedia>
+            <EmptyTitle>출석 데이터 또는 세미나 일정이 없습니다</EmptyTitle>
+            <EmptyDescription>
+              {titleText}에 등록된 세미나 일정이 없거나, 출석 대상 교육생이 아직 등록되지 않았습니다.
+            </EmptyDescription>
+          </EmptyHeader>
+          <div className="flex gap-2 justify-center mt-4">
+            {onGoToRecord && (
+              <Button size="sm" variant="outline" onClick={onGoToRecord}>
+                출석 입력 탭 확인
+              </Button>
+            )}
+            <Button size="sm" asChild>
+              <a href="/admin/seminars">세미나 일정 관리 바로가기</a>
+            </Button>
+          </div>
+        </Empty>
+      </div>
     );
   }
 
+  const totalStudents = summary.length;
+  const avgAttendance = Math.round(
+    summary.reduce((a, b) => a + b.attendanceRate, 0) / totalStudents
+  );
+  const passedStudents = summary.filter((s) => s.attendanceRate >= 80).length;
+  const needAttentionStudents = summary.filter((s) => s.attendanceRate < 80).length;
+
   return (
     <div className="space-y-4">
+      {/* Course Header Banner */}
+      <Card className="bg-gradient-to-r from-primary/5 via-primary/10 to-transparent border-primary/20">
+        <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge className="bg-primary text-primary-foreground font-semibold text-xs">
+                {titleText}
+              </Badge>
+              <h2 className="text-base font-bold text-foreground">
+                과정 출석 현황 보고서
+              </h2>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              총 {totalStudents}명의 교육생 출석 현황입니다. (수료 요건: 세미나 출석률 80% 이상)
+            </p>
+          </div>
+          {onGoToRecord && (
+            <Button
+              size="sm"
+              onClick={onGoToRecord}
+              className="gap-1.5 text-xs font-semibold shadow-xs"
+            >
+              <CalendarDays className="w-3.5 h-3.5" />
+              출석 입력 / 수정
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Summary stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "전체 교육생", value: summary.length, icon: <Users className="w-4 h-4" />, color: "text-primary" },
-          { label: "평균 출석률", value: `${Math.round(summary.reduce((a,b) => a + b.attendanceRate, 0) / summary.length)}%`, icon: <BarChart3 className="w-4 h-4" />, color: "text-green-600" },
-          { label: "출석률 80% 이상", value: summary.filter(s => s.attendanceRate >= 80).length, icon: <CheckCircle2 className="w-4 h-4" />, color: "text-green-600" },
-          { label: "출석률 80% 미만", value: summary.filter(s => s.attendanceRate < 80).length, icon: <XCircle className="w-4 h-4" />, color: "text-destructive" },
+          {
+            label: "전체 교육생",
+            value: `${totalStudents}명`,
+            icon: <Users className="w-4 h-4" />,
+            color: "text-primary",
+          },
+          {
+            label: "평균 출석률",
+            value: `${avgAttendance}%`,
+            icon: <BarChart3 className="w-4 h-4" />,
+            color: avgAttendance >= 80 ? "text-green-600" : "text-amber-600",
+          },
+          {
+            label: "이수 기준 충족 (80%↑)",
+            value: `${passedStudents}명`,
+            icon: <CheckCircle2 className="w-4 h-4" />,
+            color: "text-green-600",
+          },
+          {
+            label: "보강 필요 (80%↓)",
+            value: `${needAttentionStudents}명`,
+            icon: <XCircle className="w-4 h-4" />,
+            color: needAttentionStudents > 0 ? "text-destructive" : "text-muted-foreground",
+          },
         ].map((stat) => (
           <Card key={stat.label}>
             <CardContent className="py-4 px-5">
@@ -906,70 +1062,97 @@ function AttendanceSummaryTab({ cohortId }: { cohortId: Id<"cohorts"> }) {
 
       {/* Per-person table */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">교육생별 출석 현황</CardTitle>
+        <CardHeader className="py-3.5 px-4 border-b flex flex-row items-center justify-between">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Users className="w-4 h-4 text-primary" />
+            교육생별 세부 출석 현황
+          </CardTitle>
+          <span className="text-xs text-muted-foreground">
+            세미나 회차별 출석 데이터 종합
+          </span>
         </CardHeader>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b text-xs text-muted-foreground">
+              <tr className="border-b bg-muted/30 text-xs text-muted-foreground">
                 <th className="text-left px-4 py-2.5 font-medium">교육생</th>
+                <th className="text-center px-3 py-2.5 font-medium">총 세미나</th>
                 <th className="text-center px-3 py-2.5 font-medium">출석</th>
                 <th className="text-center px-3 py-2.5 font-medium">지각</th>
                 <th className="text-center px-3 py-2.5 font-medium">공결</th>
                 <th className="text-center px-3 py-2.5 font-medium">결석</th>
                 <th className="text-center px-3 py-2.5 font-medium">출석률</th>
+                <th className="text-center px-3 py-2.5 font-medium">이수 판정</th>
               </tr>
             </thead>
             <tbody>
-              {summary.map((s) => (
-                <tr key={s.userId} className="border-b last:border-0 hover:bg-muted/30">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs flex-shrink-0">
-                        {(s.name ?? "?")[0]}
+              {summary.map((s) => {
+                const isPassed = s.attendanceRate >= 80;
+                return (
+                  <tr key={s.userId} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs flex-shrink-0">
+                          {(s.name ?? "?")[0]}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground leading-tight">{s.name ?? "이름 없음"}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {s.email || (s.certificationGoal ? `목표: ${s.certificationGoal}` : "")}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{s.name ?? "이름 없음"}</p>
-                        {s.certificationGoal && (
-                          <p className="text-xs text-muted-foreground">{s.certificationGoal}</p>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="text-center px-3 py-3">
-                    <span className="text-green-600 font-medium">{s.present}</span>
-                  </td>
-                  <td className="text-center px-3 py-3">
-                    <span className="text-yellow-600 font-medium">{s.late}</span>
-                  </td>
-                  <td className="text-center px-3 py-3">
-                    <span className="text-blue-600 font-medium">{s.excused}</span>
-                  </td>
-                  <td className="text-center px-3 py-3">
-                    <span className="text-destructive font-medium">{s.absent}</span>
-                  </td>
-                  <td className="text-center px-3 py-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className={cn(
-                            "h-full rounded-full",
-                            s.attendanceRate >= 80 ? "bg-green-500" : "bg-destructive"
-                          )}
-                          style={{ width: `${s.attendanceRate}%` }}
-                        />
-                      </div>
-                      <span className={cn(
-                        "font-semibold text-xs w-8",
-                        s.attendanceRate >= 80 ? "text-green-600" : "text-destructive"
-                      )}>
-                        {s.attendanceRate}%
+                    </td>
+                    <td className="text-center px-3 py-3 text-xs text-muted-foreground font-medium">
+                      {s.totalSeminars}회차
+                    </td>
+                    <td className="text-center px-3 py-3">
+                      <span className="text-green-600 font-semibold">{s.present}</span>
+                    </td>
+                    <td className="text-center px-3 py-3">
+                      <span className="text-yellow-600 font-semibold">{s.late}</span>
+                    </td>
+                    <td className="text-center px-3 py-3">
+                      <span className="text-blue-600 font-semibold">{s.excused}</span>
+                    </td>
+                    <td className="text-center px-3 py-3">
+                      <span className={cn("font-semibold", s.absent > 0 ? "text-destructive" : "text-muted-foreground")}>
+                        {s.absent}
                       </span>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="text-center px-3 py-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-all",
+                              isPassed ? "bg-green-500" : "bg-destructive"
+                            )}
+                            style={{ width: `${s.attendanceRate}%` }}
+                          />
+                        </div>
+                        <span className={cn(
+                          "font-bold text-xs w-9 text-right",
+                          isPassed ? "text-green-600" : "text-destructive"
+                        )}>
+                          {s.attendanceRate}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="text-center px-3 py-3">
+                      {isPassed ? (
+                        <Badge className="bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300 text-[10px] font-semibold">
+                          이수 충족
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-amber-600 border-amber-300 dark:text-amber-400 text-[10px]">
+                          보강 권장
+                        </Badge>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

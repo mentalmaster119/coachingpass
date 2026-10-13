@@ -3,6 +3,7 @@ import { mutation, query } from "./mockAuth";
 import { ConvexError } from "convex/values";
 import type { QueryCtx, MutationCtx } from "./_generated/server.d.ts";
 import type { Id, Doc } from "./_generated/dataModel.d.ts";
+import { getResolvedCohortCategory, getResolvedSeminarCategory } from "./seminars";
 
 type AttendanceStatus = "present" | "absent" | "late" | "excused";
 
@@ -192,41 +193,194 @@ export const getUserSummary = query({
   },
 });
 
-// Get attendance summary for all members of a cohort
+// Get attendance summary for all members of a cohort, or by courseCode/category
 export const getCohortSummary = query({
-  args: { cohortId: v.id("cohorts") },
+  args: {
+    cohortId: v.optional(v.id("cohorts")),
+    educationCategory: v.optional(v.union(v.literal("expert"), v.literal("common"), v.literal("kca"))),
+    courseCode: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError({ message: "로그인이 필요합니다", code: "UNAUTHENTICATED" });
 
-    // Get all members
-    const members = await ctx.db
-      .query("cohortMembers")
-      .withIndex("by_cohort", (q) => q.eq("cohortId", args.cohortId))
-      .collect();
+    // 1. If cohortId is provided, retrieve cohort members + attendees
+    if (args.cohortId) {
+      const members = await ctx.db
+        .query("cohortMembers")
+        .withIndex("by_cohort", (q) => q.eq("cohortId", args.cohortId!))
+        .collect();
 
-    const activeMembers = members.filter((m) => m.status === "active");
+      const activeMembers = members.filter((m) => m.status === "active");
 
-    return await Promise.all(
-      activeMembers.map(async (m) => {
-        const user = await ctx.db.get(m.userId);
-        const stats = await calculateUserCohortAttendance(ctx, args.cohortId, m.userId);
+      const cohortAttendances = await ctx.db
+        .query("attendances")
+        .withIndex("by_cohort_and_user", (q) => q.eq("cohortId", args.cohortId!))
+        .collect();
+
+      const memberUserIds = new Set(activeMembers.map((m) => m.userId));
+      for (const a of cohortAttendances) {
+        memberUserIds.add(a.userId);
+      }
+
+      if (memberUserIds.size > 0) {
+        return await Promise.all(
+          Array.from(memberUserIds).map(async (userId) => {
+            const user = await ctx.db.get(userId);
+            const stats = await calculateUserCohortAttendance(ctx, args.cohortId!, userId);
+            return {
+              userId,
+              memberStatus: activeMembers.find((m) => m.userId === userId)?.status ?? "active",
+              name: user?.name ?? "이름 없음",
+              email: user?.email ?? "",
+              certificationGoal: user?.certificationGoal ?? "SMPCC",
+              totalSeminars: stats.total,
+              recorded: stats.records.length,
+              present: stats.present,
+              late: stats.late,
+              excused: stats.excused,
+              absent: stats.absent,
+              attendanceRate: stats.attendanceRate,
+            };
+          })
+        );
+      }
+    }
+
+    // 2. Course-level or category-level summary (when cohortId is null or for course view)
+    const allSeminars = await ctx.db.query("seminars").collect();
+    const allCohorts = await ctx.db.query("cohorts").collect();
+    const cohortMap = new Map(allCohorts.map((c) => [c._id, c]));
+
+    const matchingSeminars = allSeminars.filter((s) => {
+      const res = getResolvedSeminarCategory(s, cohortMap);
+      if (args.educationCategory && res.category !== args.educationCategory) return false;
+      if (args.courseCode && res.courseCode !== args.courseCode) return false;
+      return true;
+    });
+
+    if (matchingSeminars.length === 0) {
+      return [];
+    }
+
+    type DaySlot = { seminarId: Id<"seminars">; date: string };
+    const daySlots: DaySlot[] = [];
+    for (const s of matchingSeminars) {
+      const dates = s.startDate === s.endDate ? [s.startDate] : [s.startDate, s.endDate];
+      for (const d of dates) {
+        daySlots.push({ seminarId: s._id, date: d });
+      }
+    }
+
+    const userIds = new Set<Id<"users">>();
+
+    for (const c of allCohorts) {
+      const resCat = getResolvedCohortCategory(c);
+      if (args.educationCategory && resCat !== args.educationCategory) continue;
+      const code =
+        c.courseCode ||
+        (resCat === "common"
+          ? c.name.includes("심리학") || c.name.includes("강독")
+            ? "sp_cp"
+            : c.name.includes("트레이닝")
+            ? "course_1791683370051"
+            : "mspe"
+          : resCat === "kca"
+          ? c.name.includes("KPC")
+            ? "kpc"
+            : "kac"
+          : "expert");
+      if (args.courseCode && code !== args.courseCode) continue;
+
+      const cMembers = await ctx.db
+        .query("cohortMembers")
+        .withIndex("by_cohort", (q) => q.eq("cohortId", c._id))
+        .collect();
+      for (const m of cMembers) {
+        if (m.status === "active") userIds.add(m.userId);
+      }
+    }
+
+    const allSeminarAttendances: Doc<"attendances">[] = [];
+    for (const s of matchingSeminars) {
+      const recs = await ctx.db
+        .query("attendances")
+        .withIndex("by_seminar", (q) => q.eq("seminarId", s._id))
+        .collect();
+      allSeminarAttendances.push(...recs);
+      for (const r of recs) {
+        userIds.add(r.userId);
+      }
+    }
+
+    // Include all active members across cohorts for academy-wide course summaries
+    const allCohortMembers = await ctx.db.query("cohortMembers").collect();
+    for (const m of allCohortMembers) {
+      if (m.status === "active") userIds.add(m.userId);
+    }
+
+    if (userIds.size === 0) {
+      const trainees = await ctx.db
+        .query("users")
+        .withIndex("by_role", (q) => q.eq("role", "trainee"))
+        .filter((q) => q.eq(q.field("approvalStatus"), "approved"))
+        .collect();
+      for (const t of trainees) userIds.add(t._id);
+    }
+
+    const summaries = await Promise.all(
+      Array.from(userIds).map(async (userId) => {
+        const user = await ctx.db.get(userId);
+        if (!user) return null;
+
+        const userRecs = allSeminarAttendances.filter((r) => r.userId === userId);
+        let present = 0;
+        let late = 0;
+        let excused = 0;
+        let absent = 0;
+
+        for (const slot of daySlots) {
+          const rec = userRecs.find(
+            (r) => r.seminarId === slot.seminarId && r.date === slot.date
+          );
+          if (rec) {
+            if (rec.status === "present") present++;
+            else if (rec.status === "late") late++;
+            else if (rec.status === "excused") excused++;
+            else absent++;
+          } else {
+            const isSlotRecorded = allSeminarAttendances.some(
+              (r) => r.seminarId === slot.seminarId && r.date === slot.date
+            );
+            if (isSlotRecorded) {
+              absent++;
+            }
+          }
+        }
+
+        const total = daySlots.length;
+        const attended = present + late + excused;
+        const attendanceRate = total > 0 ? Math.round((attended / total) * 100) : 0;
+
         return {
-          userId: m.userId,
-          memberStatus: m.status,
-          name: user?.name,
-          email: user?.email,
-          certificationGoal: "SMPCC" as const,
-          totalSeminars: stats.total,
-          recorded: stats.records.length,
-          present: stats.present,
-          late: stats.late,
-          excused: stats.excused,
-          absent: stats.absent,
-          attendanceRate: stats.attendanceRate,
+          userId,
+          memberStatus: "active",
+          name: user.name ?? "이름 없음",
+          email: user.email ?? "",
+          certificationGoal: user.certificationGoal ?? "SMPCC",
+          totalSeminars: total,
+          recorded: userRecs.length,
+          present,
+          late,
+          excused,
+          absent,
+          attendanceRate,
         };
       })
     );
+
+    const valid = summaries.filter(Boolean) as NonNullable<(typeof summaries)[number]>[];
+    return valid.sort((a, b) => b.attendanceRate - a.attendanceRate || a.name.localeCompare(b.name));
   },
 });
 

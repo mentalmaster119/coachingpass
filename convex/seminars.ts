@@ -29,7 +29,7 @@ async function requireAdmin(ctx: QueryCtx | MutationCtx) {
   return user;
 }
 
-function getResolvedCohortCategory(cohort: any): "expert" | "common" | "kca" {
+export function getResolvedCohortCategory(cohort: any): "expert" | "common" | "kca" {
   if (cohort.educationCategory) return cohort.educationCategory;
   const name = (cohort.name || "").trim();
   if (name.includes("심리학") || name.includes("강독") || name.includes("SP") || name.includes("CP")) return "common";
@@ -40,7 +40,7 @@ function getResolvedCohortCategory(cohort: any): "expert" | "common" | "kca" {
   return "expert";
 }
 
-function getResolvedSeminarCategory(seminar: any, cohortMap: Map<string, any>): { category: "expert" | "common" | "kca"; courseCode: string } {
+export function getResolvedSeminarCategory(seminar: any, cohortMap: Map<string, any>): { category: "expert" | "common" | "kca"; courseCode: string } {
   if (seminar.educationCategory) {
     return {
       category: seminar.educationCategory,
