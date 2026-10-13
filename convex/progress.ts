@@ -3,6 +3,7 @@ import { query } from "./mockAuth";
 import { getAuthenticatedUser, requireRole } from "./helpers";
 import type { Id } from "./_generated/dataModel.d.ts";
 import { calculateCoachingProgress } from "./completion";
+import { calculateUserEducation } from "./educationCalculator";
 
 // ── Trainee: full progress overview ─────────────────────────────────────────
 
@@ -10,36 +11,8 @@ export const getMyProgress = query({
   args: {},
   handler: async (ctx) => {
     const user = await getAuthenticatedUser(ctx);
-
-    const [educationRecords, coachingLogs, bcpLogs] = await Promise.all([
-      ctx.db
-        .query("educationRecords")
-        .withIndex("by_user", (q) => q.eq("userId", user._id))
-        .collect(),
-      ctx.db
-        .query("coachingLogs")
-        .withIndex("by_user", (q) => q.eq("userId", user._id))
-        .collect(),
-      ctx.db
-        .query("bcpLogs")
-        .withIndex("by_user", (q) => q.eq("userId", user._id))
-        .collect(),
-    ]);
-
-    // Approved totals
-    const approvedBcpHours = bcpLogs
-      .filter((b) => b.approvalStatus === "approved")
-      .reduce((sum, b) => sum + b.durationMinutes, 0) / 60;
-
-    const approvedBuddyHours = coachingLogs
-      .filter((l) => l.coachingType === "buddy" && l.approvalStatus === "approved")
-      .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
-
-    const approvedEducationHours = educationRecords
-      .filter((r) => r.approvalStatus === "approved")
-      .reduce((sum, r) => sum + r.hours, 0)
-      + approvedBcpHours
-      + approvedBuddyHours;
+    const eduCalc = await calculateUserEducation(ctx, user._id);
+    const { educationRecords, coachingLogs } = eduCalc;
 
     const approvedCoachingMinutes = coachingLogs
       .filter((l) => l.approvalStatus === "approved")
@@ -57,15 +30,12 @@ export const getMyProgress = query({
     }
 
     const monthlyActivity = months.map(({ key, label }) => {
-      const eduHours = educationRecords
-        .filter((r) => r.approvalStatus === "approved" && r.educationDate.startsWith(key))
-        .reduce((sum, r) => sum + r.hours, 0);
-      const bcpHours = bcpLogs
-        .filter((b) => b.approvalStatus === "approved" && b.sessionDate.startsWith(key))
-        .reduce((sum, b) => sum + b.durationMinutes, 0) / 60;
-      const buddyHours = coachingLogs
-        .filter((l) => l.coachingType === "buddy" && l.approvalStatus === "approved" && l.coachingDate.startsWith(key))
-        .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
+      let eduHours = 0;
+      for (const [date, hrs] of eduCalc.byDate.entries()) {
+        if (date.startsWith(key)) {
+          eduHours += hrs;
+        }
+      }
 
       const coachingHours =
         coachingLogs
@@ -73,7 +43,7 @@ export const getMyProgress = query({
           .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
       return {
         month: label,
-        educationHours: Math.round((eduHours + bcpHours + buddyHours) * 10) / 10,
+        educationHours: Math.round(eduHours * 10) / 10,
         coachingHours: Math.round(coachingHours * 10) / 10,
       };
     });
@@ -95,6 +65,7 @@ export const getMyProgress = query({
         hours: r.hours,
         status: r.approvalStatus,
       })),
+      ...eduCalc.attendanceActivityItems,
       ...coachingLogs.map((l) => ({
         type: "coaching" as const,
         date: l.coachingDate,
@@ -109,9 +80,9 @@ export const getMyProgress = query({
     const coachingProgress = await calculateCoachingProgress(ctx, user._id);
 
     return {
-      approvedEducationHours,
+      approvedEducationHours: eduCalc.approvedEducationHours,
       approvedCoachingHours,
-      educationPendingCount: educationRecords.filter((r) => r.approvalStatus === "pending").length,
+      educationPendingCount: eduCalc.educationPendingCount,
       coachingPendingCount: coachingLogs.filter((l) => l.approvalStatus === "pending").length,
       monthlyActivity,
       recentActivity,
@@ -141,34 +112,8 @@ export const getAllTraineesProgress = query({
 
     return await Promise.all(
       trainees.map(async (trainee) => {
-        const [educationRecords, coachingLogs, bcpLogs] = await Promise.all([
-          ctx.db
-            .query("educationRecords")
-            .withIndex("by_user", (q) => q.eq("userId", trainee._id))
-            .collect(),
-          ctx.db
-            .query("coachingLogs")
-            .withIndex("by_user", (q) => q.eq("userId", trainee._id))
-            .collect(),
-          ctx.db
-            .query("bcpLogs")
-            .withIndex("by_user", (q) => q.eq("userId", trainee._id))
-            .collect(),
-        ]);
-
-        const approvedBcpHours = bcpLogs
-          .filter((b) => b.approvalStatus === "approved")
-          .reduce((sum, b) => sum + b.durationMinutes, 0) / 60;
-
-        const approvedBuddyHours = coachingLogs
-          .filter((l) => l.coachingType === "buddy" && l.approvalStatus === "approved")
-          .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
-
-        const approvedEducationHours = educationRecords
-          .filter((r) => r.approvalStatus === "approved")
-          .reduce((sum, r) => sum + r.hours, 0)
-          + approvedBcpHours
-          + approvedBuddyHours;
+        const eduCalc = await calculateUserEducation(ctx, trainee._id);
+        const { coachingLogs } = eduCalc;
 
         const approvedCoachingHours =
           coachingLogs
@@ -178,7 +123,7 @@ export const getAllTraineesProgress = query({
         const educationTarget = 60;
         const coachingTarget = 100;
 
-        const educationPct = Math.min((approvedEducationHours / educationTarget) * 100, 100);
+        const educationPct = Math.min((eduCalc.approvedEducationHours / educationTarget) * 100, 100);
         const coachingPct = Math.min((approvedCoachingHours / coachingTarget) * 100, 100);
         const overallPct = Math.round((educationPct + coachingPct) / 2);
 
@@ -187,13 +132,12 @@ export const getAllTraineesProgress = query({
           name: trainee.name ?? "이름 미설정",
           email: trainee.email ?? "",
           certificationGoal: "SMPCC" as const,
-          approvedEducationHours: Math.round(approvedEducationHours * 10) / 10,
+          approvedEducationHours: eduCalc.approvedEducationHours,
           approvedCoachingHours: Math.round(approvedCoachingHours * 10) / 10,
           educationTarget,
           coachingTarget,
           overallPct,
-          educationPendingCount: educationRecords.filter((r) => r.approvalStatus === "pending")
-            .length,
+          educationPendingCount: eduCalc.educationPendingCount,
           coachingPendingCount: coachingLogs.filter((l) => l.approvalStatus === "pending").length,
         };
       }),
@@ -245,34 +189,8 @@ export const getTraineeDetail = query({
     const trainee = await ctx.db.get(args.userId);
     if (!trainee) return null;
 
-    const [educationRecords, coachingLogs, bcpLogs] = await Promise.all([
-      ctx.db
-        .query("educationRecords")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
-        .collect(),
-      ctx.db
-        .query("coachingLogs")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
-        .collect(),
-      ctx.db
-        .query("bcpLogs")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
-        .collect(),
-    ]);
-
-    const approvedBcpHours = bcpLogs
-      .filter((b) => b.approvalStatus === "approved")
-      .reduce((sum, b) => sum + b.durationMinutes, 0) / 60;
-
-    const approvedBuddyHours = coachingLogs
-      .filter((l) => l.coachingType === "buddy" && l.approvalStatus === "approved")
-      .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
-
-    const approvedEducationHours = educationRecords
-      .filter((r) => r.approvalStatus === "approved")
-      .reduce((sum, r) => sum + r.hours, 0)
-      + approvedBcpHours
-      + approvedBuddyHours;
+    const eduCalc = await calculateUserEducation(ctx, args.userId);
+    const { educationRecords, coachingLogs } = eduCalc;
 
     const approvedCoachingHours =
       coachingLogs
@@ -292,15 +210,12 @@ export const getTraineeDetail = query({
     }
 
     const monthlyActivity = months.map(({ key, label }) => {
-      const edHours = educationRecords
-        .filter((r) => r.approvalStatus === "approved" && r.educationDate.startsWith(key))
-        .reduce((sum, r) => sum + r.hours, 0);
-      const bcpHours = bcpLogs
-        .filter((b) => b.approvalStatus === "approved" && b.sessionDate.startsWith(key))
-        .reduce((sum, b) => sum + b.durationMinutes, 0) / 60;
-      const buddyHours = coachingLogs
-        .filter((l) => l.coachingType === "buddy" && l.approvalStatus === "approved" && l.coachingDate.startsWith(key))
-        .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
+      let eduHours = 0;
+      for (const [date, hrs] of eduCalc.byDate.entries()) {
+        if (date.startsWith(key)) {
+          eduHours += hrs;
+        }
+      }
 
       const coHours =
         coachingLogs
@@ -308,7 +223,7 @@ export const getTraineeDetail = query({
           .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
       return {
         month: label,
-        educationHours: Math.round((edHours + bcpHours + buddyHours) * 10) / 10,
+        educationHours: Math.round(eduHours * 10) / 10,
         coachingHours: Math.round(coHours * 10) / 10,
       };
     });
@@ -320,7 +235,7 @@ export const getTraineeDetail = query({
         email: trainee.email ?? "",
         certificationGoal: "SMPCC" as const,
       },
-      approvedEducationHours: Math.round(approvedEducationHours * 10) / 10,
+      approvedEducationHours: eduCalc.approvedEducationHours,
       approvedCoachingHours: Math.round(approvedCoachingHours * 10) / 10,
       educationTarget,
       coachingTarget,
@@ -360,34 +275,8 @@ export const getTraineeProgress = query({
   }> => {
     await requireRole(ctx, ["admin", "senior_coach"]);
 
-    const [educationRecords, coachingLogs, bcpLogs] = await Promise.all([
-      ctx.db
-        .query("educationRecords")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
-        .collect(),
-      ctx.db
-        .query("coachingLogs")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
-        .collect(),
-      ctx.db
-        .query("bcpLogs")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
-        .collect(),
-    ]);
-
-    const approvedBcpHours = bcpLogs
-      .filter((b) => b.approvalStatus === "approved")
-      .reduce((sum, b) => sum + b.durationMinutes, 0) / 60;
-
-    const approvedBuddyHours = coachingLogs
-      .filter((l) => l.coachingType === "buddy" && l.approvalStatus === "approved")
-      .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
-
-    const approvedEducationHours = educationRecords
-      .filter((r) => r.approvalStatus === "approved")
-      .reduce((sum, r) => sum + r.hours, 0)
-      + approvedBcpHours
-      + approvedBuddyHours;
+    const eduCalc = await calculateUserEducation(ctx, args.userId);
+    const { coachingLogs } = eduCalc;
 
     const approvedCoachingHours =
       coachingLogs
@@ -404,15 +293,12 @@ export const getTraineeProgress = query({
     }
 
     const monthlyActivity = months.map(({ key, label }) => {
-      const edHours = educationRecords
-        .filter((r) => r.approvalStatus === "approved" && r.educationDate.startsWith(key))
-        .reduce((sum, r) => sum + r.hours, 0);
-      const bcpHours = bcpLogs
-        .filter((b) => b.approvalStatus === "approved" && b.sessionDate.startsWith(key))
-        .reduce((sum, b) => sum + b.durationMinutes, 0) / 60;
-      const buddyHours = coachingLogs
-        .filter((l) => l.coachingType === "buddy" && l.approvalStatus === "approved" && l.coachingDate.startsWith(key))
-        .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
+      let eduHours = 0;
+      for (const [date, hrs] of eduCalc.byDate.entries()) {
+        if (date.startsWith(key)) {
+          eduHours += hrs;
+        }
+      }
 
       const coachingHours =
         coachingLogs
@@ -420,13 +306,13 @@ export const getTraineeProgress = query({
           .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
       return {
         month: label,
-        educationHours: Math.round((edHours + bcpHours + buddyHours) * 10) / 10,
+        educationHours: Math.round(eduHours * 10) / 10,
         coachingHours: Math.round(coachingHours * 10) / 10,
       };
     });
 
     return {
-      approvedEducationHours: Math.round(approvedEducationHours * 10) / 10,
+      approvedEducationHours: eduCalc.approvedEducationHours,
       approvedCoachingHours: Math.round(approvedCoachingHours * 10) / 10,
       monthlyActivity,
     };

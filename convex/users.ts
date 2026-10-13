@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./mockAuth";
 import { getAuthenticatedUser } from "./helpers";
 import type { Id } from "./_generated/dataModel.d.ts";
+import { calculateUserEducation } from "./educationCalculator";
 
 // Update daily check-in reminder preferences
 export const updateReminderSettings = mutation({
@@ -266,27 +267,15 @@ export const getMyPortfolio = query({
   }> => {
     const user = await getAuthenticatedUser(ctx);
 
-    const [educationRecords, coachingLogs, mentorLogs, reflections, bcpLogs] = await Promise.all([
-      ctx.db.query("educationRecords").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
-      ctx.db.query("coachingLogs").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
+    const eduCalc = await calculateUserEducation(ctx, user._id);
+    const { educationRecords, coachingLogs } = eduCalc;
+
+    const [mentorLogs, reflections] = await Promise.all([
       ctx.db.query("mentorCoachingLogs").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
       ctx.db.query("reflectionJournals").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
-      ctx.db.query("bcpLogs").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
     ]);
 
-    const approvedBcpHours = bcpLogs
-      .filter((b) => b.approvalStatus === "approved")
-      .reduce((sum, b) => sum + b.durationMinutes, 0) / 60;
-
-    const approvedBuddyHours = coachingLogs
-      .filter((l) => l.coachingType === "buddy" && l.approvalStatus === "approved")
-      .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
-
-    const approvedEducationHours = educationRecords
-      .filter((r) => r.approvalStatus === "approved")
-      .reduce((sum, r) => sum + r.hours, 0)
-      + approvedBcpHours
-      + approvedBuddyHours;
+    const approvedEducationHours = eduCalc.approvedEducationHours;
 
     const approvedCoachingHours =
       coachingLogs

@@ -153,7 +153,9 @@ export default function TraineeProgressPage({ user }: { user: User }) {
     ? (progress.sportsCount ?? 0) + Math.min(progress.generalCount ?? 0, 15)
     : 0;
 
-  const educationPct = progress ? Math.min((attendedSeminars / 12) * 100, 100) : 0;
+  const educationPct = progress
+    ? Math.min(((progress.approvedEducationHours ?? 0) / targets.education) * 100, 100)
+    : 0;
   const coachingPct = progress ? Math.min((ncpTotalSessions / 20) * 100, 100) : 0;
   const overallPct = Math.round((educationPct + coachingPct) / 2);
 
@@ -231,10 +233,15 @@ export default function TraineeProgressPage({ user }: { user: User }) {
                   </p>
                   <RadialProgressRing
                     value={educationPct}
-                    label={`${attendedSeminars} / 12일`}
+                    label={`${Math.round((progress.approvedEducationHours ?? 0) * 10) / 10} / ${targets.education}시간`}
                     color="hsl(var(--chart-3))"
                     size={120}
                   />
+                  {attendedSeminars > 0 && (
+                    <span className="text-[11px] text-muted-foreground -mt-1 font-medium">
+                      (세미나 {attendedSeminars}일 출석)
+                    </span>
+                  )}
                   {progress.educationPendingCount > 0 && (
                     <Badge variant="secondary" className="text-[10px] px-2 py-0">
                       검토중 {progress.educationPendingCount}건

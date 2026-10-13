@@ -3,6 +3,7 @@ import { mutation, query } from "./mockAuth";
 import type { Doc, Id } from "./_generated/dataModel.d.ts";
 import { requireAdmin } from "./helpers";
 import { hashPassword } from "./authUtils";
+import { calculateUserEducation } from "./educationCalculator";
 
 // ── Dashboard stats ──────────────────────────────────────────────────────────
 
@@ -487,17 +488,8 @@ export const getTraineeFullProfile = query({
 
     const approvedCoaching = coachingLogs.filter((l) => l.approvalStatus === "approved");
     const approvedMentor = mentorLogs.filter((l) => l.approvalStatus === "approved");
-    const approvedEdu = educationRecords.filter((r) => r.approvalStatus === "approved");
-
-    const approvedBcpHours = bcpLogs
-      .filter((b) => b.approvalStatus === "approved")
-      .reduce((sum, b) => sum + b.durationMinutes, 0) / 60;
-
-    const approvedBuddyHours = coachingLogs
-      .filter((l: any) => l.coachingType === "buddy" && l.approvalStatus === "approved")
-      .reduce((sum: number, l: any) => sum + l.durationMinutes, 0) / 60;
-
-    const approvedEducationHours = approvedEdu.reduce((s, r) => s + r.hours, 0) + approvedBcpHours + approvedBuddyHours;
+    const eduCalc = await calculateUserEducation(ctx, user._id);
+    const approvedEducationHours = eduCalc.approvedEducationHours;
 
     const recentCoachingLogs = [...coachingLogs]
       .sort((a, b) => b.coachingDate.localeCompare(a.coachingDate))

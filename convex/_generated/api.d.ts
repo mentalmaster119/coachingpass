@@ -30,6 +30,7 @@ import type * as crons from "../crons.js";
 import type * as dailyCheckIn from "../dailyCheckIn.js";
 import type * as dashboard from "../dashboard.js";
 import type * as education from "../education.js";
+import type * as educationCalculator from "../educationCalculator.js";
 import type * as export_ from "../export.js";
 import type * as helpers from "../helpers.js";
 import type * as http from "../http.js";
@@ -80,6 +81,7 @@ declare const fullApi: ApiFromModules<{
   dailyCheckIn: typeof dailyCheckIn;
   dashboard: typeof dashboard;
   education: typeof education;
+  educationCalculator: typeof educationCalculator;
   export: typeof export_;
   helpers: typeof helpers;
   http: typeof http;
