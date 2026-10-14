@@ -285,7 +285,7 @@ export default function AdminTraineeProfilePage() {
                 icon={<Clock className="w-4 h-4" />}
                 label="코칭 실습 (승인)"
                 main={`${coachingHours}h`}
-                sub={`전체 ${stats.totalCoachingLogs}건`}
+                sub={`승인 ${stats.approvedCoachingLogs}건 (전체 ${stats.totalCoachingLogs}건)`}
                 highlight
               />
               <StatCard

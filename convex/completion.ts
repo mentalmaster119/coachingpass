@@ -71,15 +71,23 @@ export async function calculateCoachingProgress(ctx: QueryCtx, userId: Id<"users
   );
   const sportsCount = sportsLogs.length;
 
-  // 5. General coaching count (ncpClientCategory === "general" & not buddy/mentor/sv)
+  // 5. General coaching count (ncpClientCategory === "general" or unset & not buddy/mentor/sv)
   const generalLogs = coachingLogs.filter(
-    (l) => l.ncpClientCategory === "general" && !["buddy", "mentor", "sv"].includes(l.coachingType)
+    (l) =>
+      (l.ncpClientCategory === "general" || !l.ncpClientCategory) &&
+      !["buddy", "mentor", "sv"].includes(l.coachingType)
   );
   const generalCount = generalLogs.length;
 
   // Raw counts (same as sportsCount / generalCount now)
   const rawSportsCount = sportsLogs.length;
   const rawGeneralCount = generalLogs.length;
+
+  const approvedCoachingMinutes =
+    coachingLogs.reduce((s, l) => s + l.durationMinutes, 0) +
+    bcpLogs.reduce((s, l) => s + l.durationMinutes, 0) +
+    mentorLogs.reduce((s, l) => s + l.durationMinutes, 0);
+  const coachingHours = Math.round((approvedCoachingMinutes / 60) * 10) / 10;
 
   return {
     buddyCount,
@@ -90,6 +98,8 @@ export async function calculateCoachingProgress(ctx: QueryCtx, userId: Id<"users
     rawSportsCount,
     rawGeneralCount,
     totalCount: buddyCount + mentorCount + svCount + sportsCount + generalCount,
+    approvedCoachingMinutes,
+    coachingHours,
   };
 }
 
@@ -164,7 +174,7 @@ export const evaluateCompletion = query({
     return {
       isCompleted,
       completion: {
-        coaching: { count: progress.totalCount, required: 15, met: coachingForCompletion },
+        coaching: { count: progress.totalCount, hours: progress.coachingHours, required: 15, met: coachingForCompletion },
         buddy: { count: progress.buddyCount, required: 2, met: progress.buddyCount >= 2 },
         mentor: { count: progress.mentorCount, required: 2, met: progress.mentorCount >= 2 },
         sv: { count: progress.svCount, required: 1, met: progress.svCount >= 1 },
@@ -204,14 +214,6 @@ export const evaluateCohort = query({
       .withIndex("by_cohort", (q) => q.eq("cohortId", args.cohortId))
       .collect();
 
-    const seminars = await ctx.db
-      .query("seminars")
-      .withIndex("by_cohort", (q) => q.eq("cohortId", args.cohortId))
-      .collect();
-    seminars.sort((a, b) => a.sessionNumber - b.sessionNumber);
-    const twoDay = seminars.filter((s) => s.seminarType === "two_day");
-    const totalSlots = twoDay.length * 2;
-
     return await Promise.all(
       members.map(async (m) => {
         const user = await ctx.db.get(m.userId);
@@ -227,60 +229,9 @@ export const evaluateCohort = query({
           progress.generalCount >= 2 &&
           progress.totalCount >= 15;
 
-        // Attendance
-        const attendanceRecords = await ctx.db
-          .query("attendances")
-          .withIndex("by_cohort_and_user", (q) =>
-            q.eq("cohortId", args.cohortId).eq("userId", m.userId)
-          )
-          .collect();
-
-        let attendedSlots = 0;
-        let sessionAbsenceViolation = false;
-
-        const otherMemberships = await ctx.db
-          .query("cohortMembers")
-          .withIndex("by_user", (q) => q.eq("userId", m.userId))
-          .collect();
-        const otherCohortIds = otherMemberships
-          .map((mb) => mb.cohortId)
-          .filter((id) => id !== args.cohortId);
-
-        const makeupAttendedSessions = new Set<number>();
-        for (const otherId of otherCohortIds) {
-          const otherSeminars = await ctx.db
-            .query("seminars")
-            .withIndex("by_cohort", (q) => q.eq("cohortId", otherId))
-            .collect();
-          const otherTwoDay = otherSeminars.filter((s) => s.seminarType === "two_day");
-          for (const s of otherTwoDay) {
-            const rec = await ctx.db
-              .query("attendances")
-              .withIndex("by_seminar_and_user", (q) => q.eq("seminarId", s._id).eq("userId", m.userId))
-              .unique();
-            if (rec && rec.status !== "absent") {
-              makeupAttendedSessions.add(s.sessionNumber);
-            }
-          }
-        }
-
-        for (const seminar of twoDay) {
-          const rec = attendanceRecords.find((r) => r.seminarId === seminar._id);
-          const status = rec?.status ?? "absent";
-          const hasMakeup = makeupAttendedSessions.has(seminar.sessionNumber);
-          if (status !== "absent") {
-            attendedSlots += 2;
-          } else if (hasMakeup) {
-            attendedSlots += 2;
-          } else if (seminar.sessionNumber >= 2 && seminar.sessionNumber <= 6) {
-            sessionAbsenceViolation = true;
-          }
-        }
-
-        const attendanceRate = totalSlots > 0
-          ? Math.round((attendedSlots / totalSlots) * 100)
-          : 0;
-
+        // Attendance using unified helper
+        const stats = await calculateUserCohortAttendance(ctx, args.cohortId, m.userId, true);
+        const { attendanceRate, sessionAbsenceViolation } = stats;
         const attendanceOk = attendanceRate >= 80 && !sessionAbsenceViolation;
         const isCompleted = coachingOk && attendanceOk;
 
@@ -323,6 +274,7 @@ export const evaluateCohort = query({
           attendanceRate,
           sessionAbsenceViolation,
           
+          coachingHours: progress.coachingHours,
           approvedCoachingCount: progress.totalCount,
           eligibleCoachingCount: progress.totalCount,
           buddyCount: progress.buddyCount,

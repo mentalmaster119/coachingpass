@@ -13,11 +13,8 @@ export const getMyProgress = query({
     const user = await getAuthenticatedUser(ctx);
     const eduCalc = await calculateUserEducation(ctx, user._id);
     const { educationRecords, coachingLogs } = eduCalc;
-
-    const approvedCoachingMinutes = coachingLogs
-      .filter((l) => l.approvalStatus === "approved")
-      .reduce((sum, l) => sum + l.durationMinutes, 0);
-    const approvedCoachingHours = approvedCoachingMinutes / 60;
+    const coachingProgress = await calculateCoachingProgress(ctx, user._id);
+    const approvedCoachingHours = coachingProgress.coachingHours;
 
     // Monthly activity for the last 12 months
     const now = new Date();
@@ -76,8 +73,6 @@ export const getMyProgress = query({
     ]
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, 10);
-
-    const coachingProgress = await calculateCoachingProgress(ctx, user._id);
 
     const bookReports = await ctx.db
       .query("bookReports")

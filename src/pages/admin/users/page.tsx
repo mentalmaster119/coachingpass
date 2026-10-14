@@ -683,6 +683,8 @@ type MemberStat = {
   approvedCoachingLogs: number;
   totalCoachingLogs: number;
   supervisorName: string | null;
+  isCompleted?: boolean;
+  attendanceRate?: number;
 };
 
 const MEMBER_STATUS_LABEL: Record<string, string> = {
@@ -881,6 +883,11 @@ function CohortUsersTab({ onViewDetail }: { onViewDetail: (userId: Id<"users">) 
                             >
                               {MEMBER_STATUS_LABEL[m.memberStatus] ?? m.memberStatus}
                             </Badge>
+                            {m.isCompleted && m.memberStatus !== "completed" && (
+                              <Badge variant="outline" className="text-xs text-green-600 border-green-600/30 bg-green-50/50 dark:bg-green-950/20">
+                                수료요건 충족
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-xs text-muted-foreground truncate">{m.email}</p>
                           {m.phone && (
@@ -896,15 +903,18 @@ function CohortUsersTab({ onViewDetail }: { onViewDetail: (userId: Id<"users">) 
                         </div>
                       </div>
 
-                      {/* 코칭 시간 */}
+                      {/* 코칭 시간 및 실습 건수 */}
                       <div className="flex items-center gap-4 flex-shrink-0 sm:text-right">
                         <div className="text-center">
                           <p className="text-base font-bold text-primary">{m.coachingHours}h</p>
                           <p className="text-xs text-muted-foreground">승인 코칭</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-base font-bold text-foreground">{m.totalCoachingLogs}</p>
-                          <p className="text-xs text-muted-foreground">전체 건수</p>
+                          <p className="text-base font-bold text-foreground">
+                            {m.approvedCoachingLogs}
+                            <span className="text-xs text-muted-foreground font-normal"> / {m.totalCoachingLogs}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground">승인 / 전체</p>
                         </div>
 
                         {/* 상태 변경 */}

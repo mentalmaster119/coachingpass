@@ -4,6 +4,8 @@ import type { Doc, Id } from "./_generated/dataModel.d.ts";
 import { requireAdmin } from "./helpers";
 import { hashPassword } from "./authUtils";
 import { calculateUserEducation } from "./educationCalculator";
+import { calculateCoachingProgress } from "./completion";
+import { calculateUserCohortAttendance } from "./attendance";
 
 // ── Dashboard stats ──────────────────────────────────────────────────────────
 
@@ -486,7 +488,7 @@ export const getTraineeFullProfile = query({
         ctx.db.query("bcpLogs").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
       ]);
 
-    const approvedCoaching = coachingLogs.filter((l) => l.approvalStatus === "approved");
+    const coachingProgress = await calculateCoachingProgress(ctx, user._id);
     const approvedMentor = mentorLogs.filter((l) => l.approvalStatus === "approved");
     const eduCalc = await calculateUserEducation(ctx, user._id);
     const approvedEducationHours = eduCalc.approvedEducationHours;
@@ -539,9 +541,9 @@ export const getTraineeFullProfile = query({
         isMentorCoach: user.isMentorCoach ?? null,
       },
       stats: {
-        totalCoachingLogs: coachingLogs.length,
-        approvedCoachingLogs: approvedCoaching.length,
-        approvedCoachingMinutes: approvedCoaching.reduce((s, l) => s + l.durationMinutes, 0),
+        totalCoachingLogs: coachingLogs.length + bcpLogs.length + mentorLogs.length,
+        approvedCoachingLogs: coachingProgress.totalCount,
+        approvedCoachingMinutes: coachingProgress.approvedCoachingMinutes,
         totalMentorLogs: mentorLogs.length,
         approvedMentorLogs: approvedMentor.length,
         approvedMentorMinutes: approvedMentor.reduce((s, l) => s + l.durationMinutes, 0),
@@ -646,6 +648,8 @@ export const getCohortMembersWithStats = query({
     approvedCoachingLogs: number;
     totalCoachingLogs: number;
     supervisorName: string | null;
+    isCompleted?: boolean;
+    attendanceRate?: number;
   }[]> => {
     await requireAdmin(ctx);
     const members = await ctx.db
@@ -656,14 +660,28 @@ export const getCohortMembersWithStats = query({
     return await Promise.all(
       members.map(async (m) => {
         const user = await ctx.db.get(m.userId);
-        const coachingLogs = await ctx.db
-          .query("coachingLogs")
-          .withIndex("by_user", (q) => q.eq("userId", m.userId))
-          .collect();
-        const approved = coachingLogs.filter((l) => l.approvalStatus === "approved");
-        const approvedMinutes = approved.reduce((s, l) => s + l.durationMinutes, 0);
+        const [coachingLogs, bcpLogs, mentorLogs] = await Promise.all([
+          ctx.db.query("coachingLogs").withIndex("by_user", (q) => q.eq("userId", m.userId)).collect(),
+          ctx.db.query("bcpLogs").withIndex("by_user", (q) => q.eq("userId", m.userId)).collect(),
+          ctx.db.query("mentorCoachingLogs").withIndex("by_user", (q) => q.eq("userId", m.userId)).collect(),
+        ]);
+        const totalCoachingLogs = coachingLogs.length + bcpLogs.length + mentorLogs.length;
+
+        const progress = await calculateCoachingProgress(ctx, m.userId);
 
         const supervisor = user?.assignedCoachId ? await ctx.db.get(user.assignedCoachId) : null;
+
+        // Calculate attendance & completion for consistency with completion management
+        const attendanceStats = await calculateUserCohortAttendance(ctx, args.cohortId, m.userId, true);
+        const attendanceOk = attendanceStats.attendanceRate >= 80 && !attendanceStats.sessionAbsenceViolation;
+        const coachingOk =
+          progress.buddyCount >= 2 &&
+          progress.mentorCount >= 2 &&
+          progress.svCount >= 1 &&
+          progress.sportsCount >= 8 &&
+          progress.generalCount >= 2 &&
+          progress.totalCount >= 15;
+        const isCompleted = coachingOk && attendanceOk;
 
         return {
           _id: m._id,
@@ -675,10 +693,12 @@ export const getCohortMembersWithStats = query({
           phone: user?.phone ?? null,
           approvalStatus: user?.approvalStatus ?? "pending",
           userId: m.userId,
-          coachingHours: Math.round((approvedMinutes / 60) * 10) / 10,
-          approvedCoachingLogs: approved.length,
-          totalCoachingLogs: coachingLogs.length,
+          coachingHours: progress.coachingHours,
+          approvedCoachingLogs: progress.totalCount,
+          totalCoachingLogs,
           supervisorName: supervisor?.name ?? null,
+          isCompleted,
+          attendanceRate: attendanceStats.attendanceRate,
         };
       })
     );

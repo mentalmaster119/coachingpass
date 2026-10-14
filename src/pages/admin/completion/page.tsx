@@ -226,10 +226,10 @@ function CompletionTable({ cohortId }: { cohortId: Id<"cohorts"> }) {
       {/* Summary chips */}
       <div className="flex flex-wrap gap-3">
         {[
-          { label: "전체 교육생", value: results.length, color: "text-foreground" },
-          { label: "수료", value: completedCount, color: "text-green-600" },
-          { label: "미수료", value: results.length - completedCount, color: "text-destructive" },
-          { label: "인증 응시 자격", value: certEligibleCount, color: "text-blue-600" },
+          { label: "전체 교육생", value: `${results.length}명`, color: "text-foreground" },
+          { label: "수료 요건 충족", value: `${completedCount}명`, color: "text-green-600" },
+          { label: "요건 미충족", value: `${results.length - completedCount}명`, color: "text-destructive" },
+          { label: "인증 응시 자격", value: `${certEligibleCount}명`, color: "text-blue-600" },
         ].map((s) => (
           <div key={s.label} className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-lg">
             <span className={cn("font-bold text-lg", s.color)}>{s.value}</span>
@@ -262,8 +262,19 @@ function CompletionTable({ cohortId }: { cohortId: Id<"cohorts"> }) {
                   {r.certificationGoal && (
                     <Badge variant="outline" className="text-xs">{r.certificationGoal}</Badge>
                   )}
-                  <Badge variant={r.isCompleted ? "default" : "destructive"} className="text-xs">
-                    {r.isCompleted ? "수료" : "미수료"}
+                  {/* 기수 등록 상태 (사용자관리와 일치) */}
+                  <Badge
+                    className={cn(
+                      "text-xs",
+                      r.memberStatus === "active" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                      r.memberStatus === "completed" && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+                      r.memberStatus === "withdrawn" && "bg-destructive/10 text-destructive",
+                    )}
+                  >
+                    {r.memberStatus === "active" ? "수강중" : r.memberStatus === "completed" ? "수료" : r.memberStatus === "withdrawn" ? "중도탈락" : r.memberStatus}
+                  </Badge>
+                  <Badge variant={r.isCompleted ? "default" : "outline"} className={cn("text-xs", r.isCompleted ? "bg-green-600 hover:bg-green-700 text-white" : "text-muted-foreground")}>
+                    {r.isCompleted ? "수료요건 충족" : "수료요건 미충족"}
                   </Badge>
                   <Badge
                     variant={r.isCertEligible ? "default" : "secondary"}
@@ -273,7 +284,7 @@ function CompletionTable({ cohortId }: { cohortId: Id<"cohorts"> }) {
                   </Badge>
                   {/* Quick stats */}
                   <span className="text-xs text-muted-foreground">
-                    출석 {r.attendanceRate}% · 코칭 {r.approvedCoachingCount}건
+                    출석 {r.attendanceRate}% · 코칭 {r.coachingHours ?? 0}h (승인 {r.approvedCoachingCount}건)
                   </span>
                   {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                 </div>
