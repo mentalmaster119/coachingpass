@@ -35,6 +35,7 @@ import {
   RotateCw,
   Sun,
   Moon,
+  FileCheck,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button.tsx";
@@ -83,6 +84,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "출석 체크", href: "/attendance", icon: <CalendarDays className="w-4 h-4" /> },
       { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
       { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
+      { label: "과제 제출 (독후감/에세이)", href: "/submissions", icon: <FileCheck className="w-4 h-4" /> },
       {
         label: "실습 및 슈퍼비전 기록",
         href: "/practice-group",
@@ -185,6 +187,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
     { label: "출석 체크", href: "/attendance", icon: <CalendarDays className="w-4 h-4" /> },
     { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
     { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
+    { label: "과제 제출 (독후감/에세이)", href: "/submissions", icon: <FileCheck className="w-4 h-4" /> },
     {
       label: "실습 및 슈퍼비전 기록",
       href: "/practice-group",

@@ -20,6 +20,16 @@ async function requireAdmin(ctx: QueryCtx | MutationCtx) {
   return user;
 }
 
+// ── File upload URL ──────────────────────────────────────────────────────────
+
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await requireAuth(ctx);
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
 // ── Book Reports ─────────────────────────────────────────────────────────────
 
 export const listBookReports = query({
@@ -27,10 +37,21 @@ export const listBookReports = query({
   handler: async (ctx, args) => {
     const me = await requireAuth(ctx);
     const targetId = args.userId ?? me._id;
-    return await ctx.db
+    const reports = await ctx.db
       .query("bookReports")
       .withIndex("by_user", (q) => q.eq("userId", targetId))
       .collect();
+
+    const withUrls = await Promise.all(
+      reports.map(async (r) => {
+        const fileUrl = await ctx.storage.getUrl(r.fileStorageId);
+        return { ...r, fileUrl };
+      })
+    );
+
+    return withUrls.sort(
+      (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+    );
   },
 });
 
@@ -90,10 +111,21 @@ export const listEssays = query({
   handler: async (ctx, args) => {
     const me = await requireAuth(ctx);
     const targetId = args.userId ?? me._id;
-    return await ctx.db
+    const essays = await ctx.db
       .query("coachingEssays")
       .withIndex("by_user", (q) => q.eq("userId", targetId))
       .collect();
+
+    const withUrls = await Promise.all(
+      essays.map(async (e) => {
+        const fileUrl = await ctx.storage.getUrl(e.fileStorageId);
+        return { ...e, fileUrl };
+      })
+    );
+
+    return withUrls.sort(
+      (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+    );
   },
 });
 
@@ -144,6 +176,42 @@ export const deleteEssay = mutation({
   },
 });
 
+// ── Trainee Summary ──────────────────────────────────────────────────────────
+
+export const getMySubmissionSummary = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireAuth(ctx);
+    const bookReports = await ctx.db
+      .query("bookReports")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    const essays = await ctx.db
+      .query("coachingEssays")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const approvedBookReports = bookReports.filter((r) => r.approvalStatus === "approved").length;
+    const approvedEssays = essays.filter((e) => e.approvalStatus === "approved").length;
+
+    return {
+      bookReports: {
+        total: bookReports.length,
+        approved: approvedBookReports,
+        required: 2,
+        met: approvedBookReports >= 2,
+      },
+      essays: {
+        total: essays.length,
+        approved: approvedEssays,
+        required: 1,
+        met: approvedEssays >= 1,
+      },
+      allMet: approvedBookReports >= 2 && approvedEssays >= 1,
+    };
+  },
+});
+
 // ── Admin: list all pending submissions ──────────────────────────────────────
 
 export const listPendingSubmissions = query({
@@ -160,13 +228,15 @@ export const listPendingSubmissions = query({
     const bookReportsWithUser = await Promise.all(
       pendingBookReports.map(async (item) => {
         const user = await ctx.db.get(item.userId);
-        return { ...item, userName: user?.name, userEmail: user?.email };
+        const fileUrl = await ctx.storage.getUrl(item.fileStorageId);
+        return { ...item, userName: user?.name, userEmail: user?.email, fileUrl };
       })
     );
     const essaysWithUser = await Promise.all(
       pendingEssays.map(async (item) => {
         const user = await ctx.db.get(item.userId);
-        return { ...item, userName: user?.name, userEmail: user?.email };
+        const fileUrl = await ctx.storage.getUrl(item.fileStorageId);
+        return { ...item, userName: user?.name, userEmail: user?.email, fileUrl };
       })
     );
 

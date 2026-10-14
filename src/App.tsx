@@ -57,6 +57,7 @@ import MentorsPage from "./pages/mentors/page.tsx";
 import AdminBcpPage from "./pages/admin/bcp/page.tsx";
 import SearchPage from "./pages/search/page.tsx";
 import ClassroomBookingPage from "./pages/classroom-booking/page.tsx";
+import SubmissionsPage from "./pages/submissions/page.tsx";
 
 export default function App() {
   useServiceWorker();
@@ -122,6 +123,7 @@ export default function App() {
             <Route path="/search" element={<SearchPage />} />
             <Route path="/classroom-booking" element={<ClassroomBookingPage />} />
             <Route path="/supervision" element={<SupervisionPage />} />
+            <Route path="/submissions" element={<SubmissionsPage />} />
           </Route>
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

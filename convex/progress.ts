@@ -79,6 +79,18 @@ export const getMyProgress = query({
 
     const coachingProgress = await calculateCoachingProgress(ctx, user._id);
 
+    const bookReports = await ctx.db
+      .query("bookReports")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    const essays = await ctx.db
+      .query("coachingEssays")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const approvedBookReportCount = bookReports.filter((r) => r.approvalStatus === "approved").length;
+    const approvedEssayCount = essays.filter((e) => e.approvalStatus === "approved").length;
+
     return {
       approvedEducationHours: eduCalc.approvedEducationHours,
       approvedCoachingHours,
@@ -93,6 +105,8 @@ export const getMyProgress = query({
       sportsCount: coachingProgress.sportsCount,
       generalCount: coachingProgress.generalCount,
       totalCoachingCount: coachingProgress.totalCount,
+      approvedBookReportCount,
+      approvedEssayCount,
     };
   },
 });

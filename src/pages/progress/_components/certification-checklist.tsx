@@ -32,6 +32,8 @@ type ProgressData = {
   sportsCount?: number;
   generalCount?: number;
   totalCoachingCount?: number;
+  approvedBookReportCount?: number;
+  approvedEssayCount?: number;
 };
 
 const REQUIREMENTS = {
@@ -145,6 +147,22 @@ export default function CertificationChecklist({
       pending: progress.coachingPendingCount,
       done: (progress.totalCoachingCount ?? 0) >= 20,
       unit: "회",
+    },
+    {
+      label: "독후감 제출 (최소 2편)",
+      current: progress.approvedBookReportCount ?? 0,
+      target: 2,
+      pending: 0,
+      done: (progress.approvedBookReportCount ?? 0) >= 2,
+      unit: "편",
+    },
+    {
+      label: "멘탈코칭 에세이 제출 (최소 1편)",
+      current: progress.approvedEssayCount ?? 0,
+      target: 1,
+      pending: 0,
+      done: (progress.approvedEssayCount ?? 0) >= 1,
+      unit: "편",
     },
   ] : [
     {
