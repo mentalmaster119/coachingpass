@@ -243,3 +243,61 @@ export const listPendingSubmissions = query({
     return { bookReports: bookReportsWithUser, essays: essaysWithUser };
   },
 });
+
+// ── Admin: list all submissions with status filter ───────────────────────────
+
+export const listAllSubmissions = query({
+  args: {
+    status: v.optional(
+      v.union(
+        v.literal("all"),
+        v.literal("pending"),
+        v.literal("approved"),
+        v.literal("rejected")
+      )
+    ),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const filterStatus = args.status ?? "all";
+
+    const allBookReports = await ctx.db.query("bookReports").collect();
+    const filteredReports =
+      filterStatus === "all"
+        ? allBookReports
+        : allBookReports.filter((r) => r.approvalStatus === filterStatus);
+
+    const allEssays = await ctx.db.query("coachingEssays").collect();
+    const filteredEssays =
+      filterStatus === "all"
+        ? allEssays
+        : allEssays.filter((e) => e.approvalStatus === filterStatus);
+
+    const bookReportsWithUser = await Promise.all(
+      filteredReports.map(async (item) => {
+        const user = await ctx.db.get(item.userId);
+        const fileUrl = await ctx.storage.getUrl(item.fileStorageId);
+        return { ...item, userName: user?.name, userEmail: user?.email, fileUrl };
+      })
+    );
+    const essaysWithUser = await Promise.all(
+      filteredEssays.map(async (item) => {
+        const user = await ctx.db.get(item.userId);
+        const fileUrl = await ctx.storage.getUrl(item.fileStorageId);
+        return { ...item, userName: user?.name, userEmail: user?.email, fileUrl };
+      })
+    );
+
+    return {
+      bookReports: bookReportsWithUser.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
+      essays: essaysWithUser.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
+      counts: {
+        all: allBookReports.length + allEssays.length,
+        pending: allBookReports.filter((r) => r.approvalStatus === "pending").length + allEssays.filter((e) => e.approvalStatus === "pending").length,
+        approved: allBookReports.filter((r) => r.approvalStatus === "approved").length + allEssays.filter((e) => e.approvalStatus === "approved").length,
+        rejected: allBookReports.filter((r) => r.approvalStatus === "rejected").length + allEssays.filter((e) => e.approvalStatus === "rejected").length,
+      },
+    };
+  },
+});
+

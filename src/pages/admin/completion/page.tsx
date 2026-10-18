@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api.js";
 import type { Id } from "@/convex/_generated/dataModel.d.ts";
@@ -82,16 +83,34 @@ function CriterionRow({
 // ── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AdminCompletionPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const cohorts = useQuery(api.cohorts.list, {});
+  
+  // 진행중 기수를 기본값으로 자동 설정
+  const defaultCohortId = cohorts
+    ? ((cohorts.find((c) => c.status === "active") ?? cohorts[0])?._id ?? null)
+    : null;
   const [selectedCohortId, setSelectedCohortId] = useState<Id<"cohorts"> | null>(null);
-  const [activeTab, setActiveTab] = useState("completion");
+  const resolvedCohortId = selectedCohortId ?? defaultCohortId;
+
+  const tabParam = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(tabParam === "submissions" ? "submissions" : "completion");
+
+  const handleTabChange = (val: string) => {
+    setActiveTab(val);
+    if (val === "submissions") {
+      setSearchParams({ tab: "submissions" }, { replace: true });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
+  };
 
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold">수료 및 인증 관리</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          기수별 교육생의 수료 및 인증시험 응시 자격을 확인합니다
+          기수별 교육생의 수료 및 인증시험 응시 자격을 확인하고, 제출된 독후감·에세이 과제를 검토합니다
         </p>
       </div>
 
@@ -137,63 +156,65 @@ export default function AdminCompletionPage() {
         </Card>
       </div>
 
-      {/* Cohort selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <GraduationCap className="w-4 h-4" />
-            기수 선택
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {cohorts === undefined ? (
-            <Skeleton className="h-10 w-64" />
-          ) : cohorts.length === 0 ? (
-            <p className="text-sm text-muted-foreground">등록된 기수가 없습니다.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {cohorts.map((c) => (
-                <button
-                  key={c._id}
-                  onClick={() => setSelectedCohortId(c._id)}
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer",
-                    selectedCohortId === c._id
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background border-border hover:bg-muted"
-                  )}
-                >
-                  {c.name}
-                  <span className="ml-1.5 text-xs opacity-70">
-                    {c.term === "first" ? "상반기" : "하반기"}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList>
+          <TabsTrigger value="completion" className="gap-2">
+            <Users className="w-4 h-4" />
+            수료 현황
+          </TabsTrigger>
+          <TabsTrigger value="submissions" className="gap-2">
+            <FileText className="w-4 h-4" />
+            과제 검토 (독후감 / 에세이)
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="completion" className="mt-4 space-y-6">
+          {/* Cohort selector */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <GraduationCap className="w-4 h-4" />
+                기수 선택
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {cohorts === undefined ? (
+                <Skeleton className="h-10 w-64" />
+              ) : cohorts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">등록된 기수가 없습니다.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {cohorts.map((c) => (
+                    <button
+                      key={c._id}
+                      onClick={() => setSelectedCohortId(c._id)}
+                      className={cn(
+                        "px-4 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer",
+                        resolvedCohortId === c._id
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background border-border hover:bg-muted"
+                      )}
+                    >
+                      {c.name}
+                      <span className="ml-1.5 text-xs opacity-70">
+                        {c.term === "first" ? "상반기" : "하반기"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-      {selectedCohortId && (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="completion" className="gap-2">
-              <Users className="w-4 h-4" />
-              수료 현황
-            </TabsTrigger>
-            <TabsTrigger value="submissions" className="gap-2">
-              <FileText className="w-4 h-4" />
-              제출물 검토
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="completion" className="mt-4">
-            <CompletionTable cohortId={selectedCohortId} />
-          </TabsContent>
-          <TabsContent value="submissions" className="mt-4">
-            <SubmissionsReview />
-          </TabsContent>
-        </Tabs>
-      )}
+          {resolvedCohortId ? (
+            <CompletionTable cohortId={resolvedCohortId} />
+          ) : (
+            <p className="text-muted-foreground text-sm">기수를 선택해 주세요.</p>
+          )}
+        </TabsContent>
+        <TabsContent value="submissions" className="mt-4">
+          <SubmissionsReview />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -420,7 +441,8 @@ function CompletionTable({ cohortId }: { cohortId: Id<"cohorts"> }) {
 // ── Submissions Review ────────────────────────────────────────────────────────
 
 function SubmissionsReview() {
-  const pending = useQuery(api.submissions.listPendingSubmissions, {});
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+  const data = useQuery(api.submissions.listAllSubmissions, { status: statusFilter });
   const reviewBookReport = useMutation(api.submissions.reviewBookReport);
   const reviewEssay = useMutation(api.submissions.reviewEssay);
 
@@ -467,33 +489,70 @@ function SubmissionsReview() {
     }
   };
 
-  if (pending === undefined) {
+  if (data === undefined) {
     return <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>;
   }
 
-  const totalPending = pending.bookReports.length + pending.essays.length;
+  const { bookReports, essays, counts } = data;
+  const totalItems = bookReports.length + essays.length;
 
   return (
     <div className="space-y-6">
-      {totalPending === 0 ? (
+      {/* Status filter tabs */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-lg">
+          {[
+            { key: "pending" as const, label: "검토 대기", count: counts.pending, color: "text-amber-600 dark:text-amber-400" },
+            { key: "approved" as const, label: "승인 완료", count: counts.approved, color: "text-green-600 dark:text-green-400" },
+            { key: "rejected" as const, label: "반려", count: counts.rejected, color: "text-destructive" },
+            { key: "all" as const, label: "전체", count: counts.all },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setStatusFilter(tab.key)}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5",
+                statusFilter === tab.key
+                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <span>{tab.label}</span>
+              <span className={cn("text-[11px] font-bold", tab.color ?? "text-muted-foreground")}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {totalItems === 0 ? (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon"><CheckCircle2 /></EmptyMedia>
-            <EmptyTitle>검토 대기 중인 제출물이 없습니다</EmptyTitle>
-            <EmptyDescription>모든 독후감과 에세이가 처리되었습니다</EmptyDescription>
+            <EmptyTitle>
+              {statusFilter === "pending"
+                ? "검토 대기 중인 제출물이 없습니다"
+                : "해당 상태의 과제 제출물이 없습니다"}
+            </EmptyTitle>
+            <EmptyDescription>
+              {statusFilter === "pending"
+                ? "모든 독후감과 에세이가 처리되었습니다"
+                : "과제가 제출되면 이곳에서 확인 및 검토할 수 있습니다"}
+            </EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
         <>
           {/* Book Reports */}
-          {pending.bookReports.length > 0 && (
+          {bookReports.length > 0 && (
             <div className="space-y-3">
-              <h3 className="font-semibold flex items-center gap-2">
-                <BookOpen className="w-4 h-4" />
-                독후감 검토 대기
-                <Badge variant="secondary">{pending.bookReports.length}</Badge>
+              <h3 className="font-semibold flex items-center gap-2 text-sm">
+                <BookOpen className="w-4 h-4 text-primary" />
+                독후감 목록
+                <Badge variant="secondary">{bookReports.length}</Badge>
               </h3>
-              {pending.bookReports.map((r) => (
+              {bookReports.map((r) => (
                 <SubmissionCard
                   key={r._id}
                   title={r.bookTitle}
@@ -503,6 +562,8 @@ function SubmissionsReview() {
                   userName={r.userName}
                   userEmail={r.userEmail}
                   submittedAt={r.submittedAt}
+                  approvalStatus={r.approvalStatus}
+                  rejectionReason={r.rejectionReason}
                   onApprove={() => handleApprove("bookReport", r._id)}
                   onReject={() => setRejectDialog({ type: "bookReport", id: r._id })}
                 />
@@ -511,14 +572,14 @@ function SubmissionsReview() {
           )}
 
           {/* Essays */}
-          {pending.essays.length > 0 && (
+          {essays.length > 0 && (
             <div className="space-y-3">
-              <h3 className="font-semibold flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                에세이 검토 대기
-                <Badge variant="secondary">{pending.essays.length}</Badge>
+              <h3 className="font-semibold flex items-center gap-2 text-sm">
+                <FileText className="w-4 h-4 text-primary" />
+                코칭에세이 목록
+                <Badge variant="secondary">{essays.length}</Badge>
               </h3>
-              {pending.essays.map((e) => (
+              {essays.map((e) => (
                 <SubmissionCard
                   key={e._id}
                   title={e.title}
@@ -527,6 +588,8 @@ function SubmissionsReview() {
                   userName={e.userName}
                   userEmail={e.userEmail}
                   submittedAt={e.submittedAt}
+                  approvalStatus={e.approvalStatus}
+                  rejectionReason={e.rejectionReason}
                   onApprove={() => handleApprove("essay", e._id)}
                   onReject={() => setRejectDialog({ type: "essay", id: e._id })}
                 />
@@ -571,6 +634,8 @@ function SubmissionCard({
   userName,
   userEmail,
   submittedAt,
+  approvalStatus,
+  rejectionReason,
   onApprove,
   onReject,
 }: {
@@ -581,41 +646,78 @@ function SubmissionCard({
   userName?: string;
   userEmail?: string;
   submittedAt: string;
+  approvalStatus?: string;
+  rejectionReason?: string;
   onApprove: () => void;
   onReject: () => void;
 }) {
   const fileUrl = useQuery(api.resources.getFileUrl, { storageId: fileStorageId });
 
   return (
-    <Card>
+    <Card className="hover:border-primary/30 transition-colors">
       <CardContent className="py-4 px-5">
         <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <p className="font-medium text-sm">{title}</p>
-            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-              <span>{userName ?? "이름 없음"} {userEmail ? `(${userEmail})` : ""}</span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <p className="font-semibold text-sm">{title}</p>
+              {approvalStatus === "approved" && (
+                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs">
+                  승인 완료
+                </Badge>
+              )}
+              {approvalStatus === "rejected" && (
+                <Badge variant="destructive" className="text-xs">
+                  반려됨
+                </Badge>
+              )}
+              {approvalStatus === "pending" && (
+                <Badge variant="secondary" className="text-xs bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400">
+                  대기중
+                </Badge>
+              )}
+            </div>
+            {subtitle && <p className="text-xs text-muted-foreground mb-1">{subtitle}</p>}
+            <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+              <span className="font-medium text-foreground">{userName ?? "이름 없음"}</span>
+              {userEmail && <span>{userEmail}</span>}
               <span>{format(parseISO(submittedAt), "yyyy.MM.dd", { locale: ko })} 제출</span>
               {fileUrl && (
                 <a
                   href={fileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-0.5 text-primary hover:underline"
+                  className="flex items-center gap-1 text-primary font-medium hover:underline bg-primary/5 px-2 py-0.5 rounded"
                 >
                   <ExternalLink className="w-3 h-3" />
                   {fileName}
                 </a>
               )}
             </div>
+            {rejectionReason && (
+              <p className="text-xs text-destructive mt-2 bg-destructive/5 rounded px-2.5 py-1.5 border border-destructive/10">
+                반려 사유: {rejectionReason}
+              </p>
+            )}
           </div>
           <div className="flex gap-2 flex-shrink-0">
-            <Button size="sm" variant="outline" onClick={onReject} className="text-destructive border-destructive/30 hover:bg-destructive/10 cursor-pointer">
-              반려
-            </Button>
-            <Button size="sm" onClick={onApprove} className="cursor-pointer">
-              승인
-            </Button>
+            {approvalStatus === "pending" ? (
+              <>
+                <Button size="sm" variant="outline" onClick={onReject} className="text-destructive border-destructive/30 hover:bg-destructive/10 cursor-pointer">
+                  반려
+                </Button>
+                <Button size="sm" onClick={onApprove} className="cursor-pointer">
+                  승인
+                </Button>
+              </>
+            ) : approvalStatus === "rejected" ? (
+              <Button size="sm" variant="outline" onClick={onApprove} className="cursor-pointer text-xs">
+                승인으로 변경
+              </Button>
+            ) : (
+              <Button size="sm" variant="ghost" onClick={onReject} className="text-destructive hover:bg-destructive/10 cursor-pointer text-xs">
+                반려로 변경
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

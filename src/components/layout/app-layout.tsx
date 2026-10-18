@@ -136,6 +136,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
       { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
       { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
+      { label: "과제(독후감/에세이) 검토", href: "/admin/completion?tab=submissions", icon: <FileCheck className="w-4 h-4" /> },
       { label: "데이터 내보내기", href: "/admin/export", icon: <FileSpreadsheet className="w-4 h-4" /> },
       { label: "내 프로필", href: "/profile", icon: <UserCircle className="w-4 h-4" /> },
       { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
