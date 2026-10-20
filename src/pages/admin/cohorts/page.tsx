@@ -99,7 +99,7 @@ const defaultForm: CohortFormData = {
   endDate: "",
   status: "upcoming",
   description: "",
-  maxMentors: "2",
+  maxMentors: "4",
   educationCategory: "expert",
   courseCode: "expert",
 };
@@ -154,7 +154,7 @@ export default function AdminCohortsPage() {
       endDate: cohort.endDate,
       status: cohort.status,
       description: cohort.description ?? "",
-      maxMentors: String(cohort.maxMentors ?? 2),
+      maxMentors: String(cohort.maxMentors ?? 4),
       educationCategory: (cohort.educationCategory as EducationCategoryKey) || resolved.category || "expert",
       courseCode: cohort.courseCode || resolved.courseKey || "expert",
     });
@@ -275,7 +275,7 @@ export default function AdminCohortsPage() {
                         {cohort.term === "first" ? "상반기" : "하반기"} ·{" "}
                         {format(new Date(cohort.startDate), "yyyy년 M월", { locale: ko })} ~{" "}
                         {format(new Date(cohort.endDate), "yyyy년 M월", { locale: ko })} ·{" "}
-                        최대 멘토: <strong>{cohort.maxMentors ?? 2}명</strong>
+                        최대 멘토: <strong>{cohort.maxMentors ?? 4}명</strong>
                       </p>
                     </div>
                   </div>

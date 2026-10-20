@@ -147,7 +147,7 @@ export default function AdminAssignmentsPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-bold flex items-center gap-2 text-purple-950 dark:text-purple-300">
                 <Users className="w-4 h-4 text-purple-600" />
-                멘토코치별 매칭 현황 (인원 제한: 최대 2명)
+                멘토코치별 매칭 현황 (인원 제한: 최대 4명)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -163,7 +163,7 @@ export default function AdminAssignmentsPage() {
                       t.assignedCoachId4 === coach._id ||
                       t.assignedCoachId5 === coach._id
                     );
-                    const isFull = matched.length >= 2;
+                    const isFull = matched.length >= 4;
                     return (
                       <div
                         key={coach._id}
@@ -188,7 +188,7 @@ export default function AdminAssignmentsPage() {
                             )}
                             variant="secondary"
                           >
-                            {matched.length} / 2명
+                            {matched.length} / 4명
                           </Badge>
                         </div>
                         <div className="space-y-1">
@@ -294,7 +294,7 @@ export default function AdminAssignmentsPage() {
 
                     {/* Coach selectors */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-wrap flex-shrink-0">
-                      {Array.from({ length: trainee.maxMentorsLimit ?? 2 }).map((_, index) => {
+                      {Array.from({ length: trainee.maxMentorsLimit ?? 4 }).map((_, index) => {
                         const slots = ["first", "second", "third", "fourth", "fifth"] as const;
                         const fields = [
                           "assignedCoachId",

@@ -47,7 +47,7 @@ export default function MentorsPage() {
   const myMembership = useQuery(api.cohorts.getMyMembership);
   const { user: currentUser } = useCurrentUser();
 
-  const maxMentorsLimit = myMembership?.cohort?.maxMentors ?? 2;
+  const maxMentorsLimit = myMembership?.cohort?.maxMentors ?? 4;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMentor, setSelectedMentor] = useState<any | null>(null);
@@ -132,8 +132,8 @@ export default function MentorsPage() {
           </p>
           <div className="mt-2 text-xs text-muted-foreground bg-purple-500/5 border border-purple-100 rounded-md px-3 py-2 space-y-0.5 max-w-md">
             <p>• 교육생 한 명당 최대 <strong>{maxMentorsLimit}명</strong>의 멘토코치까지 배정 신청할 수 있습니다.</p>
-            <p>• 멘토코치 한 명당 이번 기수에서 최대 <strong>2명</strong>의 교육생만 신청 가능합니다.</p>
-            <p>• 이미 2명 신청이 완료된 멘토코칭 카드는 <strong>신청 마감</strong>으로 표시됩니다.</p>
+            <p>• 멘토코치 한 명당 이번 기수에서 최대 <strong>4명</strong>의 교육생만 신청 가능합니다.</p>
+            <p>• 이미 4명 신청이 완료된 멘토코칭 카드는 <strong>신청 마감</strong>으로 표시됩니다.</p>
           </div>
         </div>
       </motion.div>
@@ -195,7 +195,7 @@ export default function MentorsPage() {
 
               const isAppliedToOtherMentor =
                 assignedCoachesCount >= maxMentorsLimit && !isAppliedToThisMentor;
-              const isMentorFull = mentor.assignedTraineesCount >= 2;
+              const isMentorFull = mentor.assignedTraineesCount >= 4;
 
               return (
                 <motion.div
@@ -258,7 +258,7 @@ export default function MentorsPage() {
                               </Badge>
                             )}
                             <span className="text-[11px] text-muted-foreground font-medium">
-                              신청 인원: <strong>{mentor.assignedTraineesCount} / 2명</strong>
+                              신청 인원: <strong>{mentor.assignedTraineesCount} / 4명</strong>
                             </span>
                           </div>
 
@@ -336,7 +336,7 @@ export default function MentorsPage() {
                         ) : isMentorFull ? (
                           <Button
                             onClick={() => {
-                              alert("해당 멘토코치님은 이미 이번 기수 신청이 마감되었습니다 (최대 2명). 더 이상 신청할 수 없습니다.");
+                              alert("해당 멘토코치님은 이미 이번 기수 신청이 마감되었습니다 (최대 4명). 더 이상 신청할 수 없습니다.");
                             }}
                             className="w-full bg-red-100 hover:bg-red-200 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-xs h-9 gap-1.5 border border-red-200 dark:border-red-900/50 font-semibold cursor-pointer"
                           >

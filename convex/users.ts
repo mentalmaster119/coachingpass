@@ -711,15 +711,17 @@ export const requestMentoring = mutation({
       throw new ConvexError({ message: "이미 이 멘토코치님께 신청된 상태입니다.", code: "BAD_REQUEST" });
     }
 
-    let maxMentorsLimit = 2; // Default to 2
+    let maxMentorsLimit = 4; // Default to 4
     const membership = await ctx.db
       .query("cohortMembers")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .first();
     if (membership) {
       const cohort = await ctx.db.get(membership.cohortId);
-      if (cohort && cohort.maxMentors !== undefined) {
+      if (cohort && cohort.maxMentors !== undefined && cohort.maxMentors !== 2) {
         maxMentorsLimit = Math.max(1, Math.min(5, cohort.maxMentors));
+      } else {
+        maxMentorsLimit = 4;
       }
     }
 
@@ -759,8 +761,8 @@ export const requestMentoring = mutation({
       count = currentTrainees.filter((t) => cohortUserIds.has(t._id)).length;
     }
 
-    if (count >= 2) {
-      throw new ConvexError({ message: "해당 멘토코치님은 이미 이번 기수 신청이 마감되었습니다 (최대 2명).", code: "BAD_REQUEST" });
+    if (count >= 4) {
+      throw new ConvexError({ message: "해당 멘토코치님은 이미 이번 기수 신청이 마감되었습니다 (최대 4명).", code: "BAD_REQUEST" });
     }
 
     const emptyField = coachFields.slice(0, maxMentorsLimit).find((field) => !user[field]);

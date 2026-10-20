@@ -65,6 +65,7 @@ export const list = query({
     // Enrich each cohort with resolved categories
     let enriched = cohorts.map((c) => ({
       ...c,
+      maxMentors: c.maxMentors !== undefined && c.maxMentors !== 2 ? c.maxMentors : 4,
       educationCategory: getResolvedCohortCategory(c),
       courseCode: getResolvedCourseCode(c),
       isLongTerm: c.isLongTerm !== undefined ? c.isLongTerm : getResolvedCohortCategory(c) === "expert",
@@ -305,7 +306,15 @@ export const getMyMembership = query({
       .first();
     if (!membership) return null;
     const cohort = await ctx.db.get(membership.cohortId);
-    return { membership, cohort };
+    return {
+      membership,
+      cohort: cohort
+        ? {
+            ...cohort,
+            maxMentors: cohort.maxMentors !== undefined && cohort.maxMentors !== 2 ? cohort.maxMentors : 4,
+          }
+        : null,
+    };
   },
 });
 
@@ -366,5 +375,21 @@ export const changeMemberCohort = mutation({
         status: "active",
       });
     }
+  },
+});
+
+// One-time or sync migration to set maxMentors to 4 for cohorts where it was 2 or undefined
+export const migrateCohortMaxMentors = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const cohorts = await ctx.db.query("cohorts").collect();
+    let updated = 0;
+    for (const c of cohorts) {
+      if (c.maxMentors === undefined || c.maxMentors === 2) {
+        await ctx.db.patch(c._id, { maxMentors: 4 });
+        updated++;
+      }
+    }
+    return { updated, total: cohorts.length };
   },
 });

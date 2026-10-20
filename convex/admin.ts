@@ -321,15 +321,17 @@ export const getApprovedTrainees = query({
         const coaches = await Promise.all(
           coachIds.map(async (id) => id ? await ctx.db.get(id) : null)
         );
-        let maxMentorsLimit = 2;
+        let maxMentorsLimit = 4;
         const membership = await ctx.db
           .query("cohortMembers")
           .withIndex("by_user", (q) => q.eq("userId", trainee._id))
           .first();
         if (membership) {
           const cohort = await ctx.db.get(membership.cohortId);
-          if (cohort && cohort.maxMentors !== undefined) {
+          if (cohort && cohort.maxMentors !== undefined && cohort.maxMentors !== 2) {
             maxMentorsLimit = Math.max(1, Math.min(5, cohort.maxMentors));
+          } else {
+            maxMentorsLimit = 4;
           }
         }
 
