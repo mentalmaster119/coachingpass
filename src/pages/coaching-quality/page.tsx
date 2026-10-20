@@ -108,6 +108,8 @@ export default function CoachingQualityPage() {
     totalLogs,
     currentScores,
     currentGroup,
+    personalizedDiagnosis,
+    personalizedLeapTip,
     milestones,
     evaluatedLogs,
     narrativeFeedback,
@@ -224,7 +226,7 @@ export default function CoachingQualityPage() {
                     <Sparkles className="w-5 h-5 text-purple-600" />
                   </h1>
                   <p className="text-xs md:text-sm text-muted-foreground mt-1 leading-relaxed">
-                    {currentGroup.description}
+                    {personalizedDiagnosis || currentGroup.description}
                   </p>
                 </div>
 
@@ -233,20 +235,20 @@ export default function CoachingQualityPage() {
                   {currentScores.total >= 80 ? (
                     <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 bg-emerald-50/70 dark:bg-emerald-950/30 px-3 py-1.5 rounded-lg border border-emerald-200 w-fit">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                      <span>최우수 1그룹 달성! 수퍼비전에 즉시 활용 가능한 표준 포트폴리오를 유지하고 있습니다.</span>
+                      <span>{personalizedLeapTip || "최우수 1그룹 달성! 수퍼비전에 즉시 활용 가능한 표준 포트폴리오를 유지하고 있습니다."}</span>
                     </div>
                   ) : currentScores.total >= 65 ? (
                     <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 rounded-lg border border-amber-200 w-fit">
                       <Target className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
                       <span>
-                        1그룹(80점) 도약까지 <strong>+{80 - currentScores.total}점</strong> 남음 (미기재 보완 & 5-2 행동규칙 작성 시 즉시 도약 가능)
+                        {personalizedLeapTip || `1그룹(80점) 도약까지 +${80 - currentScores.total}점 남음 (행동규칙 수립 시 즉시 도약 가능)`}
                       </span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5 text-rose-800 dark:text-rose-300 bg-rose-50/70 dark:bg-rose-950/30 px-3 py-1.5 rounded-lg border border-rose-200 w-fit">
                       <Target className="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
                       <span>
-                        2그룹(65점) 진입까지 <strong>+{65 - currentScores.total}점</strong> 남음 (4단계 구조화 훈련을 통해 단기간 도약 가능)
+                        {personalizedLeapTip || `2그룹(65점) 진입까지 +${65 - currentScores.total}점 남음 (4단계 구조화 훈련을 통해 단기간 도약 가능)`}
                       </span>
                     </div>
                   )}

@@ -259,13 +259,13 @@ export const GROUP_LEVELS: GroupLevelInfo[] = [
     minScore: 65,
     maxScore: 79,
     label: "좋은 역량이 있으나 일관성/구조화 보완 필요",
-    description: "현장 경험과 성찰의 깊이가 매우 우수하나, 미기재 항목이 발생하여 일관성이 떨어지거나 고객 통찰과 기존 문제 서술의 구분이 다소 약한 단계입니다.",
+    description: "현장 경험과 성찰의 깊이가 우수하나, 교육생에 따라 미기재 항목(완결성) 또는 코치 메타성찰·학습전이(5-2 행동규칙)의 구체화를 보완하여 1그룹 도약을 준비하는 단계입니다.",
     characteristics: [
       "현장 경험을 솔직하게 기록하고 자기 실패를 숨기지 않는 훌륭한 태도",
-      "그러나 특정 사례에서 일부 항목(통찰, 성찰, 다음계획)이 비어 있어 포트폴리오 완결성이 저하됨",
+      "완결성이 우수하더라도 코치 메타성찰(4번)이나 실천 행동규칙(5-2)이 미흡하거나, 특정 일지의 미기재로 일관성이 저하된 상태",
       "고객 통찰 항목이 새로운 깨달음이 아닌 기존 문제의 반복 서술에 머무는 경우가 있음",
     ],
-    prescription: "표준 리포트 양식을 바탕으로 미기재 항목을 없애고, ‘고객 반응에 근거한 코치 자기성찰’을 일관되게 채우면 80점 이상 1그룹으로 즉시 도약 가능",
+    prescription: "표준 리포트 양식을 바탕으로 미기재 항목을 없애고, ‘고객 반응에 근거한 코치 자기성찰 및 5-2 행동규칙’을 일관되게 채우면 80점 이상 1그룹으로 즉시 도약 가능",
     badgeColor: "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300",
     bgLight: "bg-amber-50/40 dark:bg-amber-950/20",
     borderColor: "border-amber-200 dark:border-amber-800",
@@ -566,7 +566,9 @@ export const getMyCoachingQualityReport = query({
           : currentScores.total >= 80
           ? "현재 MCCI 표준 리포트에 가장 가까운 우수한 수준입니다. 가이드 5-2 항목에 따라 다음 적용 계획에 코치 본인의 구체적 개입 룰(침묵 대기, 특정 질문 등)을 더욱 정밀하게 다듬으면 최고 수준의 수퍼비전 포트폴리오가 완성됩니다."
           : currentScores.total >= 65
-          ? "현장 기록의 재료와 진솔성은 매우 훌륭합니다. 미기재를 없애고 가이드 4번(메타성찰) 및 5-2번(코치 행동규칙 분리)을 체계적으로 보완하면 80점 이상으로 크게 도약할 것입니다."
+          ? currentScores.completeness >= 18
+            ? "현장 기록의 재료와 5대 항목 완결성은 매우 훌륭합니다. 가이드 4번(코치 메타성찰) 및 5-2번(코치 행동규칙 분리)을 체계적으로 보완하면 80점 이상 1그룹으로 즉시 도약할 것입니다."
+            : "현장 기록의 재료와 진솔성은 매우 훌륭합니다. 미기재를 없애고 가이드 4번(메타성찰) 및 5-2번(코치 행동규칙 분리)을 체계적으로 보완하면 80점 이상으로 크게 도약할 것입니다."
           : "경험의 양과 열정은 충분하므로, MCCI 가이드의 '관찰–판단–개입–반응–성찰' 4단계 구조와 5대 자기점검 체크리스트를 염두에 두고 작성하시면 리포트 품질이 비약적으로 향상됩니다.",
     };
 
@@ -602,6 +604,66 @@ export const getMyCoachingQualityReport = query({
       ],
     };
 
+    // ── Generate Dynamic Personalized Diagnosis & Leap Tip ──
+    let personalizedDiagnosis = currentGroup.description;
+    let personalizedLeapTip = "";
+
+    if (totalLogs === 0) {
+      personalizedDiagnosis =
+        "등록된 실습일지가 없습니다. 첫 실습일지를 등록하시면 MCCI 5대 핵심 항목 기준 정밀 품질 진단이 제공됩니다.";
+      personalizedLeapTip = "첫 실습일지를 작성하여 수퍼비전 진단을 시작하세요.";
+    } else {
+      const compHigh = currentScores.completeness >= 18;
+      const compLow = currentScores.completeness < 15;
+      const reflLow = currentScores.selfReflection < 14;
+      const tranLow = currentScores.learningTransfer < 14;
+      const procLow = currentScores.processTracking < 14;
+
+      if (currentScores.total >= 80) {
+        personalizedDiagnosis =
+          "목표·과정·고객 통찰·코치 성찰이 유기적으로 연결되어 있으며, 수퍼비전에 즉시 활용하기 가장 좋은 우수한 표준 리포트를 유지하고 있습니다.";
+        personalizedLeapTip = "최우수 1그룹 달성! 수퍼비전에 즉시 활용 가능한 표준 포트폴리오를 유지하고 있습니다.";
+      } else if (currentScores.total >= 65) {
+        // Group 2
+        if (compHigh && (reflLow || tranLow)) {
+          personalizedDiagnosis =
+            "5대 필수 항목을 빠짐없이 충실히 작성하여 완결성(20점)은 매우 우수하나, 코치 자신의 수행을 돌아보는 메타성찰 및 차기 실습 행동규칙(5-2)의 구체화가 필요한 단계입니다.";
+        } else if (compLow) {
+          personalizedDiagnosis =
+            "현장 경험과 성찰의 깊이는 매우 우수하나, 일부 일지에서 미기재 항목이 발생하여 포트폴리오의 완결성과 일관성을 보완해야 하는 단계입니다.";
+        } else if (procLow) {
+          personalizedDiagnosis =
+            "현장 기록의 진솔함은 돋보이나, 코칭 진행 과정의 [상태 ➔ 탐색 ➔ 개입 ➔ 반응] 4단계 인과 구조화와 코치 개입의 근거를 보강해야 하는 단계입니다.";
+        } else {
+          personalizedDiagnosis =
+            "좋은 코칭 기록 역량을 갖추고 있으며, 고객 통찰과 코치 성찰의 분리 및 구체적 실천 규칙을 보완하면 1그룹 도약이 가능한 단계입니다.";
+        }
+
+        const diff = 80 - currentScores.total;
+        const weakPoints: string[] = [];
+        if (compLow) weakPoints.push("미기재 항목 보완");
+        if (reflLow) weakPoints.push("메타성찰 심화");
+        if (procLow) weakPoints.push("4단계 구조화");
+        if (tranLow) weakPoints.push("5-2 행동규칙 수립");
+        if (weakPoints.length === 0) weakPoints.push("행동규칙 구체화");
+
+        const tipAction = weakPoints.slice(0, 2).join(" & ");
+        personalizedLeapTip = `1그룹(80점) 도약까지 +${diff}점 남음 (${tipAction} 시 즉시 도약 가능)`;
+      } else {
+        // Group 3
+        if (compLow) {
+          personalizedDiagnosis =
+            "현장 실습의 진솔함은 충분하나, 미기재 항목이 많고 축약되어 있어 5대 표준 항목(목표·내용·통찰·성찰·계획)의 기본 완결성 확보가 시급합니다.";
+        } else {
+          personalizedDiagnosis =
+            "현장 경험의 열정은 충분하나, 코치의 주관적 판단/지시와 고객 발견이 혼재되어 MCCI 표준 4단계 구조화 훈련이 필요한 단계입니다.";
+        }
+
+        const diff = 65 - currentScores.total;
+        personalizedLeapTip = `2그룹(65점) 진입까지 +${diff}점 남음 (4단계 구조화 & 5대 항목 완결 훈련을 통해 단기간 도약 가능)`;
+      }
+    }
+
     // Cohort lookup
     const cohortMember = await ctx.db
       .query("cohortMembers")
@@ -619,6 +681,8 @@ export const getMyCoachingQualityReport = query({
       totalLogs,
       currentScores,
       currentGroup,
+      personalizedDiagnosis,
+      personalizedLeapTip,
       milestones,
       evaluatedLogs: evaluatedLogs.reverse(), // latest first for log history view
       narrativeFeedback,
