@@ -89,11 +89,11 @@ export default function CoachingQualityPage() {
     setCheckedItems((prev) => ({ ...prev, [no]: !prev[no] }));
   };
 
-  const evaluatedLogs = report?.evaluatedLogs;
+  const rawEvaluatedLogs = report?.evaluatedLogs;
   const chronologicalLogs = useMemo(() => {
-    if (!evaluatedLogs) return [];
-    return [...evaluatedLogs].sort((a: any, b: any) => a.index - b.index);
-  }, [evaluatedLogs]);
+    if (!rawEvaluatedLogs) return [];
+    return [...rawEvaluatedLogs].sort((a: any, b: any) => a.index - b.index);
+  }, [rawEvaluatedLogs]);
 
   if (report === undefined) {
     return (
@@ -118,6 +118,7 @@ export default function CoachingQualityPage() {
     personalizedDiagnosis,
     personalizedLeapTip,
     milestones,
+    evaluatedLogs,
     narrativeFeedback,
     motivationSection,
     mcciGuide,
