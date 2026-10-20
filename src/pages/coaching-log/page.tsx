@@ -113,7 +113,11 @@ export default function CoachingLogPage() {
   const [activeTab, setActiveTab] = useState("all");
   const logs = useQuery(api.coaching.getMyLogs);
   const summary = useQuery(api.coaching.getMySummary);
-  const { user } = useCurrentUser();
+  const { user, realUser } = useCurrentUser();
+  const activeRole =
+    user?.role || realUser?.role || (localStorage.getItem("real_role") as string | null);
+  const isAdmin =
+    activeRole === "admin" || activeRole === "senior_coach" || activeRole === "admin3";
 
   const filteredLogs =
     logs?.filter((log) => {
@@ -137,6 +141,39 @@ export default function CoachingLogPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-8">
+      {/* Admin Notice Banner if accessed by Admin */}
+      {isAdmin && (
+        <div className="bg-purple-50/90 dark:bg-purple-950/40 border-2 border-purple-200 dark:border-purple-800 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-purple-600 flex items-center justify-center text-white flex-shrink-0 shadow-sm">
+              <UserCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-foreground">
+                현재 관리자(수퍼바이저) 모드로 접속 중입니다.
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                이 페이지는 교육생 본인의 실습 등록 공간입니다. 교육생들의 코칭 기록을 검토하고 분석하시려면 관리자 전용 메뉴로 이동하세요.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+            <Link to="/admin/coaching-analysis">
+              <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white text-xs gap-1 font-bold">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>교육생 코칭 실습 분석</span>
+              </Button>
+            </Link>
+            <Link to="/admin/coaching">
+              <Button size="sm" variant="outline" className="text-xs gap-1">
+                <ClipboardList className="w-3.5 h-3.5" />
+                <span>코칭 기록 검토</span>
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Page header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}

@@ -52,16 +52,17 @@ import {
   SelectValue,
 } from "@/components/ui/select.tsx";
 import { Users } from "lucide-react";
+import { useCurrentUser } from "@/hooks/use-current-user.ts";
 
 export default function CoachingQualityPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const userIdParam = searchParams.get("userId");
 
-  const currentUser = useQuery(api.users.getCurrentUser);
+  const { user, realUser } = useCurrentUser();
+  const activeRole =
+    user?.role || realUser?.role || (localStorage.getItem("real_role") as string | null);
   const isAdmin =
-    currentUser?.role === "admin" ||
-    currentUser?.role === "senior_coach" ||
-    currentUser?.role === "admin3";
+    activeRole === "admin" || activeRole === "senior_coach" || activeRole === "admin3";
 
   const trainees = useQuery(
     api.coachingAnalysis.listTraineesForAnalysis,
