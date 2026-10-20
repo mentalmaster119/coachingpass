@@ -234,60 +234,72 @@ export const getTraineeCoachingDeepAnalysis = query({
     });
     const domainDistribution = Array.from(domainMap.entries()).map(([domain, count]) => ({ domain, count }));
 
-    // ── 6. Self-Reflection & Insight Collection (실상 파악 - 내면/성찰) ──
+    // ── 6. Self-Reflection & Insight Collection (실상 파악 - 내면/성찰 5대 핵심 항목) ──
     const reflections: {
       id: string;
       type: "coaching" | "bcp" | "mentor" | "sv";
+      typeLabel: string;
       date: string;
       topic: string;
-      clientInsight?: string;
-      coachReflection?: string;
-      actionPlan?: string;
+      partner: string;
+      coachingGoal?: string;      // 1. 코칭 목표
+      coachingContent?: string;   // 2. 코칭 내용
+      clientInsight?: string;     // 3. 고객 통찰 및 깨달음
+      coachReflection?: string;   // 4. 코치로서의 성찰 및 배움
+      actionPlan?: string;        // 5. 다음 코칭 적용 계획
       coachPattern?: string;
       learnedAsCoach?: string;
     }[] = [];
 
     coachingLogs.forEach((l) => {
-      if (l.clientInsight || l.reflection || l.actionPlan || l.svReflectionLearning) {
-        reflections.push({
-          id: l._id,
-          type: l.coachingType === "sv" ? "sv" : "coaching",
-          date: l.coachingDate,
-          topic: l.topic,
-          clientInsight: l.clientInsight,
-          coachReflection: l.svReflectionLearning || l.reflection,
-          actionPlan: l.actionPlan,
-        });
-      }
+      reflections.push({
+        id: l._id,
+        type: l.coachingType === "sv" ? "sv" : "coaching",
+        typeLabel: l.coachingType === "sv" ? "수퍼비전 실습" : l.coachingType === "buddy" ? "버디 코칭" : "1:1 코칭 리포트",
+        date: l.coachingDate,
+        topic: l.topic,
+        partner: l.coacheeInfo,
+        coachingGoal: l.goals,
+        coachingContent: l.summary,
+        clientInsight: l.clientInsight,
+        coachReflection: l.svReflectionLearning || l.reflection,
+        actionPlan: l.actionPlan || l.nextSessionPractice,
+        coachPattern: l.coachPattern,
+      });
     });
 
     bcpLogs.forEach((l) => {
-      if (l.clientInsight || l.reflection || l.actionPlan || l.coachPattern) {
-        reflections.push({
-          id: l._id,
-          type: "bcp",
-          date: l.sessionDate,
-          topic: l.topic,
-          clientInsight: l.clientInsight,
-          coachReflection: l.reflection,
-          actionPlan: l.actionPlan,
-          coachPattern: l.coachPattern,
-        });
-      }
+      reflections.push({
+        id: l._id,
+        type: "bcp",
+        typeLabel: "버디코칭 (BCP)",
+        date: l.sessionDate,
+        topic: l.topic,
+        partner: l.myRole === "coach" ? "버디 고객" : "버디 코치",
+        coachingGoal: l.topic,
+        coachingContent: l.content,
+        clientInsight: l.clientInsight,
+        coachReflection: l.reflection || l.bestOfSession,
+        actionPlan: l.actionPlan || l.improvementForNext,
+        coachPattern: l.coachPattern,
+      });
     });
 
     mentorLogs.forEach((l) => {
-      if (l.content || l.learnedAsCoach || l.actionPlan || l.reflection) {
-        reflections.push({
-          id: l._id,
-          type: "mentor",
-          date: l.sessionDate,
-          topic: l.topic,
-          coachReflection: l.content || l.reflection,
-          learnedAsCoach: l.learnedAsCoach,
-          actionPlan: l.actionPlan,
-        });
-      }
+      reflections.push({
+        id: l._id,
+        type: "mentor",
+        typeLabel: l.sessionType === "coder_co" ? "코더코 (Coder-Co)" : "멘토코칭",
+        date: l.sessionDate,
+        topic: l.topic,
+        partner: l.coachName ? `멘토: ${l.coachName}` : "멘토코치",
+        coachingGoal: l.coacheeGoal || l.topic,
+        coachingContent: l.content,
+        clientInsight: l.reflection,
+        coachReflection: l.learnedAsCoach || l.reflection,
+        actionPlan: l.actionPlan,
+        learnedAsCoach: l.learnedAsCoach,
+      });
     });
 
     // Sort reflections by date descending
