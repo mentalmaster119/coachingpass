@@ -1070,12 +1070,18 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
             </div>
 
             <div className="border-t pt-4 space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">핵심 발견</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">핵심 발견</h3>
+                <span className="text-[11px] text-purple-600 font-medium">MCCI 가이드 3번</span>
+              </div>
               <div className="space-y-1.5">
-                <Label htmlFor="clientInsight">고객의 핵심 통찰</Label>
+                <Label htmlFor="clientInsight">3. 고객의 핵심 통찰 및 깨달음</Label>
                 <Textarea id="clientInsight" rows={2}
-                  placeholder='예) "실패가 두려워 철봉을 잡지 않고 있었다."'
+                  placeholder='예) "완벽하게 해내려던 생각이 오히려 나를 압박하고 있었다." (고객 스스로 깨달은 인식 전환)'
                   value={clientInsight} onChange={(e) => setClientInsight(e.target.value)} />
+                <p className="text-[11px] text-muted-foreground">
+                  💡 <strong>MCCI 가이드:</strong> 코치의 설명이 아닌, 고객 스스로 발견한 깨달음(Aha-moment)을 적어주세요. 뚜렷한 통찰이 없을 때는 솔직한 상태 인식을 기술하셔도 좋습니다.
+                </p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="coachPattern">코치가 발견한 핵심 패턴</Label>
@@ -1092,38 +1098,67 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
           <div className="space-y-5">
             {/* 실행 */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">실행</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">목표 및 실행계획</h3>
+                <span className="text-[11px] text-purple-600 font-medium">MCCI 가이드 1 & 5-1번</span>
+              </div>
               <div className="space-y-1.5">
-                <Label htmlFor="goals">코칭 목표 <span className="text-destructive">*</span></Label>
-                <Input id="goals" placeholder="예: 팀원과의 갈등 해소 전략 수립"
+                <Label htmlFor="goals">1. 코칭 목표 <span className="text-destructive">*</span></Label>
+                <Input id="goals" placeholder="예: 시합 불안을 점검하고, 1세트 초반에 시도할 나만의 루틴 1가지 수립"
                   value={goals} onChange={(e) => setGoals(e.target.value)}
                   className={submitted && !goals.trim() ? "border-destructive" : ""} />
                 {submitted && !goals.trim() && <p className="text-xs text-destructive">코칭 목표를 입력해 주세요.</p>}
+                <p className="text-[11px] text-muted-foreground">
+                  💡 <strong>MCCI 가이드:</strong> 지나치게 거대한 장기 목표('자신감 높이기') 대신 오늘 50분 세션에서 다룰 현실적인 작업 단위로 좁혀 적으세요.
+                </p>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="actionPlan">고객의 실행계획</Label>
+                <Label htmlFor="actionPlan">5-1. 고객 실행계획 (고객 과제)</Label>
                 <Textarea id="actionPlan" rows={2}
-                  placeholder="세션 이후 고객이 실천할 행동 계획 (3줄 이내)"
+                  placeholder="다음 세션 전까지 고객이 실천하기로 합의한 구체적 행동 과제 (언제, 어디서, 무엇을)"
                   value={actionPlan} onChange={(e) => setActionPlan(e.target.value)} />
+                <p className="text-[11px] text-muted-foreground">
+                  💡 <strong>MCCI 가이드:</strong> 고객이 현장에서 실천할 구체적 행동 계획을 기재하세요.
+                </p>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="nextSessionPractice">다음 회차까지 실천사항</Label>
+                <Label htmlFor="nextSessionPractice" className="text-purple-700 dark:text-purple-300 font-semibold">
+                  5-2. 코치의 다음 실습 적용계획 (Action Rules) ★
+                </Label>
                 <Textarea id="nextSessionPractice" rows={2}
-                  placeholder="다음 코칭 전까지 실천할 내용 (3줄 이내)"
+                  placeholder="예: 고객이 말을 멈추었을 때 속으로 3초를 세며 침묵을 온전히 기다리기 / 감정 단어가 나오면 다음 단계로 서두르지 않고 머무는 질문 던지기"
                   value={nextSessionPractice} onChange={(e) => setNextSessionPractice(e.target.value)} />
+                <p className="text-[11px] text-purple-600 dark:text-purple-400 font-medium">
+                  ★ <strong>MCCI 핵심 원칙:</strong> 고객 과제(5-1)와 분리하여, <u>코치 본인이 다음 세션에서 실천할 1가지 행동 규칙(Action Rule)</u>을 반드시 기재하세요.
+                </p>
               </div>
             </div>
 
             {/* 코치 성장 */}
             <div className="border-t pt-4 space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">코치 성장</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">코칭 과정 요약 및 메타성찰</h3>
+                <span className="text-[11px] text-purple-600 font-medium">MCCI 가이드 2 & 4번</span>
+              </div>
               <div className="space-y-1.5">
-                <Label htmlFor="summary">코칭 내용 요약 <span className="text-destructive">*</span></Label>
+                <Label htmlFor="summary">2. 코칭 내용 요약 <span className="text-destructive">*</span></Label>
                 <Textarea id="summary" rows={3}
-                  placeholder="코칭 세션에서 다룬 내용과 결과를 요약해 주세요"
+                  placeholder="[고객 상태 ➔ 탐색 질문 ➔ 개입 도구 ➔ 고객 반응 및 변화] 4단계 인과 흐름으로 요약해 주세요."
                   value={summary} onChange={(e) => setSummary(e.target.value)}
                   className={submitted && !summary.trim() ? "border-destructive" : ""} />
                 {submitted && !summary.trim() && <p className="text-xs text-destructive">코칭 내용 요약을 입력해 주세요.</p>}
+                <p className="text-[11px] text-muted-foreground">
+                  💡 <strong>MCCI 가이드:</strong> 단순 도구 나열을 피하고, 왜 그 도구를 선택했고 그 결과 고객에게 어떤 반응과 변화가 일어났는지 인과적으로 적으세요.
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="reflection" className="font-semibold">4. 코치로서의 성찰 및 배움 (메타인지)</Label>
+                <Textarea id="reflection" rows={2}
+                  placeholder="고객을 평가하지 말고, 코치 자신의 수행(서두름, 침묵 대기 여부, 기법 집착, 에고 등)을 객관적으로 돌아보고 배운 점을 솔직히 작성해 주세요."
+                  value={reflection} onChange={(e) => setReflection(e.target.value)} />
+                <p className="text-[11px] text-muted-foreground">
+                  💡 <strong>MCCI 가이드:</strong> '코칭은 좋다' 같은 단순 소감이나 고객 탓을 피하고, 코치 자신의 한계와 실수를 솔직히 드러낼수록 최상의 수퍼비전을 받게 됩니다.
+                </p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="bestOfSession">이번 세션에서 가장 잘한 점</Label>
@@ -1167,12 +1202,6 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
                 <Label htmlFor="coachOverallFeedback">코치 전체 소감</Label>
                 <Textarea id="coachOverallFeedback" rows={2}
                   value={coachOverallFeedback} onChange={(e) => setCoachOverallFeedback(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="reflection">성찰 및 느낀점</Label>
-                <Textarea id="reflection" rows={2}
-                  placeholder="코칭을 마치고 느낀 점, 개선할 부분 등을 작성해 주세요"
-                  value={reflection} onChange={(e) => setReflection(e.target.value)} />
               </div>
 
               {/* MCCI 4대 영역 */}
