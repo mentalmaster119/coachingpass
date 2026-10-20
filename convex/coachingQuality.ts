@@ -218,32 +218,82 @@ export function evaluateLog(log: UnifiedPracticeLog): LogScore {
   };
 }
 
-export function getGroupClassification(totalScore: number) {
-  if (totalScore >= 80) {
-    return {
-      groupNumber: 1,
-      name: "1그룹",
-      label: "수퍼비전 즉시 활용 가능 수준",
-      description: "목표·과정·고객 통찰·코치 성찰이 유기적으로 연결되며, 표준 리포트 양식을 훌륭하게 준수하고 있습니다.",
-      badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300",
-    };
-  } else if (totalScore >= 65) {
-    return {
-      groupNumber: 2,
-      name: "2그룹",
-      label: "좋은 역량이 있으나 일관성/구조화 보완 필요",
-      description: "현장 경험과 성찰의 깊이가 우수하나, 미기재 항목이 있거나 고객 통찰과 코치 해석의 구분이 일부 필요합니다.",
-      badgeColor: "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300",
-    };
-  } else {
-    return {
-      groupNumber: 3,
-      name: "3그룹",
-      label: "표준 리포트 양식 훈련 필요",
-      description: "현장 경험의 진정성은 높으나, '관찰-판단-개입-반응-성찰'의 전문 리포트 구조화 훈련이 우선적으로 요구됩니다.",
-      badgeColor: "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/40 dark:text-rose-300",
-    };
-  }
+export interface GroupLevelInfo {
+  groupNumber: number;
+  name: string;
+  scoreRange: string;
+  minScore: number;
+  maxScore: number;
+  label: string;
+  description: string;
+  characteristics: string[];
+  prescription: string;
+  badgeColor: string;
+  bgLight: string;
+  borderColor: string;
+}
+
+export const GROUP_LEVELS: GroupLevelInfo[] = [
+  {
+    groupNumber: 1,
+    name: "1그룹",
+    scoreRange: "80점 ~ 100점",
+    minScore: 80,
+    maxScore: 100,
+    label: "수퍼비전 즉시 활용 가능 수준 (우수 표준)",
+    description: "목표·과정·고객 통찰·코치 성찰이 하나의 흐름으로 유기적으로 연결되며, 수퍼비전에 즉시 활용하기 가장 좋은 완성도 높은 리포트입니다.",
+    characteristics: [
+      "목표와 코칭 내용, 고객 통찰, 코치 성찰이 일관된 맥락으로 연결됨",
+      "자신의 부족한 점이나 실수(조급함, 서두름 등)를 객관적으로 직시하는 솔직한 메타성찰",
+      "5대 항목의 누락 없이 높은 일관성과 완결성을 유지",
+    ],
+    prescription: "‘다음 코칭 적용 계획’에 고객 과제(5-1) 외에 ‘코치 자신의 다음 실습 행동 규칙(5-2 Action Rules)’을 더욱 정밀하게 다듬으면 최고 수준의 프로 리포트 완성",
+    badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300",
+    bgLight: "bg-emerald-50/40 dark:bg-emerald-950/20",
+    borderColor: "border-emerald-200 dark:border-emerald-800",
+  },
+  {
+    groupNumber: 2,
+    name: "2그룹",
+    scoreRange: "65점 ~ 79점",
+    minScore: 65,
+    maxScore: 79,
+    label: "좋은 역량이 있으나 일관성/구조화 보완 필요",
+    description: "현장 경험과 성찰의 깊이가 매우 우수하나, 미기재 항목이 발생하여 일관성이 떨어지거나 고객 통찰과 기존 문제 서술의 구분이 다소 약한 단계입니다.",
+    characteristics: [
+      "현장 경험을 솔직하게 기록하고 자기 실패를 숨기지 않는 훌륭한 태도",
+      "그러나 특정 사례에서 일부 항목(통찰, 성찰, 다음계획)이 비어 있어 포트폴리오 완결성이 저하됨",
+      "고객 통찰 항목이 새로운 깨달음이 아닌 기존 문제의 반복 서술에 머무는 경우가 있음",
+    ],
+    prescription: "표준 리포트 양식을 바탕으로 미기재 항목을 없애고, ‘고객 반응에 근거한 코치 자기성찰’을 일관되게 채우면 80점 이상 1그룹으로 즉시 도약 가능",
+    badgeColor: "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300",
+    bgLight: "bg-amber-50/40 dark:bg-amber-950/20",
+    borderColor: "border-amber-200 dark:border-amber-800",
+  },
+  {
+    groupNumber: 3,
+    name: "3그룹",
+    scoreRange: "64점 이하",
+    minScore: 0,
+    maxScore: 64,
+    label: "표준 리포트 양식 구조화 훈련 필요",
+    description: "현장 실습의 열정과 진솔함은 충분하나, 코치의 자의적 판단/지시와 고객 발견이 혼재되거나 지나치게 축약되어 수퍼비전을 위한 인과적 근거 확인이 어려운 단계입니다.",
+    characteristics: [
+      "기법이나 활동 기록은 있으나, 왜 그 도구를 선택했고 고객에게 어떤 반응이 일어났는지 인과 흐름이 약함",
+      "코치의 주관적 해석('욕심이 많다' 등)이나 지시가 사실처럼 섞여 있음",
+      "지나치게 축약되어 수퍼바이저가 현장 맥락을 파악하고 지도하기 어려움",
+    ],
+    prescription: "MCCI 가이드의 ‘고객 상태 ➔ 탐색 ➔ 개입 ➔ 고객 반응 및 변화’ 4단계 구조화와 5대 자기점검 체크리스트를 연습하여 리포트의 뼈대를 세우는 훈련 필요",
+    badgeColor: "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/40 dark:text-rose-300",
+    bgLight: "bg-rose-50/40 dark:bg-rose-950/20",
+    borderColor: "border-rose-200 dark:border-rose-800",
+  },
+];
+
+export function getGroupClassification(totalScore: number): GroupLevelInfo {
+  if (totalScore >= 80) return GROUP_LEVELS[0];
+  if (totalScore >= 65) return GROUP_LEVELS[1];
+  return GROUP_LEVELS[2];
 }
 
 // ── Convex Query: getMyCoachingQualityReport ───────────────────────────────────
@@ -574,6 +624,7 @@ export const getMyCoachingQualityReport = query({
       narrativeFeedback,
       motivationSection,
       mcciGuide: MCCI_WRITING_GUIDE,
+      groupLevels: GROUP_LEVELS,
     };
   },
 });

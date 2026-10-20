@@ -28,6 +28,7 @@ import {
   Flame,
   AlertTriangle,
   Info,
+  Trophy,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card.tsx";
@@ -87,6 +88,7 @@ export default function CoachingQualityPage() {
     narrativeFeedback,
     motivationSection,
     mcciGuide,
+    groupLevels,
   } = report;
 
   const checkedCount = Object.values(checkedItems).filter(Boolean).length;
@@ -117,10 +119,19 @@ export default function CoachingQualityPage() {
             variant="outline"
             size="sm"
             className="h-8 text-xs gap-1 border-purple-300 text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+            onClick={() => setMainNavTab("levels")}
+          >
+            <Trophy className="w-3.5 h-3.5" />
+            <span>3개 그룹 수준 안내</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs gap-1 border-blue-300 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
             onClick={() => setMainNavTab("guide")}
           >
             <BookOpen className="w-3.5 h-3.5" />
-            <span>MCCI 작성 가이드</span>
+            <span>MCCI 가이드</span>
           </Button>
         </div>
       </div>
@@ -138,7 +149,7 @@ export default function CoachingQualityPage() {
               <div className="space-y-3 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="outline" className={`text-xs px-2.5 py-0.5 font-bold ${currentGroup.badgeColor}`}>
-                    {currentGroup.name} · {currentGroup.label}
+                    {currentGroup.name} ({currentGroup.scoreRange}) · {currentGroup.label}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
                     {totalLogs === 0 ? "실습일지 등록 대기 중" : `총 ${totalLogs}건 누적 통합 평가`}
@@ -155,17 +166,35 @@ export default function CoachingQualityPage() {
                   </p>
                 </div>
 
-                <div className="pt-1 flex items-center gap-2 text-xs flex-wrap">
-                  <span className="text-muted-foreground">현재 마일스톤 단계:</span>
-                  <Badge variant="secondary" className="font-semibold text-xs">
-                    {totalLogs <= 5
-                      ? "1~5회 (기초 적응 및 표준 양식 체득)"
-                      : totalLogs <= 10
-                      ? "6~10회 (고객 통찰 유도 및 메타성찰)"
-                      : totalLogs <= 15
-                      ? "11~15회 (현장 도구 접목 및 행동규칙 수립)"
-                      : "16~20회 (프로 수준 구조화 & 자가 수퍼비전)"}
-                  </Badge>
+                {/* Score Interval & Group Leap Advice */}
+                <div className="pt-1 flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
+                  {currentScores.total >= 80 ? (
+                    <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 bg-emerald-50/70 dark:bg-emerald-950/30 px-3 py-1.5 rounded-lg border border-emerald-200 w-fit">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                      <span>최우수 1그룹 달성! 수퍼비전에 즉시 활용 가능한 표준 포트폴리오를 유지하고 있습니다.</span>
+                    </div>
+                  ) : currentScores.total >= 65 ? (
+                    <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 rounded-lg border border-amber-200 w-fit">
+                      <Target className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                      <span>
+                        1그룹(80점) 도약까지 <strong>+{80 - currentScores.total}점</strong> 남음 (미기재 보완 & 5-2 행동규칙 작성 시 즉시 도약 가능)
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-rose-800 dark:text-rose-300 bg-rose-50/70 dark:bg-rose-950/30 px-3 py-1.5 rounded-lg border border-rose-200 w-fit">
+                      <Target className="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
+                      <span>
+                        2그룹(65점) 진입까지 <strong>+{65 - currentScores.total}점</strong> 남음 (4단계 구조화 훈련을 통해 단기간 도약 가능)
+                      </span>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => setMainNavTab("levels")}
+                    className="text-xs text-purple-700 hover:text-purple-800 font-semibold underline underline-offset-2 ml-1 cursor-pointer w-fit"
+                  >
+                    3개 그룹 기준 자세히 보기 →
+                  </button>
                 </div>
               </div>
 
@@ -366,12 +395,16 @@ export default function CoachingQualityPage() {
         </div>
       </div>
 
-      {/* Main Navigation Tabs: Feedback vs Guide vs Checklist vs Motivation vs History */}
+      {/* Main Navigation Tabs */}
       <Tabs value={mainNavTab} onValueChange={setMainNavTab} className="w-full">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-5 h-auto p-1.5 bg-muted/80 rounded-xl">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto p-1.5 bg-muted/80 rounded-xl">
           <TabsTrigger value="feedback" className="text-xs py-2.5 font-semibold gap-1.5">
             <Award className="w-4 h-4 text-purple-600" />
             <span>AI 진단 & 마일스톤</span>
+          </TabsTrigger>
+          <TabsTrigger value="levels" className="text-xs py-2.5 font-semibold gap-1.5">
+            <Trophy className="w-4 h-4 text-emerald-600" />
+            <span>3개 그룹 수준 안내</span>
           </TabsTrigger>
           <TabsTrigger value="guide" className="text-xs py-2.5 font-semibold gap-1.5">
             <BookOpen className="w-4 h-4 text-blue-600" />
@@ -452,23 +485,34 @@ export default function CoachingQualityPage() {
                 </div>
               </div>
 
-              {/* Quick Guide Jump Banner */}
+              {/* Quick Jump Bar */}
               <div className="bg-muted/40 rounded-xl p-3 border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Info className="w-4 h-4 text-blue-600 flex-shrink-0" />
                   <span className="text-xs text-muted-foreground">
-                    더 높은 점수를 위한 모범 작성 예(O)와 피해야 할 예(X)를 가이드북에서 확인하세요.
+                    1그룹(80점 이상) 도약을 위한 3대 그룹 수준 기준과 작성 가이드를 확인해 보세요.
                   </span>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-xs h-7 gap-1"
-                  onClick={() => setMainNavTab("guide")}
-                >
-                  <BookOpen className="w-3.5 h-3.5 text-purple-600" />
-                  <span>5개 항목별 가이드 보기</span>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs h-7 gap-1"
+                    onClick={() => setMainNavTab("levels")}
+                  >
+                    <Trophy className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>3개 그룹 체계 보기</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs h-7 gap-1"
+                    onClick={() => setMainNavTab("guide")}
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-purple-600" />
+                    <span>작성 가이드 보기</span>
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -504,7 +548,7 @@ export default function CoachingQualityPage() {
                 <Card className="shadow-sm">
                   <CardContent className="pt-5 space-y-4 text-xs">
                     <p className="text-muted-foreground">
-                      현재까지 작성된 {totalLogs}건의 모든 코칭 실습일지를 누적 통합한 분석 결과입니다. 아래 개별 구간 탭을 클릭하여 5회 단위의 성장 추이를 비교해 보세요.
+                      현재까지 작성된 {totalLogs}건의 모든 코칭 실습일지를 누적 통합한 분석 결과입니다. 각 구간 탭을 클릭하여 5회 단위의 성장 추이를 비교해 보세요.
                     </p>
                   </CardContent>
                 </Card>
@@ -629,7 +673,213 @@ export default function CoachingQualityPage() {
         </TabsContent>
 
         {/* ══════════════════════════════════════════════════════════════════════════
-            TAB 2: MCCI 공식 5대 항목 작성 가이드 & 모범·주의 예시 (13페이지 가이드 전문)
+            TAB 2: 3개 점수 구간 및 그룹 수준 안내 (1그룹 · 2그룹 · 3그룹)
+           ══════════════════════════════════════════════════════════════════════════ */}
+        <TabsContent value="levels" className="mt-6 space-y-6">
+          <Card className="border-2 border-emerald-200 dark:border-emerald-900/60 shadow-md bg-gradient-to-br from-emerald-50/50 via-card to-indigo-50/30 dark:from-emerald-950/20 dark:via-card dark:to-indigo-950/20">
+            <CardHeader className="pb-3 border-b">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-emerald-600" />
+                    <CardTitle className="text-base md:text-lg font-black text-foreground">
+                      MCCI 코칭실습 리포트 3개 그룹 수준 체계표
+                    </CardTitle>
+                  </div>
+                  <CardDescription className="text-xs">
+                    코치가 작성한 실습일지의 5대 항목 품질 점수에 따라 3개 그룹으로 분류되며, 수퍼비전 활용도와 성장 로드맵을 정의합니다.
+                  </CardDescription>
+                </div>
+
+                <Badge variant="outline" className={`text-xs px-3 py-1 font-bold ${currentGroup.badgeColor}`}>
+                  현재 나의 위치: {currentGroup.name} ({currentScores.total}점)
+                </Badge>
+              </div>
+            </CardHeader>
+
+            <CardContent className="pt-6 space-y-6">
+              {/* 3 Group Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {(groupLevels || []).map((lvl: any) => {
+                  const isCurrent = currentGroup.groupNumber === lvl.groupNumber;
+                  return (
+                    <div
+                      key={lvl.groupNumber}
+                      className={`rounded-2xl border-2 p-5 space-y-3 relative transition-all ${
+                        isCurrent
+                          ? "border-purple-500 shadow-md ring-2 ring-purple-400/40 bg-card"
+                          : `${lvl.borderColor} ${lvl.bgLight} bg-card/60`
+                      }`}
+                    >
+                      {/* Current User Badge */}
+                      {isCurrent && (
+                        <div className="absolute -top-3 right-4 bg-purple-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1 animate-pulse">
+                          <span>📍 현재 나의 수준</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className={`text-xs font-bold px-2 py-0.5 ${lvl.badgeColor}`}>
+                          {lvl.name} ({lvl.scoreRange})
+                        </Badge>
+                        <span className="text-xs font-black text-foreground">{lvl.scoreRange}</span>
+                      </div>
+
+                      <div>
+                        <h3 className="font-bold text-foreground text-sm leading-snug">{lvl.label}</h3>
+                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                          {lvl.description}
+                        </p>
+                      </div>
+
+                      {/* Characteristics */}
+                      <div className="space-y-1.5 pt-2 border-t text-xs">
+                        <span className="font-semibold text-foreground block text-[11px]">
+                          📌 주요 리포트 특징:
+                        </span>
+                        <ul className="space-y-1 pl-4 list-disc text-muted-foreground text-[11px]">
+                          {lvl.characteristics.map((c: string, idx: number) => (
+                            <li key={idx} className="leading-relaxed">{c}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Prescription */}
+                      <div className="pt-2 border-t text-xs space-y-1 bg-card/60 p-2.5 rounded-lg border">
+                        <span className="font-bold text-foreground text-[11px] block flex items-center gap-1">
+                          <Target className="w-3.5 h-3.5 text-purple-600" />
+                          도약 및 유지 처방:
+                        </span>
+                        <p className="text-muted-foreground text-[11px] leading-relaxed">
+                          {lvl.prescription}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 5-Dimension Comparison Matrix Table */}
+              <Card className="border shadow-none">
+                <CardHeader className="py-3 px-4 bg-muted/40 border-b">
+                  <CardTitle className="text-xs md:text-sm font-bold flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-purple-600" />
+                    수퍼비전 5대 항목별 그룹 수준 비교표
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 text-xs overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[600px]">
+                    <thead>
+                      <tr className="border-b bg-muted/20 text-[11px] text-muted-foreground">
+                        <th className="p-3 w-1/5 font-semibold">평가 항목</th>
+                        <th className="p-3 w-1/4 font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50/30">
+                          1그룹 (80점 이상 · 우수 표준)
+                        </th>
+                        <th className="p-3 w-1/4 font-semibold text-amber-800 dark:text-amber-300 bg-amber-50/30">
+                          2그룹 (65~79점 · 보완 필요)
+                        </th>
+                        <th className="p-3 w-1/4 font-semibold text-rose-800 dark:text-rose-300 bg-rose-50/30">
+                          3그룹 (64점 이하 · 훈련 필요)
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y text-[11px]">
+                      <tr>
+                        <td className="p-3 font-semibold text-foreground bg-muted/10">1. 완결성 (20점)</td>
+                        <td className="p-3 text-muted-foreground bg-emerald-50/10">
+                          5대 항목 누락 없이 전 회차에 걸쳐 균일하고 충실하게 작성
+                        </td>
+                        <td className="p-3 text-muted-foreground bg-amber-50/10">
+                          작성한 부분의 질은 높으나 일부 사례에서 미기재 항목 발생
+                        </td>
+                        <td className="p-3 text-muted-foreground bg-rose-50/10">
+                          미기재 항목이 많아 포트폴리오의 일관성과 신뢰도가 낮음
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-semibold text-foreground bg-muted/10">2. 구체성 (20점)</td>
+                        <td className="p-3 text-muted-foreground bg-emerald-50/10">
+                          포스트잇, VAK 등 도구 선택 이유, 대화 인용(" "), 시간/수치 묘사
+                        </td>
+                        <td className="p-3 text-muted-foreground bg-amber-50/10">
+                          현장 경험은 솔직하나 도구 사용 맥락이나 고객 반응 묘사 부족
+                        </td>
+                        <td className="p-3 text-muted-foreground bg-rose-50/10">
+                          단순 도구 명칭만 나열하거나 지나치게 축약되어 맥락 파악 불가
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-semibold text-foreground bg-muted/10">3. 과정추적 (20점)</td>
+                        <td className="p-3 text-muted-foreground bg-emerald-50/10">
+                          [상태 ➔ 탐색 ➔ 개입 ➔ 반응] 4단계 인과 흐름이 선명하게 연결
+                        </td>
+                        <td className="p-3 text-muted-foreground bg-amber-50/10">
+                          진행 과정은 보이나 고객 반응과 코치 개입의 인과적 구분이 약함
+                        </td>
+                        <td className="p-3 text-muted-foreground bg-rose-50/10">
+                          코치의 주관적 판단/지시와 고객 발견이 혼재되어 상호작용 불명확
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-semibold text-foreground bg-muted/10">4. 자기성찰 (20점)</td>
+                        <td className="p-3 text-muted-foreground bg-emerald-50/10">
+                          서두름, 조급함, 침묵 대기 여부, 에고를 정직하게 직시하는 메타인지
+                        </td>
+                        <td className="p-3 text-muted-foreground bg-amber-50/10">
+                          솔직성은 우수하나 단순 감상이나 고객 분석으로 이동하는 경향
+                        </td>
+                        <td className="p-3 text-muted-foreground bg-rose-50/10">
+                          단순 소감("코칭은 좋다")에 그치거나 세션 어려움을 고객 탓으로 돌림
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-semibold text-foreground bg-muted/10">5. 학습전이 (20점)</td>
+                        <td className="p-3 text-muted-foreground bg-emerald-50/10">
+                          5-1(고객 과제)과 5-2(코치 행동규칙 Action Rules)를 명확히 분리
+                        </td>
+                        <td className="p-3 text-muted-foreground bg-amber-50/10">
+                          고객 과제만 적고 코치 자신의 다음 실습 개입 규칙이 일부 누락됨
+                        </td>
+                        <td className="p-3 text-muted-foreground bg-rose-50/10">
+                          다음 적용계획이 미기재되었거나 막연한 결심에 그쳐 실행력 부족
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+
+              {/* Roadmap: How to Climb Up */}
+              <div className="rounded-xl border p-4 bg-muted/30 space-y-3">
+                <span className="font-bold text-foreground text-xs md:text-sm flex items-center gap-1.5">
+                  <TrendingUp className="w-4 h-4 text-purple-600" />
+                  그룹 단계별 도약 전략 (Roadmap to Group 1)
+                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-lg border bg-card space-y-1">
+                    <span className="font-bold text-amber-700 block">
+                      🚀 3그룹 ➔ 2그룹 도약 (65점 달성):
+                    </span>
+                    <p className="text-muted-foreground leading-relaxed text-[11px]">
+                      5대 항목(목표·내용·통찰·성찰·계획)에 빈칸을 남기지 않고, 코칭 내용을 단순 도구 이름이 아닌 [고객 상태 ➔ 탐색 ➔ 개입 ➔ 반응] 4단계 흐름으로 기록하는 훈련만으로도 즉시 65점 이상으로 진입할 수 있습니다.
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg border bg-card space-y-1">
+                    <span className="font-bold text-emerald-700 block">
+                      🏆 2그룹 ➔ 1그룹 도약 (80점 우수 표준 달성):
+                    </span>
+                    <p className="text-muted-foreground leading-relaxed text-[11px]">
+                      고객 통찰을 기존 문제 반복이 아닌 '고객의 실제 깨달음 발화'로 채우고, 다음 적용 계획에 고객 과제(5-1) 외에 <strong>'코치 자신이 실천할 1가지 행동 규칙(5-2 Action Rule, 예: 3초 침묵 기다리기)'</strong>을 분리해 작성하면 80점 이상의 최우수 리포트가 완성됩니다.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ══════════════════════════════════════════════════════════════════════════
+            TAB 3: MCCI 공식 5대 항목 작성 가이드 & 모범·주의 예시 (13페이지 가이드 전문)
            ══════════════════════════════════════════════════════════════════════════ */}
         <TabsContent value="guide" className="mt-6 space-y-6">
           {/* Guide Header Banner */}
@@ -851,7 +1101,7 @@ export default function CoachingQualityPage() {
         </TabsContent>
 
         {/* ══════════════════════════════════════════════════════════════════════════
-            TAB 3: 작성 완료 전 5대 자기점검 체크리스트
+            TAB 4: 작성 완료 전 5대 자기점검 체크리스트
            ══════════════════════════════════════════════════════════════════════════ */}
         <TabsContent value="checklist" className="mt-6 space-y-6">
           <Card className="border-2 border-emerald-200 dark:border-emerald-900/60 shadow-md">
@@ -950,7 +1200,7 @@ export default function CoachingQualityPage() {
         </TabsContent>
 
         {/* ══════════════════════════════════════════════════════════════════════════
-            TAB 4: 왜 실습일지를 잘 작성해야 하는가? (동기부여 4대 기둥)
+            TAB 5: 왜 실습일지를 잘 작성해야 하는가? (동기부여 4대 기둥)
            ══════════════════════════════════════════════════════════════════════════ */}
         <TabsContent value="motivation" className="mt-6 space-y-6">
           <Card className="border-2 border-amber-200 dark:border-amber-800/60 shadow-sm bg-gradient-to-br from-amber-50/50 via-card to-orange-50/30 dark:from-amber-950/20 dark:via-card dark:to-orange-950/20">
@@ -993,7 +1243,7 @@ export default function CoachingQualityPage() {
         </TabsContent>
 
         {/* ══════════════════════════════════════════════════════════════════════════
-            TAB 5: 회차별 실습 리포트 품질 평가 이력 (1건, 2건, ... N건 누적 추이)
+            TAB 6: 회차별 실습 리포트 품질 평가 이력 (1건, 2건, ... N건 누적 추이)
            ══════════════════════════════════════════════════════════════════════════ */}
         <TabsContent value="history" className="mt-6 space-y-6">
           <Card className="shadow-sm">
