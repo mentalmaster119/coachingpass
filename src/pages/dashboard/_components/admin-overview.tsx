@@ -3,7 +3,7 @@ import { useQuery } from "convex/react";
 import { motion } from "motion/react";
 import {
   Users, Clock, CheckCircle2, AlertTriangle, ArrowRight,
-  BookOpen, ClipboardList, Award, MessageSquareDot, UserCheck, TrendingUp,
+  BookOpen, ClipboardList, Award, MessageSquareDot, UserCheck, TrendingUp, GraduationCap,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -62,6 +62,32 @@ export default function AdminOverview({ user }: { user: User }) {
         </div>
         <Button onClick={() => navigate("/admin/users")}>
           사용자 관리 <ArrowRight className="w-4 h-4 ml-2" />
+        </Button>
+      </motion.div>
+
+      {/* ── Active Cohort Banner (18기) ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.03 }}
+        className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <GraduationCap className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-sm text-foreground">현재 진행 기수: 18기 코칭 전문가 과정</span>
+              <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0">진행중</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              18기 재적 교육생 이수 현황, 세미나 출석률 및 코칭 실습 누적 데이터를 집중 관리합니다.
+            </p>
+          </div>
+        </div>
+        <Button size="sm" variant="default" className="text-xs shrink-0 gap-1.5" onClick={() => navigate("/admin")}>
+          18기 대시보드 바로가기 <ArrowRight className="w-3.5 h-3.5" />
         </Button>
       </motion.div>
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
@@ -17,6 +17,7 @@ import {
   AlertCircle,
   Trash2,
   Key,
+  Pencil,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
 import type { Doc, Id } from "@/convex/_generated/dataModel.d.ts";
@@ -292,6 +293,76 @@ function ResetPasswordDialog({
   );
 }
 
+function EditNameDialog({
+  user,
+  open,
+  onOpenChange,
+}: {
+  user: User | null;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const [name, setName] = useState(user?.name ?? "");
+  const [isPending, setIsPending] = useState(false);
+  const updateUserName = useMutation(api.admin.updateUserName);
+
+  useEffect(() => {
+    if (user) setName(user.name ?? "");
+  }, [user]);
+
+  const handleSave = async () => {
+    if (!user || !name.trim()) return;
+    setIsPending(true);
+    try {
+      await updateUserName({ userId: user._id, name: name.trim() });
+      toast.success(`${name.trim()}님으로 이름이 변경되었습니다.`);
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error(err?.message || "이름 변경 중 오류가 발생했습니다.");
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>참가자 이름 수정</DialogTitle>
+          <DialogDescription>
+            <span className="font-semibold text-foreground">{user?.email}</span> 계정의 참가자 이름을 수정합니다.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">이름 입력</label>
+            <Input
+              type="text"
+              placeholder="예: 홍길동"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={isPending}
+              autoFocus
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isPending}>
+            취소
+          </Button>
+          <Button
+            variant="default"
+            disabled={isPending || !name.trim() || name.trim() === user?.name}
+            onClick={handleSave}
+          >
+            {isPending ? "저장 중..." : "이름 저장"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 type SortKey = "name" | "cohort";
 
@@ -307,6 +378,7 @@ function AllUsersTable({
   const [rejectTarget, setRejectTarget] = useState<User | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [resetTarget, setResetTarget] = useState<User | null>(null);
+  const [editNameTarget, setEditNameTarget] = useState<User | null>(null);
   const updateRole = useMutation(api.admin.updateUserRole);
   const approveUser = useMutation(api.admin.approveUser);
   const changeCohort = useMutation(api.cohorts.changeMemberCohort);
@@ -409,6 +481,18 @@ function AllUsersTable({
                   <div className="min-w-0 space-y-0.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium text-sm text-foreground truncate">{u.name ?? "이름 미설정"}</p>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                        title="이름 수정"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditNameTarget(u);
+                        }}
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </Button>
                       {u.cohortName && (
                         <Badge variant="outline" className="text-xs flex-shrink-0">{u.cohortName}</Badge>
                       )}
@@ -543,6 +627,11 @@ function AllUsersTable({
         user={resetTarget}
         open={resetTarget !== null}
         onOpenChange={(v) => { if (!v) setResetTarget(null); }}
+      />
+      <EditNameDialog
+        user={editNameTarget}
+        open={editNameTarget !== null}
+        onOpenChange={(v) => { if (!v) setEditNameTarget(null); }}
       />
     </>
   );

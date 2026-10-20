@@ -41,6 +41,318 @@ export const getAdminStats = query({
   },
 });
 
+// ── Cohort-Centric Admin Dashboard Data ───────────────────────────────────────
+export const getCohortDashboardData = query({
+  args: {
+    cohortId: v.optional(v.union(v.id("cohorts"), v.literal("all"))),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
+    // 1. Fetch all cohorts
+    const allCohorts = await ctx.db.query("cohorts").collect();
+
+    // Enrich cohorts with member counts
+    const cohortsWithCounts = await Promise.all(
+      allCohorts.map(async (c) => {
+        const members = await ctx.db
+          .query("cohortMembers")
+          .withIndex("by_cohort", (q) => q.eq("cohortId", c._id))
+          .collect();
+        return {
+          _id: c._id,
+          name: c.name,
+          number: c.number,
+          term: c.term,
+          startDate: c.startDate,
+          endDate: c.endDate,
+          status: c.status,
+          description: c.description ?? "",
+          memberCount: members.length,
+          activeMemberCount: members.filter((m) => m.status === "active").length,
+        };
+      }),
+    );
+
+    // Sort: active first (number desc), then upcoming, then completed
+    const statusOrder: Record<string, number> = { active: 0, upcoming: 1, completed: 2 };
+    cohortsWithCounts.sort((a, b) => {
+      const sDiff = (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3);
+      if (sDiff !== 0) return sDiff;
+      return b.number - a.number;
+    });
+
+    // 2. Identify the active in-progress cohort (e.g., 18기)
+    const currentActiveCohort =
+      cohortsWithCounts.find((c) => c.status === "active") ||
+      cohortsWithCounts[0] ||
+      null;
+
+    // 3. Resolve target cohort
+    const isAllMode = args.cohortId === "all";
+    let targetCohort = currentActiveCohort;
+    if (args.cohortId && args.cohortId !== "all") {
+      const found = cohortsWithCounts.find((c) => c._id === args.cohortId);
+      if (found) targetCohort = found;
+    }
+
+    // 4. Global system users
+    const allUsers = await ctx.db.query("users").collect();
+    const allApprovedTrainees = allUsers.filter(
+      (u) => u.role === "trainee" && u.approvalStatus === "approved",
+    );
+    const globalPendingUsers = allUsers.filter((u) => u.approvalStatus === "pending").length;
+
+    // If 'ALL' mode or no cohorts found:
+    if (isAllMode || !targetCohort) {
+      const pendingEducation = await ctx.db
+        .query("educationRecords")
+        .withIndex("by_approval_status", (q) => q.eq("approvalStatus", "pending"))
+        .collect();
+      const pendingCoaching = await ctx.db
+        .query("coachingLogs")
+        .withIndex("by_approval_status", (q) => q.eq("approvalStatus", "pending"))
+        .collect();
+
+      const allTraineesProgress = await Promise.all(
+        allApprovedTrainees.map(async (trainee) => {
+          const eduCalc = await calculateUserEducation(ctx, trainee._id);
+          const coachingProgress = await calculateCoachingProgress(ctx, trainee._id);
+          const educationTarget = 60;
+          const coachingTarget = 100;
+          const educationPct = Math.min((eduCalc.approvedEducationHours / educationTarget) * 100, 100);
+          const coachingPct = Math.min((coachingProgress.coachingHours / coachingTarget) * 100, 100);
+          const overallPct = Math.round((educationPct + coachingPct) / 2);
+
+          const member = await ctx.db
+            .query("cohortMembers")
+            .withIndex("by_user", (q) => q.eq("userId", trainee._id))
+            .first();
+          const cohort = member ? await ctx.db.get(member.cohortId) : null;
+
+          return {
+            _id: trainee._id,
+            name: trainee.name ?? "이름 미설정",
+            email: trainee.email ?? "",
+            avatarUrl: trainee.avatarStorageId
+              ? await ctx.storage.getUrl(trainee.avatarStorageId)
+              : null,
+            cohortName: cohort?.name ?? "기수 미정",
+            cohortId: cohort?._id ?? null,
+            certificationGoal: (trainee.certificationGoal || "SMPCC") as string,
+            approvedEducationHours: eduCalc.approvedEducationHours,
+            approvedCoachingHours: Math.round(coachingProgress.coachingHours * 10) / 10,
+            educationTarget,
+            coachingTarget,
+            overallPct,
+            educationPendingCount: eduCalc.educationPendingCount,
+            coachingPendingCount: coachingProgress.totalCount ?? 0,
+            attendanceRate: 0,
+            coachName: trainee.assignedCoachId
+              ? (await ctx.db.get(trainee.assignedCoachId))?.name ?? null
+              : null,
+          };
+        }),
+      );
+
+      const totalCoachingHours = allTraineesProgress.reduce((s, t) => s + t.approvedCoachingHours, 0);
+
+      return {
+        cohorts: cohortsWithCounts,
+        currentActiveCohort,
+        selectedCohort: null,
+        isAllMode: true,
+        kpis: {
+          totalUsers: allUsers.length,
+          approvedTrainees: allApprovedTrainees.length,
+          pendingUsers: globalPendingUsers,
+          pendingEducation: pendingEducation.length,
+          pendingCoaching: pendingCoaching.length,
+          totalPending: pendingEducation.length + pendingCoaching.length,
+          totalCoachingHours: Math.round(totalCoachingHours * 10) / 10,
+          averageCoachingHours:
+            allTraineesProgress.length > 0
+              ? Math.round((totalCoachingHours / allTraineesProgress.length) * 10) / 10
+              : 0,
+          totalCoachingLogs: 0,
+          seminarCount: 0,
+          averageAttendanceRate: 0,
+        },
+        trainees: allTraineesProgress.sort((a, b) => b.overallPct - a.overallPct),
+        seminars: [],
+        coachingGroups: [],
+      };
+    }
+
+    // 5. CURRENT IN-PROGRESS COHORT (e.g. 18기) CENTRIC DATA
+    const cohortMembers = await ctx.db
+      .query("cohortMembers")
+      .withIndex("by_cohort", (q) => q.eq("cohortId", targetCohort._id))
+      .collect();
+
+    const memberUserIds = cohortMembers.map((m) => m.userId);
+
+    // Get trainee users in this cohort
+    const cohortTrainees: Doc<"users">[] = [];
+    for (const userId of memberUserIds) {
+      const u = await ctx.db.get(userId);
+      if (u && u.role === "trainee" && u.approvalStatus === "approved") {
+        cohortTrainees.push(u);
+      }
+    }
+
+    // Seminars for this cohort
+    const seminars = await ctx.db
+      .query("seminars")
+      .withIndex("by_cohort", (q) => q.eq("cohortId", targetCohort._id))
+      .collect();
+    seminars.sort((a, b) => (a.sessionNumber ?? 0) - (b.sessionNumber ?? 0));
+
+    // Coaching groups for this cohort (조 편성)
+    const groups = await ctx.db
+      .query("coachingGroups")
+      .withIndex("by_cohort", (q) => q.eq("cohortId", targetCohort._id))
+      .collect();
+
+    // Group info with member names
+    const enrichedGroups = await Promise.all(
+      groups.map(async (g) => {
+        const memberUsers = await Promise.all(g.memberIds.map((id) => ctx.db.get(id)));
+        return {
+          _id: g._id,
+          groupName: g.groupName,
+          groupNumber: g.groupNumber,
+          memberCount: g.memberIds.length,
+          memberNames: memberUsers.map((u) => u?.name ?? "미설정"),
+        };
+      }),
+    );
+
+    // Calculate progress for each trainee in this cohort
+    let cohortApprovedCoachingMinutes = 0;
+    let cohortTotalCoachingLogs = 0;
+    let cohortPendingEducation = 0;
+    let cohortPendingCoaching = 0;
+    let totalAttendanceSum = 0;
+    let traineesWithAttendanceCount = 0;
+
+    const traineesProgress = await Promise.all(
+      cohortTrainees.map(async (trainee) => {
+        const eduCalc = await calculateUserEducation(ctx, trainee._id);
+        const coachingProgress = await calculateCoachingProgress(ctx, trainee._id);
+
+        let attendanceRate = 0;
+        try {
+          const attendanceStats = await calculateUserCohortAttendance(
+            ctx,
+            targetCohort._id,
+            trainee._id,
+          );
+          if (attendanceStats && typeof attendanceStats.attendanceRate === "number") {
+            attendanceRate = attendanceStats.attendanceRate;
+            totalAttendanceSum += attendanceRate;
+            traineesWithAttendanceCount++;
+          }
+        } catch {
+          attendanceRate = 0;
+        }
+
+        // Pending counts for this user
+        const userCoachingLogs = await ctx.db
+          .query("coachingLogs")
+          .withIndex("by_user", (q) => q.eq("userId", trainee._id))
+          .collect();
+        const pendingCoachLogs = userCoachingLogs.filter(
+          (l) => l.approvalStatus === "pending",
+        ).length;
+
+        cohortApprovedCoachingMinutes += coachingProgress.approvedCoachingMinutes;
+        cohortTotalCoachingLogs += userCoachingLogs.length;
+        cohortPendingEducation += eduCalc.educationPendingCount;
+        cohortPendingCoaching += pendingCoachLogs;
+
+        const educationTarget = 60;
+        const coachingTarget = 100;
+        const educationPct = Math.min(
+          (eduCalc.approvedEducationHours / educationTarget) * 100,
+          100,
+        );
+        const coachingPct = Math.min(
+          (coachingProgress.coachingHours / coachingTarget) * 100,
+          100,
+        );
+        const overallPct = Math.round((educationPct + coachingPct) / 2);
+
+        return {
+          _id: trainee._id,
+          name: trainee.name ?? "이름 미설정",
+          email: trainee.email ?? "",
+          avatarUrl: trainee.avatarStorageId
+            ? await ctx.storage.getUrl(trainee.avatarStorageId)
+            : null,
+          cohortName: targetCohort.name,
+          cohortId: targetCohort._id,
+          certificationGoal: (trainee.certificationGoal || "SMPCC") as string,
+          approvedEducationHours: eduCalc.approvedEducationHours,
+          approvedCoachingHours: Math.round(coachingProgress.coachingHours * 10) / 10,
+          educationTarget,
+          coachingTarget,
+          overallPct,
+          educationPendingCount: eduCalc.educationPendingCount,
+          coachingPendingCount: pendingCoachLogs,
+          attendanceRate,
+          coachName: trainee.assignedCoachId
+            ? (await ctx.db.get(trainee.assignedCoachId))?.name ?? null
+            : null,
+        };
+      }),
+    );
+
+    const totalCoachingHours =
+      Math.round((cohortApprovedCoachingMinutes / 60) * 10) / 10;
+    const averageCoachingHours =
+      cohortTrainees.length > 0
+        ? Math.round((totalCoachingHours / cohortTrainees.length) * 10) / 10
+        : 0;
+    const averageAttendanceRate =
+      traineesWithAttendanceCount > 0
+        ? Math.round(totalAttendanceSum / traineesWithAttendanceCount)
+        : 0;
+
+    return {
+      cohorts: cohortsWithCounts,
+      currentActiveCohort,
+      selectedCohort: targetCohort,
+      isAllMode: false,
+      kpis: {
+        totalUsers: allUsers.length,
+        approvedTrainees: cohortTrainees.length, // Trainees in this cohort!
+        pendingUsers: globalPendingUsers,
+        pendingEducation: cohortPendingEducation,
+        pendingCoaching: cohortPendingCoaching,
+        totalPending: cohortPendingEducation + cohortPendingCoaching,
+        totalCoachingHours,
+        averageCoachingHours,
+        totalCoachingLogs: cohortTotalCoachingLogs,
+        seminarCount: seminars.length,
+        averageAttendanceRate,
+      },
+      trainees: traineesProgress.sort((a, b) => b.overallPct - a.overallPct),
+      seminars: seminars.map((s) => ({
+        _id: s._id,
+        sessionNumber: s.sessionNumber,
+        title: s.title,
+        seminarType: s.seminarType,
+        startDate: s.startDate,
+        endDate: s.endDate,
+        location: s.location ?? null,
+        isOnline: s.isOnline ?? false,
+      })),
+      coachingGroups: enrichedGroups,
+    };
+  },
+});
+
 export const getAllUsers = query({
   args: {},
   handler: async (ctx): Promise<(Doc<"users"> & { cohortId: Id<"cohorts"> | null; cohortName: string | null; cohortNumber: number | null })[]> => {
@@ -158,6 +470,89 @@ export const resetUserPassword = mutation({
     }
     const passwordHash = await hashPassword(args.newPassword);
     await ctx.db.patch(args.userId, { passwordHash });
+  },
+});
+
+// 관리자: 사용자 이름 변경
+export const updateUserName = mutation({
+  args: {
+    userId: v.id("users"),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const trimmed = args.name.trim();
+    if (!trimmed) {
+      throw new ConvexError({
+        message: "이름을 입력해 주세요.",
+        code: "BAD_REQUEST",
+      });
+    }
+    await ctx.db.patch(args.userId, { name: trimmed });
+    return { success: true };
+  },
+});
+
+// 관리자: joosksoon@daum.net 사용자 이름을 '주승규'로 변경 (일회성 마이그레이션)
+export const updateJoosksoonToJuSeungGyu = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const allUsers = await ctx.db.query("users").collect();
+    const matched = allUsers.filter(
+      (u) =>
+        u.email?.toLowerCase().trim() === "joosksoon@daum.net".toLowerCase() ||
+        (u.name === "User" && u.email?.toLowerCase().includes("joosksoon")),
+    );
+
+    if (matched.length === 0) {
+      return {
+        success: false,
+        message: "joosksoon@daum.net 사용자를 찾을 수 없습니다.",
+      };
+    }
+
+    const updated = [];
+    for (const u of matched) {
+      await ctx.db.patch(u._id, { name: "주승규" });
+      updated.push({
+        id: u._id,
+        email: u.email,
+        oldName: u.name,
+        newName: "주승규",
+      });
+    }
+
+    return {
+      success: true,
+      updatedCount: updated.length,
+      users: updated,
+    };
+  },
+});
+
+export const getJoosksoonInfo = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("email"), "joosksoon@daum.net"))
+      .first();
+    if (!user) return null;
+    const memberships = await ctx.db
+      .query("cohortMembers")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    const cohorts = await Promise.all(memberships.map((m) => ctx.db.get(m.cohortId)));
+    return {
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        approvalStatus: user.approvalStatus,
+        cohorts: cohorts.map((c) => ({ id: c?._id, name: c?.name })),
+      },
+    };
   },
 });
 
