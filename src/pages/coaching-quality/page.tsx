@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "motion/react";
@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/select.tsx";
 import { Users } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user.ts";
+import ScoreTrendCard, { MilestoneMiniTrend } from "./_components/score-trend-card.tsx";
 
 export default function CoachingQualityPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -119,6 +120,11 @@ export default function CoachingQualityPage() {
   } = report;
 
   const checkedCount = Object.values(checkedItems).filter(Boolean).length;
+
+  const chronologicalLogs = useMemo(() => {
+    if (!evaluatedLogs) return [];
+    return [...evaluatedLogs].sort((a: any, b: any) => a.index - b.index);
+  }, [evaluatedLogs]);
 
   return (
     <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-8">
@@ -593,6 +599,15 @@ export default function CoachingQualityPage() {
               </p>
             </div>
 
+            {/* 📈 Score Progression Trendline Graph Card */}
+            <ScoreTrendCard
+              chronologicalLogs={chronologicalLogs}
+              milestones={milestones}
+              totalLogs={totalLogs}
+              selectedMilestoneKey={milestoneTab}
+              onSelectMilestone={(key) => setMilestoneTab(key)}
+            />
+
             <Tabs value={milestoneTab} onValueChange={setMilestoneTab} className="w-full">
               <TabsList className="grid grid-cols-2 sm:grid-cols-5 h-auto p-1 bg-muted/60">
                 <TabsTrigger value="overall" className="text-xs py-2">
@@ -610,17 +625,74 @@ export default function CoachingQualityPage() {
               {/* OVERALL SUB-TAB */}
               <TabsContent value="overall" className="mt-4">
                 <Card className="shadow-sm">
-                  <CardContent className="pt-5 space-y-4 text-xs">
-                    <p className="text-muted-foreground">
-                      현재까지 작성된 {totalLogs}건의 모든 코칭 실습일지를 누적 통합한 분석 결과입니다. 각 구간 탭을 클릭하여 5회 단위의 성장 추이를 비교해 보세요.
+                  <CardHeader className="pb-3 border-b">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <span>전체 실습 품질 누적 요약 및 마일스톤 비교</span>
+                      <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300 text-xs">
+                        총 {totalLogs}건 완료
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      5회 단위 마일스톤 구간별 평균 점수 변화와 단계별 성장 요약을 확인하세요.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-4 space-y-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {milestones.map((m: any) => (
+                        <div
+                          key={m.key}
+                          onClick={() => !m.isLocked && setMilestoneTab(m.key)}
+                          className={`border rounded-xl p-3 space-y-2 transition-all ${
+                            m.isLocked
+                              ? "bg-muted/40 opacity-60 border-dashed"
+                              : "bg-card hover:border-purple-300 hover:shadow-sm cursor-pointer"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-foreground">{m.title}</span>
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] ${
+                                m.isCompleted
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                  : m.isInProgress
+                                  ? "bg-purple-50 text-purple-700 border-purple-300"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {m.isCompleted ? "5/5 완료" : m.isInProgress ? `${m.actualCount}/5 진행` : "대기"}
+                            </Badge>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground line-clamp-1">{m.stageName}</p>
+                          {!m.isLocked ? (
+                            <div className="pt-1 flex items-baseline justify-between border-t">
+                              <span className="text-muted-foreground text-[10px]">구간 평점:</span>
+                              <span className="text-base font-black text-purple-700 dark:text-purple-400">
+                                {m.scores.total}점
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="pt-1 text-center text-muted-foreground text-[10px] border-t">
+                              {m.minCount}회 작성 시 오픈
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-muted-foreground text-[11px]">
+                      💡 상단 탭에서 특정 구간(예: 1~5회, 6~10회)을 클릭하시면 해당 구간의 5대 항목별 점수, 회차별 추세선과 심층 수퍼비전 진단 리포트를 열람할 수 있습니다.
                     </p>
                   </CardContent>
                 </Card>
               </TabsContent>
 
               {/* SPECIFIC MILESTONE TABS */}
-              {milestones.map((m: any) => (
-                <TabsContent key={m.key} value={m.key} className="mt-4 space-y-4">
+              {milestones.map((m: any) => {
+                const segLogs = chronologicalLogs.filter(
+                  (item: any) => item.index >= m.minCount && item.index <= m.maxCount
+                );
+                return (
+                  <TabsContent key={m.key} value={m.key} className="mt-4 space-y-4">
                   <Card className="shadow-sm">
                     <CardHeader className="pb-3 border-b">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -696,6 +768,14 @@ export default function CoachingQualityPage() {
                             </div>
                           </div>
 
+                          {/* Mini Trendline for this milestone segment */}
+                          {segLogs.length > 0 && (
+                            <MilestoneMiniTrend
+                              logs={segLogs}
+                              milestoneTitle={m.title}
+                            />
+                          )}
+
                           {/* Segment Narrative Feedback */}
                           <div className="space-y-3 pt-2">
                             <div className="rounded-lg bg-muted/40 p-3 border space-y-1">
@@ -731,7 +811,8 @@ export default function CoachingQualityPage() {
                     </CardContent>
                   </Card>
                 </TabsContent>
-              ))}
+              );
+            })}
             </Tabs>
           </div>
         </TabsContent>
