@@ -19,6 +19,7 @@ import {
   XCircle,
   Loader2,
   GraduationCap,
+  Sparkles,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
 import type { Id } from "@/convex/_generated/dataModel.d.ts";
@@ -151,15 +152,26 @@ export default function AdminTraineeProfilePage() {
         transition={{ duration: 0.35 }}
         className="flex items-center gap-3"
       >
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1 text-muted-foreground hover:text-foreground"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          뒤로
-        </Button>
+        <div className="flex items-center justify-between w-full">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1 text-muted-foreground hover:text-foreground"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            뒤로
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-purple-200 text-purple-700 hover:bg-purple-50 text-xs h-8"
+            onClick={() => navigate(`/admin/coaching-analysis?userId=${userId}`)}
+          >
+            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+            코칭 실습 심층 분석
+          </Button>
+        </div>
       </motion.div>
 
       {/* Profile card */}

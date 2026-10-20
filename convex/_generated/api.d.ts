@@ -20,6 +20,7 @@ import type * as certification from "../certification.js";
 import type * as classroomBookings from "../classroomBookings.js";
 import type * as coachFeedback from "../coachFeedback.js";
 import type * as coaching from "../coaching.js";
+import type * as coachingAnalysis from "../coachingAnalysis.js";
 import type * as coachingGroups from "../coachingGroups.js";
 import type * as cohorts from "../cohorts.js";
 import type * as comments from "../comments.js";
@@ -72,6 +73,7 @@ declare const fullApi: ApiFromModules<{
   classroomBookings: typeof classroomBookings;
   coachFeedback: typeof coachFeedback;
   coaching: typeof coaching;
+  coachingAnalysis: typeof coachingAnalysis;
   coachingGroups: typeof coachingGroups;
   cohorts: typeof cohorts;
   comments: typeof comments;

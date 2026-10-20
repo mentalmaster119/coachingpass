@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import {
   Check, X, Paperclip, Calendar, Clock, User, Users, ClipboardList,
   Search, ChevronDown, ChevronUp, Brain, Target, Lightbulb, Zap,
-  MessageSquare, BookOpen, Filter,
+  MessageSquare, BookOpen, Filter, Sparkles,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -457,6 +458,7 @@ function LogCard({
   onReject: (log: CoachingLog) => void;
   onDetail: (log: CoachingLog) => void;
 }) {
+  const navigate = useNavigate();
   const [isApproving, setIsApproving] = useState(false);
   const [optimisticApproved, setOptimisticApproved] = useState(false);
   const approve = useMutation(api.coaching.approve);
@@ -489,7 +491,18 @@ function LogCard({
               <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[11px] font-bold flex-shrink-0">
                 {(log.userName?.[0] ?? "?").toUpperCase()}
               </div>
-              <p className="text-xs font-semibold text-foreground">{log.userName}</p>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/admin/coaching-analysis?userId=${log.userId}`);
+                }}
+                className="text-xs font-semibold text-foreground hover:text-purple-600 hover:underline cursor-pointer flex items-center gap-1"
+                title="해당 교육생 코칭 실습 심층 분석 보기"
+              >
+                <span>{log.userName}</span>
+                <Sparkles className="w-3 h-3 text-purple-500 inline" />
+              </button>
               <p className="text-xs text-muted-foreground hidden sm:block">{log.userEmail}</p>
               <Badge className={`text-[10px] px-1.5 py-0 ${cfg.color}`}>{cfg.label}</Badge>
               {log.mcciDomain && (
@@ -580,6 +593,7 @@ function LogCard({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function AdminCoachingPage() {
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [search, setSearch] = useState("");
@@ -614,24 +628,37 @@ export default function AdminCoachingPage() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="flex items-center gap-3"
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
-        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-          <ClipboardList className="w-5 h-5 text-primary-foreground" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+            <ClipboardList className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">코칭 기록 검토</h1>
+            <p className="text-sm text-muted-foreground">
+              교육생이 제출한 코칭 실습 기록을 검토하고 승인/반려하세요
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-foreground">코칭 기록 검토</h1>
-          <p className="text-sm text-muted-foreground">
-            교육생이 제출한 코칭 실습 기록을 검토하고 승인/반려하세요
-          </p>
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/admin/coaching-analysis")}
+            className="border-purple-200 text-purple-700 hover:bg-purple-50 text-xs h-9"
+          >
+            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+            교육생별 심층 분석
+          </Button>
+          {!isLoading && (
+            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+              {statusFilter === "all"
+                ? `전체 ${logs.length}건`
+                : `${filtered.length}건`}
+            </Badge>
+          )}
         </div>
-        {!isLoading && (
-          <Badge className="ml-auto bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-            {statusFilter === "all"
-              ? `전체 ${logs.length}건`
-              : `${filtered.length}건`}
-          </Badge>
-        )}
       </motion.div>
 
       {/* Filters row */}

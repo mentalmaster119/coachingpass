@@ -36,6 +36,7 @@ import {
   Sun,
   Moon,
   FileCheck,
+  Sparkles,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button.tsx";
@@ -134,6 +135,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "사용자 관리", href: "/admin/users", icon: <Users className="w-4 h-4" /> },
       { label: "교육 기록 검토", href: "/admin/education", icon: <BookOpen className="w-4 h-4" /> },
       { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
+      { label: "교육생 코칭 실습 분석", href: "/admin/coaching-analysis", icon: <Sparkles className="w-4 h-4" /> },
       { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
       { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
       { label: "과제(독후감/에세이) 검토", href: "/admin/completion?tab=submissions", icon: <FileCheck className="w-4 h-4" /> },
@@ -165,6 +167,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
       { label: "교육 기록 검토", href: "/admin/education", icon: <BookOpen className="w-4 h-4" /> },
       { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
+      { label: "교육생 코칭 실습 분석", href: "/admin/coaching-analysis", icon: <Sparkles className="w-4 h-4" /> },
       { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
       { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
       { label: "인증 신청 관리", href: "/admin/certification", icon: <Award className="w-4 h-4" /> },

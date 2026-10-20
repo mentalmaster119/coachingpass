@@ -58,6 +58,7 @@ import AdminBcpPage from "./pages/admin/bcp/page.tsx";
 import SearchPage from "./pages/search/page.tsx";
 import ClassroomBookingPage from "./pages/classroom-booking/page.tsx";
 import SubmissionsPage from "./pages/submissions/page.tsx";
+import AdminCoachingAnalysisPage from "./pages/admin/coaching-analysis/page.tsx";
 
 export default function App() {
   useServiceWorker();
@@ -124,6 +125,8 @@ export default function App() {
             <Route path="/classroom-booking" element={<ClassroomBookingPage />} />
             <Route path="/supervision" element={<SupervisionPage />} />
             <Route path="/submissions" element={<SubmissionsPage />} />
+            <Route path="/admin/coaching-analysis" element={<AdminCoachingAnalysisPage />} />
+            <Route path="/admin/coaching-analysis/:userId" element={<AdminCoachingAnalysisPage />} />
           </Route>
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
