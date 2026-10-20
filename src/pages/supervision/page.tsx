@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/empty.tsx";
 import CoachingLogCard from "../coaching-log/_components/coaching-log-card.tsx";
 import SupervisionPracticeDialog from "./_components/supervision-practice-dialog.tsx";
-import SupervisionObservationDialog from "./_components/supervision-observation-dialog.tsx";
 
 function StatCard({
   icon,
@@ -100,7 +99,6 @@ function SvProgressCard({
 
 export default function SupervisionPage() {
   const [addOpen, setAddOpen] = useState(false);
-  const [observationOpen, setObservationOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const logs = useQuery(api.coaching.getMyLogs);
   const summary = useQuery(api.coaching.getMySummary);
@@ -144,14 +142,6 @@ export default function SupervisionPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
-          <Button
-            variant="outline"
-            onClick={() => setObservationOpen(true)}
-            className="border-purple-200 text-purple-700 hover:bg-purple-50 text-xs h-9"
-          >
-            <ClipboardList className="w-3.5 h-3.5 mr-1.5" />
-            수퍼바이징 일지 (수퍼바이저용)
-          </Button>
           <Button
             onClick={() => setAddOpen(true)}
             className="bg-purple-600 hover:bg-purple-700 text-white text-xs h-9"
@@ -293,7 +283,6 @@ export default function SupervisionPage() {
       </motion.div>
 
       <SupervisionPracticeDialog open={addOpen} onOpenChange={setAddOpen} />
-      <SupervisionObservationDialog open={observationOpen} onOpenChange={setObservationOpen} />
     </div>
   );
 }

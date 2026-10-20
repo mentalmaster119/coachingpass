@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +15,7 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "@/components/ui/empty.tsx";
+import SupervisionObservationDialog from "@/pages/supervision/_components/supervision-observation-dialog.tsx";
 
 const CERT_COLORS: Record<string, string> = {
   KAC: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
@@ -23,6 +25,8 @@ const CERT_COLORS: Record<string, string> = {
 export default function CoachTraineesPage() {
   const trainees = useQuery(api.admin.getMyAssignedTrainees);
   const navigate = useNavigate();
+  const [observationOpen, setObservationOpen] = useState(false);
+  const [selectedTraineeName, setSelectedTraineeName] = useState("");
 
   const pendingTotal = trainees?.reduce((s, t) => s + t.pendingReviewCount, 0) ?? 0;
 
@@ -34,16 +38,29 @@ export default function CoachTraineesPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-            <UserCheck className="w-5 h-5 text-primary-foreground" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+              <UserCheck className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">담당 교육생</h1>
+              <p className="text-sm text-muted-foreground">
+                배정된 교육생의 진행 상황을 확인합니다.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">담당 교육생</h1>
-            <p className="text-sm text-muted-foreground">
-              배정된 교육생의 진행 상황을 확인합니다.
-            </p>
-          </div>
+          <Button
+            variant="outline"
+            className="border-purple-200 text-purple-700 hover:bg-purple-50 self-start sm:self-center"
+            onClick={() => {
+              setSelectedTraineeName("");
+              setObservationOpen(true);
+            }}
+          >
+            <ClipboardList className="w-4 h-4 mr-1.5" />
+            수퍼바이징 일지 작성
+          </Button>
         </div>
       </motion.div>
 
@@ -128,15 +145,29 @@ export default function CoachTraineesPage() {
                     </div>
 
                     {/* Actions */}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="self-start sm:self-center flex-shrink-0"
-                      onClick={() => navigate(`/progress/trainee/${trainee._id}`)}
-                    >
-                      <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
-                      진행 현황 보기
-                    </Button>
+                    <div className="flex items-center gap-2 self-start sm:self-center flex-shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-purple-200 text-purple-700 hover:bg-purple-50 text-xs h-8"
+                        onClick={() => {
+                          setSelectedTraineeName(trainee.name ?? "");
+                          setObservationOpen(true);
+                        }}
+                      >
+                        <ClipboardList className="w-3.5 h-3.5 mr-1" />
+                        수퍼바이징 일지
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-xs h-8"
+                        onClick={() => navigate(`/progress/trainee/${trainee._id}`)}
+                      >
+                        <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
+                        진행 현황 보기
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -144,6 +175,12 @@ export default function CoachTraineesPage() {
           </div>
         )}
       </motion.div>
+
+      <SupervisionObservationDialog
+        open={observationOpen}
+        onOpenChange={setObservationOpen}
+        defaultTraineeName={selectedTraineeName}
+      />
     </div>
   );
 }
