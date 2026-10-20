@@ -89,6 +89,12 @@ export default function CoachingQualityPage() {
     setCheckedItems((prev) => ({ ...prev, [no]: !prev[no] }));
   };
 
+  const evaluatedLogs = report?.evaluatedLogs;
+  const chronologicalLogs = useMemo(() => {
+    if (!evaluatedLogs) return [];
+    return [...evaluatedLogs].sort((a: any, b: any) => a.index - b.index);
+  }, [evaluatedLogs]);
+
   if (report === undefined) {
     return (
       <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
@@ -112,7 +118,6 @@ export default function CoachingQualityPage() {
     personalizedDiagnosis,
     personalizedLeapTip,
     milestones,
-    evaluatedLogs,
     narrativeFeedback,
     motivationSection,
     mcciGuide,
@@ -120,11 +125,6 @@ export default function CoachingQualityPage() {
   } = report;
 
   const checkedCount = Object.values(checkedItems).filter(Boolean).length;
-
-  const chronologicalLogs = useMemo(() => {
-    if (!evaluatedLogs) return [];
-    return [...evaluatedLogs].sort((a: any, b: any) => a.index - b.index);
-  }, [evaluatedLogs]);
 
   return (
     <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-8">
