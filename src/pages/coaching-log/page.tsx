@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { motion } from "motion/react";
 import {
@@ -12,9 +13,12 @@ import {
   FileDown,
   Trophy,
   UserCheck,
+  Sparkles,
+  ChevronRight,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
 import { Button } from "@/components/ui/button.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs.tsx";
 import { Card, CardContent } from "@/components/ui/card.tsx";
@@ -161,6 +165,38 @@ export default function CoachingLogPage() {
             기록 추가
           </Button>
         </div>
+      </motion.div>
+
+      {/* Coaching Quality Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Link to="/coaching-quality">
+          <div className="rounded-xl border border-purple-200 dark:border-purple-800/60 bg-gradient-to-r from-purple-50/80 via-card to-indigo-50/80 dark:from-purple-950/30 dark:via-card dark:to-indigo-950/30 p-3.5 flex items-center justify-between gap-3 hover:shadow-md transition-all group">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-purple-600 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-foreground group-hover:text-purple-700 transition-colors flex items-center gap-1.5">
+                  <span>내 코칭실습 품질 분석 & AI 피드백</span>
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-purple-300 text-purple-700 bg-white/80 dark:bg-slate-900">
+                    5대 지표 자동 점수화
+                  </Badge>
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  완결성·구체성·과정추적·자기성찰·학습전이 5대 기준 실습 품질 진단 및 5·10·15·20회 구간 리포트 확인하기
+                </p>
+              </div>
+            </div>
+            <Button size="sm" variant="ghost" className="h-8 text-xs text-purple-700 group-hover:translate-x-1 transition-transform">
+              <span>리포트 보기</span>
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+        </Link>
       </motion.div>
 
       {/* Stats */}

@@ -14,6 +14,7 @@ import AdminEducationPage from "./pages/admin/education/page.tsx";
 import AdminCoachingPage from "./pages/admin/coaching/page.tsx";
 import EducationPage from "./pages/education/page.tsx";
 import CoachingLogPage from "./pages/coaching-log/page.tsx";
+import CoachingQualityPage from "./pages/coaching-quality/page.tsx";
 import ProgressPage from "./pages/progress/page.tsx";
 import TraineeDetailPage from "./pages/progress/trainee/page.tsx";
 import SettingsPage from "./pages/settings/page.tsx";
@@ -77,6 +78,7 @@ export default function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/education" element={<Navigate to="/training-history" replace />} />
             <Route path="/coaching-log" element={<CoachingLogPage />} />
+            <Route path="/coaching-quality" element={<CoachingQualityPage />} />
             <Route path="/mentor-coaching" element={<MentorCoachingPage />} />
             <Route path="/mentors" element={<MentorsPage />} />
             <Route path="/progress" element={<ProgressPage />} />

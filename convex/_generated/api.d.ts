@@ -22,6 +22,7 @@ import type * as coachFeedback from "../coachFeedback.js";
 import type * as coaching from "../coaching.js";
 import type * as coachingAnalysis from "../coachingAnalysis.js";
 import type * as coachingGroups from "../coachingGroups.js";
+import type * as coachingQuality from "../coachingQuality.js";
 import type * as cohorts from "../cohorts.js";
 import type * as comments from "../comments.js";
 import type * as community from "../community.js";
@@ -75,6 +76,7 @@ declare const fullApi: ApiFromModules<{
   coaching: typeof coaching;
   coachingAnalysis: typeof coachingAnalysis;
   coachingGroups: typeof coachingGroups;
+  coachingQuality: typeof coachingQuality;
   cohorts: typeof cohorts;
   comments: typeof comments;
   community: typeof community;

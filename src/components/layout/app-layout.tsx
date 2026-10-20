@@ -95,6 +95,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
           { label: "버디코칭 실습 기록", href: "/bcp" },
           { label: "멘토코칭 실습 기록", href: "/mentor-coaching" },
           { label: "수퍼비전 기록", href: "/supervision" },
+          { label: "코칭실습 AI 품질 분석 & 피드백", href: "/coaching-quality" },
         ]
       },
       { label: "멘토코치 매칭 및 신청", href: "/mentors", icon: <UserCheck className="w-4 h-4" /> },
@@ -201,6 +202,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
         { label: "버디코칭 실습 기록", href: "/bcp" },
         { label: "멘토코칭 실습 기록", href: "/mentor-coaching" },
         { label: "수퍼비전 기록", href: "/supervision" },
+        { label: "코칭실습 AI 품질 분석 & 피드백", href: "/coaching-quality" },
       ]
     },
     { label: "멘토코치 매칭 및 신청", href: "/mentors", icon: <UserCheck className="w-4 h-4" /> },
@@ -246,12 +248,12 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const navItems = user ? getNavItems(user.role, isPreviewMode) : [];
 
   const [practiceOpen, setPracticeOpen] = useState(() => {
-    const practiceRoutes = ["/coaching-log", "/bcp", "/mentor-coaching", "/supervision"];
+    const practiceRoutes = ["/coaching-log", "/bcp", "/mentor-coaching", "/supervision", "/coaching-quality"];
     return practiceRoutes.some((route) => location.pathname === route);
   });
 
   useEffect(() => {
-    const practiceRoutes = ["/coaching-log", "/bcp", "/mentor-coaching", "/supervision"];
+    const practiceRoutes = ["/coaching-log", "/bcp", "/mentor-coaching", "/supervision", "/coaching-quality"];
     if (practiceRoutes.some((route) => location.pathname === route)) {
       setPracticeOpen(true);
     }

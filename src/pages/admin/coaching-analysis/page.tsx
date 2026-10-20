@@ -298,7 +298,19 @@ export default function AdminCoachingAnalysisPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-start md:self-center">
+        <div className="flex items-center gap-2 self-start md:self-center flex-wrap">
+          {currentUserId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/coaching-quality?userId=${currentUserId}`)}
+              className="text-xs h-9 border-purple-300 text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+              title="해당 교육생의 5대 지표 품질 점수 및 5·10·15·20회 구간 피드백 리포트를 확인합니다."
+            >
+              <Award className="w-3.5 h-3.5 mr-1.5 text-purple-600" />
+              품질 점수·구간 리포트
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
