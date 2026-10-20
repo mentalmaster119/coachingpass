@@ -23,8 +23,9 @@ import {
   EmptyDescription,
   EmptyContent,
 } from "@/components/ui/empty.tsx";
-import CoachingLogForm from "../coaching-log/_components/coaching-log-form.tsx";
 import CoachingLogCard from "../coaching-log/_components/coaching-log-card.tsx";
+import SupervisionPracticeDialog from "./_components/supervision-practice-dialog.tsx";
+import SupervisionObservationDialog from "./_components/supervision-observation-dialog.tsx";
 
 function StatCard({
   icon,
@@ -99,6 +100,7 @@ function SvProgressCard({
 
 export default function SupervisionPage() {
   const [addOpen, setAddOpen] = useState(false);
+  const [observationOpen, setObservationOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const logs = useQuery(api.coaching.getMyLogs);
   const summary = useQuery(api.coaching.getMySummary);
@@ -136,15 +138,26 @@ export default function SupervisionPage() {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-bold text-foreground">슈퍼비전 실습 기록</h1>
+          <h1 className="text-2xl font-bold text-foreground">수퍼비전 실습 기록</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            버디코칭 장면에 슈퍼바이저(멘토코치)가 참가한 슈퍼비전 실습을 작성하고 피드백을 기록해 보세요.
+            수퍼비전 코칭에서 멘탈코치 역할로 참가한 코칭실습을 작성하고 수퍼비전 받은 피드백 내용을 기록합니다.
           </p>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-center">
-          <Button onClick={() => setAddOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            기록 추가
+        <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => setObservationOpen(true)}
+            className="border-purple-200 text-purple-700 hover:bg-purple-50 text-xs h-9"
+          >
+            <ClipboardList className="w-3.5 h-3.5 mr-1.5" />
+            수퍼바이징 일지 (수퍼바이저용)
+          </Button>
+          <Button
+            onClick={() => setAddOpen(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white text-xs h-9"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            실습 기록 작성
           </Button>
         </div>
       </motion.div>
@@ -203,7 +216,7 @@ export default function SupervisionPage() {
           <p className="text-sm font-semibold text-foreground mb-2">인정 기준 달성 현황</p>
           <div className="grid grid-cols-1 gap-3">
             <SvProgressCard
-              label="슈퍼비전 실습 완료 여부 (최소 1회)"
+              label="수퍼비전 실습 완료 여부 (최소 1회)"
               current={approvedSvCount}
               goal={1}
               icon={<Users className="w-4 h-4" />}
@@ -249,11 +262,11 @@ export default function SupervisionPage() {
                     <ClipboardList />
                   </EmptyMedia>
                   <EmptyTitle>
-                    {activeTab === "all" ? "아직 기록된 슈퍼비전 실습이 없습니다" : activeTab === "draft" ? "임시저장된 기록이 없습니다" : "해당하는 기록이 없습니다"}
+                    {activeTab === "all" ? "아직 기록된 수퍼비전 실습이 없습니다" : activeTab === "draft" ? "임시저장된 기록이 없습니다" : "해당하는 기록이 없습니다"}
                   </EmptyTitle>
                   <EmptyDescription>
                     {activeTab === "all"
-                      ? "첫 번째 슈퍼비전 실습 기록을 등록해 보세요."
+                      ? "첫 번째 수퍼비전 실습 기록을 등록해 보세요."
                       : activeTab === "draft"
                       ? "작성 중인 기록을 임시저장하면 여기서 확인할 수 있습니다."
                       : "다른 탭에서 확인해 보세요."}
@@ -263,7 +276,7 @@ export default function SupervisionPage() {
                   <EmptyContent>
                     <Button size="sm" onClick={() => setAddOpen(true)}>
                       <Plus className="w-3.5 h-3.5 mr-1" />
-                      기록 추가
+                      실습 기록 작성
                     </Button>
                   </EmptyContent>
                 )}
@@ -279,7 +292,8 @@ export default function SupervisionPage() {
         </Tabs>
       </motion.div>
 
-      <CoachingLogForm open={addOpen} onOpenChange={setAddOpen} defaultCoachingType="sv" />
+      <SupervisionPracticeDialog open={addOpen} onOpenChange={setAddOpen} />
+      <SupervisionObservationDialog open={observationOpen} onOpenChange={setObservationOpen} />
     </div>
   );
 }

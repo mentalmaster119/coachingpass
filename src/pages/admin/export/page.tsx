@@ -219,8 +219,8 @@ function MentorCoachingExportCard({ cohortId }: { cohortId: Id<"cohorts"> | "" }
     try {
       const csv = toCSV(data);
       const date = new Date().toISOString().slice(0, 10);
-      downloadCSV(csv, `슈퍼비전_기록_${status}_${date}.csv`);
-      toast.success(`${data.length}건의 슈퍼비전 기록을 내보냈습니다`);
+      downloadCSV(csv, `수퍼비전_기록_${status}_${date}.csv`);
+      toast.success(`${data.length}건의 수퍼비전 기록을 내보냈습니다`);
     } catch {
       toast.error("내보내기 실패");
     } finally {
@@ -231,7 +231,7 @@ function MentorCoachingExportCard({ cohortId }: { cohortId: Id<"cohorts"> | "" }
   return (
     <ExportCard
       icon={<MessageSquare className="w-5 h-5" />}
-      title="슈퍼비전 기록"
+      title="수퍼비전 기록"
       description="선택한 기수의 멘토코칭·코더코 세션 기록, 코치명, 주제, 승인 상태를 내보냅니다"
       count={data?.length}
       columns={["교육생명", "세션일", "유형", "코치명", "시간(분)", "주제", "승인상태"]}
@@ -311,9 +311,9 @@ function TraineeProgressExportCard({ cohortId }: { cohortId: Id<"cohorts"> | "" 
     <ExportCard
       icon={<TrendingUp className="w-5 h-5" />}
       title="교육생별 진행 현황"
-      description="선택한 기수의 승인된 교육시간, 코칭시간(개인/그룹), 슈퍼비전 횟수를 요약합니다"
+      description="선택한 기수의 승인된 교육시간, 코칭시간(개인/그룹), 수퍼비전 횟수를 요약합니다"
       count={data?.length}
-      columns={["이름", "이메일", "승인교육시간", "승인코칭시간", "개인코칭시간", "그룹코칭시간", "슈퍼비전횟수"]}
+      columns={["이름", "이메일", "승인교육시간", "승인코칭시간", "개인코칭시간", "그룹코칭시간", "수퍼비전횟수"]}
       onExport={handleExport}
       loading={loading || data === undefined}
       disabled={!cohortId}

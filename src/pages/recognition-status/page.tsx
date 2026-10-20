@@ -25,7 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton.tsx";
 // NCP: 스포츠선수 세션 5회 이상 + 전체 15회 이상 (일반인은 최대 15회까지 합산 인정)
 // BCP: 버디코칭 실습 기록 2회 이상
 // MCP: 멘토코칭 2회 이상
-// SVP: 슈퍼비전 1회 이상
+// SVP: 수퍼비전 1회 이상
 
 const NCP_ATHLETE_TARGET = 5;
 const NCP_SESSION_TARGET = 15;
@@ -135,7 +135,7 @@ export default function RecognitionStatusPage() {
   const mentorCount = mentorSummary?.mentorCoachingCount ?? 0;
   const mcpDone = mentorCount >= MCP_TARGET;
 
-  // ── SVP (슈퍼비전) ───────────────────────────────────────────────────────
+  // ── SVP (수퍼비전) ───────────────────────────────────────────────────────
   const approvedSvLogs = approvedLogs.filter((l) => l.coachingType === "sv");
   const approvedSvCount = approvedSvLogs.length;
   const approvedSvHours = approvedSvLogs.reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
@@ -185,7 +185,7 @@ export default function RecognitionStatusPage() {
       bg: "bg-amber-50 dark:bg-amber-900/20",
     },
     {
-      label: "슈퍼비전 (SVP)",
+      label: "수퍼비전 (SVP)",
       value: isLoading ? "..." : `${approvedSvCount}회`,
       sub: `목표 ${SVP_TARGET}회`,
       done: svpDone,
@@ -460,7 +460,7 @@ export default function RecognitionStatusPage() {
           </Card>
         </motion.div>
 
-        {/* SVP (슈퍼비전) 현황 */}
+        {/* SVP (수퍼비전) 현황 */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -472,7 +472,7 @@ export default function RecognitionStatusPage() {
                 <CardTitle className="text-sm flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-rose-600" />
-                    슈퍼비전 현황 (SVP)
+                    수퍼비전 현황 (SVP)
                   </span>
                   {svpDone ? (
                     <Badge className="text-[10px] bg-green-500/10 text-green-600 border-green-200">달성</Badge>
@@ -488,7 +488,7 @@ export default function RecognitionStatusPage() {
                   <div className="grid grid-cols-3 gap-2.5 text-center">
                     {[
                       {
-                        label: "슈퍼비전",
+                        label: "수퍼비전",
                         value: `${approvedSvCount}회`,
                         note: `목표 ${SVP_TARGET}회`,
                       },
@@ -520,7 +520,7 @@ export default function RecognitionStatusPage() {
                 className="w-full text-xs"
                 onClick={() => navigate("/supervision")}
               >
-                슈퍼비전 기록 보기 <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                수퍼비전 기록 보기 <ChevronRight className="w-3.5 h-3.5 ml-1" />
               </Button>
             </CardContent>
           </Card>

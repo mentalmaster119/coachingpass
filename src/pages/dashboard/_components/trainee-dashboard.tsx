@@ -447,7 +447,7 @@ export default function TraineeDashboard({ user }: { user: User }) {
             ) : (
               <button onClick={() => navigate("/feedback")} className="w-full text-left space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-foreground">{todayOverview.recentFeedback.coachName} 슈퍼바이저</span>
+                  <span className="text-xs font-medium text-foreground">{todayOverview.recentFeedback.coachName} 수퍼바이저</span>
                   <div className="flex items-center gap-0.5">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Star key={i} className={cn("w-3 h-3", i < todayOverview.recentFeedback!.rating ? "text-amber-400 fill-amber-400" : "text-muted-foreground/30")} />

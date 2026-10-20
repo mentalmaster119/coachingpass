@@ -19,10 +19,12 @@ import { toast } from "sonner";
 import { ConvexError } from "convex/values";
 import FeedbackCard, { type FeedbackItem } from "@/pages/feedback/_components/feedback-card.tsx";
 import FeedbackFormDialog from "@/pages/feedback/_components/feedback-form-dialog.tsx";
+import SupervisionObservationDialog from "@/pages/supervision/_components/supervision-observation-dialog.tsx";
 import type { Id } from "@/convex/_generated/dataModel.d.ts";
 
 function CoachFeedbackInner() {
   const [showForm, setShowForm] = useState(false);
+  const [observationOpen, setObservationOpen] = useState(false);
   const [editingFeedback, setEditingFeedback] = useState<FeedbackItem | null>(null);
 
   const feedbacks = useQuery(api.coachFeedback.listMyWrittenFeedbacks, {});
@@ -63,10 +65,19 @@ function CoachFeedbackInner() {
               <p className="text-sm text-muted-foreground">담당 교육생에게 피드백을 작성합니다</p>
             </div>
           </div>
-          <Button onClick={() => { setEditingFeedback(null); setShowForm(true); }}>
-            <Plus className="w-4 h-4 mr-2" />
-            피드백 작성
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setObservationOpen(true)}
+              className="border-purple-200 text-purple-700 hover:bg-purple-50"
+            >
+              수퍼바이징 일지 작성
+            </Button>
+            <Button onClick={() => { setEditingFeedback(null); setShowForm(true); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              피드백 작성
+            </Button>
+          </div>
         </div>
       </motion.div>
 
@@ -139,6 +150,11 @@ function CoachFeedbackInner() {
         open={showForm}
         onClose={() => { setShowForm(false); setEditingFeedback(null); }}
         editing={editingFeedback}
+      />
+
+      <SupervisionObservationDialog
+        open={observationOpen}
+        onOpenChange={setObservationOpen}
       />
     </div>
   );

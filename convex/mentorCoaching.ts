@@ -205,7 +205,7 @@ export const approve = mutation({
       reviewedBy: reviewer._id,
     });
 
-    const typeLabel = log.sessionType === "mentor_coaching" ? "개인 슈퍼비전" : "그룹 슈퍼비전";
+    const typeLabel = log.sessionType === "mentor_coaching" ? "개인 수퍼비전" : "그룹 수퍼비전";
     await insertNotification(ctx, {
       userId: log.userId,
       type: "mentor_coaching_approved",
@@ -232,7 +232,7 @@ export const reject = mutation({
       reviewedBy: reviewer._id,
     });
 
-    const typeLabel = log.sessionType === "mentor_coaching" ? "개인 슈퍼비전" : "그룹 슈퍼비전";
+    const typeLabel = log.sessionType === "mentor_coaching" ? "개인 수퍼비전" : "그룹 수퍼비전";
     await insertNotification(ctx, {
       userId: log.userId,
       type: "mentor_coaching_rejected",

@@ -482,7 +482,7 @@ export const setActiveMockUser = mutation({
             durationMinutes: 60,
             coachingType: "sv",
             coacheeInfo: "김민재 선수",
-            topic: "슈퍼비전 코칭 실습: 목표 설정 단계 피드백",
+            topic: "수퍼비전 코칭 실습: 목표 설정 단계 피드백",
             goals: "GROW 모델을 적용한 코칭 프로세스 확립",
             summary: "GROW 모델에 기반하여 고객의 강점을 탐색하고 현실 파악을 구체화하는 훈련을 시행함.",
             techniquesUsed: ["GROW 모델", "인지 재구성"],

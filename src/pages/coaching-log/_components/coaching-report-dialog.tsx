@@ -410,7 +410,7 @@ function ReportContent({ logs, user, summary }: Omit<Props, "open" | "onOpenChan
           <tr>
             {[
               { role: "제출자", name: user.name ?? "성명" },
-              { role: "슈퍼바이저", name: "" },
+              { role: "수퍼바이저", name: "" },
               { role: "심사위원", name: "" },
             ].map(({ role, name }) => (
               <td

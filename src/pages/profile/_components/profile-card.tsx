@@ -17,7 +17,7 @@ type ProfileCardProps = {
 
 const roleLabels: Record<string, string> = {
   admin: "관리자",
-  senior_coach: "슈퍼바이저",
+  senior_coach: "수퍼바이저",
   trainee: "교육생",
 };
 

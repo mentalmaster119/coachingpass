@@ -301,7 +301,7 @@ export default function AdminReportPage() {
                         <TableHead className="text-center">스포츠</TableHead>
                         <TableHead className="text-center">독후감</TableHead>
                         <TableHead className="text-center">에세이</TableHead>
-                        <TableHead className="text-center">슈퍼비전</TableHead>
+                        <TableHead className="text-center">수퍼비전</TableHead>
                         <TableHead className="text-center">수료</TableHead>
                         <TableHead className="text-center">인증자격</TableHead>
                       </TableRow>
@@ -480,7 +480,7 @@ export default function AdminReportPage() {
                   { icon: <Dumbbell className="w-4 h-4" />, label: "스포츠선수 대상 코칭 8건 이상", section: "인증" },
                   { icon: <BookOpen className="w-4 h-4" />, label: "독후감 2건 이상", section: "인증" },
                   { icon: <FileText className="w-4 h-4" />, label: "멘탈코칭 에세이 1건 이상", section: "인증" },
-                  { icon: <UserCheck className="w-4 h-4" />, label: "슈퍼비전/멘토링 *회 이상 (예정)", section: "인증" },
+                  { icon: <UserCheck className="w-4 h-4" />, label: "수퍼비전/멘토링 *회 이상 (예정)", section: "인증" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-2 text-sm">
                     <span className="text-muted-foreground mt-0.5 shrink-0">{item.icon}</span>

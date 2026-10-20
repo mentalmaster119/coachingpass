@@ -897,7 +897,7 @@ function CohortUsersTab({ onViewDetail }: { onViewDetail: (userId: Id<"users">) 
                           )}
                           {m.supervisorName && (
                             <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <UserCheck className="w-3 h-3" />슈퍼바이저: {m.supervisorName}
+                              <UserCheck className="w-3 h-3" />수퍼바이저: {m.supervisorName}
                             </p>
                           )}
                         </div>

@@ -289,7 +289,7 @@ function DetailDialog({
             <div className="border-t pt-2 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
               <div>
                 <span className="text-xs text-muted-foreground">
-                  {log.coachingType === "mentor" ? "멘토코치" : log.coachingType === "sv" ? "슈퍼바이저" : "코치이"}
+                  {log.coachingType === "mentor" ? "멘토코치" : log.coachingType === "sv" ? "수퍼바이저" : "코치이"}
                 </span>
                 <p className="font-medium">{log.coacheeInfo}</p>
               </div>
@@ -404,11 +404,15 @@ function DetailDialog({
           </div>
 
           {/* Supervision Feedback */}
-          {log.coachingType === "sv" && (log.svSupervisorFeedback || log.svPeerFeedback || log.svReflectionLearning) && (
+          {log.coachingType === "sv" && (
             <div className="rounded-lg border p-3 space-y-2 bg-primary/5 border-primary/10">
-              <p className="text-xs font-semibold text-primary uppercase tracking-wide">슈퍼비전 피드백 & 성찰</p>
-              {renderField("슈퍼바이저 피드백", log.svSupervisorFeedback)}
-              {renderField("동료 피드백", log.svPeerFeedback)}
+              <p className="text-xs font-semibold text-primary uppercase tracking-wide">수퍼비전 피드백 & 성찰</p>
+              {renderField("코칭 프로세스", (log as any).coachingProcess)}
+              {renderField("멘탈코칭 툴 활용 방식", (log as any).toolUsageDetail)}
+              {renderField("동료 피드백 - 잘한 점", (log as any).peerStrengths || log.svPeerFeedback)}
+              {renderField("동료 피드백 - 개선할 점", (log as any).peerImprovements)}
+              {renderField("수퍼바이저 피드백 - 잘한 점", (log as any).supervisorStrengths || log.svSupervisorFeedback)}
+              {renderField("수퍼바이저 피드백 - 개선할 점", (log as any).supervisorImprovements)}
               {renderField("피드백을 통한 성찰 및 배움", log.svReflectionLearning)}
             </div>
           )}

@@ -56,7 +56,7 @@ const TOUR_FEATURES = [
     icon: <ClipboardList className="w-6 h-6" />,
     color: "bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400",
     title: "코칭 실습 기록",
-    description: "코칭 실습 내용을 기록하고 슈퍼바이저의 피드백을 받을 수 있습니다.",
+    description: "코칭 실습 내용을 기록하고 수퍼바이저의 피드백을 받을 수 있습니다.",
   },
   {
     icon: <BookOpen className="w-6 h-6" />,

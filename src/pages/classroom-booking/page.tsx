@@ -46,7 +46,7 @@ const SLOT_CONFIG: Record<TimeSlot, { label: string; period: string }> = {
 const COACHING_CONFIG: Record<CoachingType, { label: string; color: string; badgeVariant: "default" | "secondary" | "outline" }> = {
   buddy: { label: "버디코칭", color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400", badgeVariant: "default" },
   mentor: { label: "멘토코칭", color: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/30 dark:text-sky-400", badgeVariant: "secondary" },
-  supervision: { label: "슈퍼비전", color: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400", badgeVariant: "outline" },
+  supervision: { label: "수퍼비전", color: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400", badgeVariant: "outline" },
 };
 
 export default function ClassroomBookingPage() {

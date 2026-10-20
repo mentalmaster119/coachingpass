@@ -221,7 +221,7 @@ export default function AdminTraineeProfilePage() {
                   {user.coachName && (
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                       <Shield className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span>담당 슈퍼바이저: {user.coachName}</span>
+                      <span>담당 수퍼바이저: {user.coachName}</span>
                     </div>
                   )}
                   {user.cohortName && (
@@ -290,7 +290,7 @@ export default function AdminTraineeProfilePage() {
               />
               <StatCard
                 icon={<Shield className="w-4 h-4" />}
-                label="슈퍼비전 (승인)"
+                label="수퍼비전 (승인)"
                 main={`${mentorHours}h`}
                 sub={`전체 ${stats.totalMentorLogs}건`}
               />

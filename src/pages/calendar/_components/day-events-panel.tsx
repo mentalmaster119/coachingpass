@@ -32,7 +32,7 @@ const BOOKING_COLORS = {
 const BOOKING_TYPE_LABELS = {
   buddy: "교육장: 버디코칭",
   mentor: "교육장: 멘토코칭",
-  supervision: "교육장: 슈퍼비전",
+  supervision: "교육장: 수퍼비전",
 };
 
 type Props = {

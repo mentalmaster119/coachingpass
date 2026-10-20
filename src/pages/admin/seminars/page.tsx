@@ -149,9 +149,9 @@ const DEFAULT_COURSES: CourseInfo[] = [
   },
   {
     key: "supervisor_training",
-    name: "멘탈코칭슈퍼바이저양성과정",
-    fullName: "멘탈코칭슈퍼바이저양성과정",
-    description: "상위 코치 및 슈퍼바이저로서 코칭 피드백과 지도를 수행할 수 있는 역량을 양성하는 최고위 과정입니다.",
+    name: "멘탈코칭수퍼바이저양성과정",
+    fullName: "멘탈코칭수퍼바이저양성과정",
+    description: "상위 코치 및 수퍼바이저로서 코칭 피드백과 지도를 수행할 수 있는 역량을 양성하는 최고위 과정입니다.",
     creditHours: 30,
   },
 ];
@@ -163,7 +163,7 @@ const COMMON_COURSE_OPTIONS = [
   "MSPE명상기본과정",
   "스포츠심리학강독기본과정",
   "스포츠심리학강독심화과정",
-  "멘탈코칭슈퍼바이저양성과정",
+  "멘탈코칭수퍼바이저양성과정",
   "기타(직접입력)",
 ];
 

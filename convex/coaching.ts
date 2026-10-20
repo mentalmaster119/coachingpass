@@ -126,6 +126,13 @@ const coachingLogFields = {
   svSupervisorFeedback: v.optional(v.string()),
   svPeerFeedback: v.optional(v.string()),
   svReflectionLearning: v.optional(v.string()),
+  // 멘탈코칭 실습 기록지 확장 필드
+  coachingProcess: v.optional(v.string()),
+  toolUsageDetail: v.optional(v.string()),
+  peerStrengths: v.optional(v.string()),
+  peerImprovements: v.optional(v.string()),
+  supervisorStrengths: v.optional(v.string()),
+  supervisorImprovements: v.optional(v.string()),
 };
 
 // Draft fields – all required fields become optional for saving mid-progress
@@ -188,6 +195,13 @@ const coachingDraftFields = {
   svSupervisorFeedback: v.optional(v.string()),
   svPeerFeedback: v.optional(v.string()),
   svReflectionLearning: v.optional(v.string()),
+  // 멘탈코칭 실습 기록지 확장 필드
+  coachingProcess: v.optional(v.string()),
+  toolUsageDetail: v.optional(v.string()),
+  peerStrengths: v.optional(v.string()),
+  peerImprovements: v.optional(v.string()),
+  supervisorStrengths: v.optional(v.string()),
+  supervisorImprovements: v.optional(v.string()),
 };
 
 export const saveDraft = mutation({

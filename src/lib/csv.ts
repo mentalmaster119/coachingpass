@@ -38,7 +38,7 @@ export const HEADER_LABELS: Record<string, string> = {
   approvedCoachingHours: "승인코칭시간",
   individualCoachingHours: "개인코칭시간",
   groupCoachingHours: "그룹코칭시간",
-  mentorCount: "슈퍼비전횟수",
+  mentorCount: "수퍼비전횟수",
   totalCoachingLogs: "코칭기록총수",
   // certification
   submittedAt: "신청일",

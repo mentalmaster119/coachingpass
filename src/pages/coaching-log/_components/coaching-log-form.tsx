@@ -350,7 +350,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
 
   const getCoacheeLabel = (base: string) => {
     const isMentorOrSv = coachingType === "mentor" || coachingType === "sv";
-    const replacement = coachingType === "mentor" ? "멘토코치" : "슈퍼바이저";
+    const replacement = coachingType === "mentor" ? "멘토코치" : "수퍼바이저";
     if (isMentorOrSv) {
       return base.replace("코치이", replacement).replace("고객", replacement);
     }
@@ -1229,10 +1229,10 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
         return (
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="svSupervisorFeedback">슈퍼바이저 피드백</Label>
+              <Label htmlFor="svSupervisorFeedback">수퍼바이저 피드백</Label>
               <Textarea
                 id="svSupervisorFeedback"
-                placeholder="슈퍼바이저(멘토코치)가 제공한 강점, 보완점, 향후 코칭 역량 개발 방향 피드백 내용을 입력해 주세요."
+                placeholder="수퍼바이저(멘토코치)가 제공한 강점, 보완점, 향후 코칭 역량 개발 방향 피드백 내용을 입력해 주세요."
                 rows={4}
                 value={svSupervisorFeedback}
                 onChange={(e) => setSvSupervisorFeedback(e.target.value)}
@@ -1281,7 +1281,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
           <div className="flex items-center gap-3">
             <DialogTitle>
               {coachingType === "sv"
-                ? "슈퍼비전 기록"
+                ? "수퍼비전 기록"
                 : isDraft
                 ? "임시저장 기록 이어 작성"
                 : isEdit

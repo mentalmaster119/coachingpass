@@ -32,6 +32,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import CoachingLogForm from "./coaching-log-form.tsx";
+import SupervisionPracticeDialog from "@/pages/supervision/_components/supervision-practice-dialog.tsx";
 
 export const COACHING_TYPE_MAP: Record<string, string> = {
   individual: "개인",
@@ -39,7 +40,7 @@ export const COACHING_TYPE_MAP: Record<string, string> = {
   team: "팀",
   buddy: "버디",
   mentor: "멘토",
-  sv: "SV",
+  sv: "수퍼비전",
 };
 
 type CoachingLog = Doc<"coachingLogs"> & { evidenceUrl?: string | null };
@@ -160,7 +161,7 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
           {/* Coachee info */}
           <p className="text-xs text-muted-foreground mb-2">
             <span className="font-medium text-foreground/70">
-              {log.coachingType === "mentor" ? "멘토코치:" : log.coachingType === "sv" ? "슈퍼바이저:" : "코치이:"}
+              {log.coachingType === "mentor" ? "멘토코치:" : log.coachingType === "sv" ? "수퍼바이저:" : "코치이:"}
             </span>{" "}
             {log.coacheeInfo}
           </p>
@@ -215,7 +216,7 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
                   {log.coachingPlace && <span className="mr-3">장소: {{ zoom: "Zoom", study_room: "공부방", center: "센터", home: "가정집", hanyang: "한양대 올림픽체육관", other: log.coachingPlaceOther ?? "기타" }[log.coachingPlace]}</span>}
                   {(log.coacheeGender || log.coacheeAge) && (
                     <span className="mr-3">
-                      {log.coachingType === "mentor" ? "멘토코치:" : log.coachingType === "sv" ? "슈퍼바이저:" : "코치이:"}{" "}
+                      {log.coachingType === "mentor" ? "멘토코치:" : log.coachingType === "sv" ? "수퍼바이저:" : "코치이:"}{" "}
                       {log.coacheeGender === "male" ? "남" : log.coacheeGender === "female" ? "여" : ""}{log.coacheeAge ? ` ${log.coacheeAge}세` : ""}
                     </span>
                   )}
@@ -357,19 +358,62 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
               {/* Supervision specific feedback display */}
               {log.coachingType === "sv" && (
                 <div className="border-t border-border pt-3 mt-3 space-y-3">
-                  <p className="text-xs font-semibold text-foreground/80">슈퍼비전 피드백 & 성찰</p>
-                  {log.svSupervisorFeedback && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-purple-950 dark:text-purple-300">
+                      수퍼비전 실습 내용 & 피드백
+                    </p>
+                    <Badge variant="outline" className="text-[10px] text-purple-700 bg-purple-50/50 border-purple-200">
+                      수퍼비전
+                    </Badge>
+                  </div>
+
+                  {/* Coaching Process & Tool usage */}
+                  {(log as any).coachingProcess && (
                     <div className="bg-muted/30 p-2.5 rounded-md">
-                      <p className="text-xs font-medium text-foreground/70 mb-1">슈퍼바이저 피드백</p>
-                      <p className="text-xs text-foreground whitespace-pre-wrap">{log.svSupervisorFeedback}</p>
+                      <p className="text-xs font-medium text-foreground/70 mb-1">코칭 프로세스</p>
+                      <p className="text-xs text-foreground whitespace-pre-wrap">{(log as any).coachingProcess}</p>
                     </div>
                   )}
-                  {log.svPeerFeedback && (
+
+                  {(log as any).toolUsageDetail && (
                     <div className="bg-muted/30 p-2.5 rounded-md">
-                      <p className="text-xs font-medium text-foreground/70 mb-1">동료 피드백</p>
-                      <p className="text-xs text-foreground whitespace-pre-wrap">{log.svPeerFeedback}</p>
+                      <p className="text-xs font-medium text-foreground/70 mb-1">코칭 툴 활용 방식</p>
+                      <p className="text-xs text-foreground whitespace-pre-wrap">{(log as any).toolUsageDetail}</p>
                     </div>
                   )}
+
+                  {/* Supervisor feedback */}
+                  {((log as any).supervisorStrengths || (log as any).supervisorImprovements || log.svSupervisorFeedback) && (
+                    <div className="bg-purple-50/40 border border-purple-100 dark:bg-purple-950/20 dark:border-purple-900/30 p-2.5 rounded-md space-y-1.5">
+                      <p className="text-xs font-semibold text-purple-900 dark:text-purple-300">수퍼바이저 피드백</p>
+                      {(log as any).supervisorStrengths && (
+                        <p className="text-xs text-foreground"><strong className="text-purple-700 dark:text-purple-400">• 잘한 점:</strong> {(log as any).supervisorStrengths}</p>
+                      )}
+                      {(log as any).supervisorImprovements && (
+                        <p className="text-xs text-foreground"><strong className="text-purple-700 dark:text-purple-400">• 개선할 점:</strong> {(log as any).supervisorImprovements}</p>
+                      )}
+                      {!(log as any).supervisorStrengths && log.svSupervisorFeedback && (
+                        <p className="text-xs text-foreground whitespace-pre-wrap">{log.svSupervisorFeedback}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Peer feedback */}
+                  {((log as any).peerStrengths || (log as any).peerImprovements || log.svPeerFeedback) && (
+                    <div className="bg-muted/30 p-2.5 rounded-md space-y-1.5">
+                      <p className="text-xs font-medium text-foreground/70">동료 피드백</p>
+                      {(log as any).peerStrengths && (
+                        <p className="text-xs text-foreground"><strong>• 잘한 점:</strong> {(log as any).peerStrengths}</p>
+                      )}
+                      {(log as any).peerImprovements && (
+                        <p className="text-xs text-foreground"><strong>• 개선할 점:</strong> {(log as any).peerImprovements}</p>
+                      )}
+                      {!(log as any).peerStrengths && log.svPeerFeedback && (
+                        <p className="text-xs text-foreground whitespace-pre-wrap">{log.svPeerFeedback}</p>
+                      )}
+                    </div>
+                  )}
+
                   {log.svReflectionLearning && (
                     <div className="bg-primary/5 border border-primary/10 p-2.5 rounded-md">
                       <p className="text-xs font-medium text-primary mb-1">피드백을 통한 성찰 및 배움</p>
@@ -395,12 +439,20 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
         </CardContent>
       </Card>
 
-      <CoachingLogForm
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        editLog={log}
-        defaultCoachingType={log.coachingType}
-      />
+      {log.coachingType === "sv" ? (
+        <SupervisionPracticeDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          editingLog={log}
+        />
+      ) : (
+        <CoachingLogForm
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          editLog={log}
+          defaultCoachingType={log.coachingType}
+        />
+      )}
 
       <CoachingLogCommentsDrawer
         open={commentsOpen}

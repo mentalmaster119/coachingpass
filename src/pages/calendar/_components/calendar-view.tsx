@@ -329,7 +329,7 @@ export default function CalendarView({
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-violet-500" />
-          <span className="text-xs text-muted-foreground">교육장: 슈퍼비전</span>
+          <span className="text-xs text-muted-foreground">교육장: 수퍼비전</span>
         </div>
       </div>
     </div>

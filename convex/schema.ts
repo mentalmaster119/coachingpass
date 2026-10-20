@@ -119,10 +119,17 @@ export default defineSchema({
       v.literal("motivation"), v.literal("skill"),
       v.literal("performance"), v.literal("relationship")
     )),
-    // ── Ⅷ. 슈퍼비전 추가 항목 ──
-    svSupervisorFeedback: v.optional(v.string()), // 슈퍼바이저 피드백
+    // ── Ⅷ. 수퍼비전 추가 항목 ──
+    svSupervisorFeedback: v.optional(v.string()), // 수퍼바이저 피드백
     svPeerFeedback: v.optional(v.string()),       // 동료 피드백
     svReflectionLearning: v.optional(v.string()), // 피드백을 통한 성찰 및 배움
+    // ── Ⅸ. 멘탈코칭 실습 기록지 (수퍼비전 세부 항목) ──
+    coachingProcess: v.optional(v.string()),        // 3. 코칭 프로세스
+    toolUsageDetail: v.optional(v.string()),        // 5. 코칭 툴을 어떻게 활용했는가?
+    peerStrengths: v.optional(v.string()),          // 6. 동료가 알려준 잘한 점
+    peerImprovements: v.optional(v.string()),       // 7. 동료가 알려준 개선할 점
+    supervisorStrengths: v.optional(v.string()),    // 8. 수퍼바이저가 알려준 잘한 점
+    supervisorImprovements: v.optional(v.string()), // 9. 수퍼바이저가 알려준 개선할 점
     // ── 증빙 / 승인 ──
     evidenceStorageId: v.optional(v.id("_storage")),
     approvalStatus: v.union(
@@ -751,4 +758,36 @@ export default defineSchema({
   })
     .index("by_date_and_slot", ["date", "timeSlot"])
     .index("by_user", ["userId"]),
+
+  // 멘탈코칭 수퍼바이징 일지 (수퍼바이저/멘토코치 현장 관찰형 평가)
+  supervisionJournals: defineTable({
+    coachId: v.id("users"),                 // 작성 수퍼바이저
+    traineeName: v.string(),                // 교육생(수퍼바이지) 이름
+    traineeId: v.optional(v.id("users")),   // 연계된 교육생 ID
+    coachingDate: v.string(),               // 관찰 일자
+    topic: v.string(),                      // 코칭 주제
+    currentScore: v.optional(v.string()),   // 현재 상태 점수 (예: "3/10")
+    targetScore: v.optional(v.string()),    // 목표 상태 점수 (예: "8/10")
+    toolsUsed: v.array(v.string()),         // 활용한 멘탈코칭 툴 (히어로 인터뷰, 시간선 등)
+    toolOther: v.optional(v.string()),      // 기타 툴
+    // 9개 역량 관찰평가 (1~4 점수, 또는 "NO")
+    competencies: v.object({
+      topicClarity: v.string(),
+      goalQuantification: v.string(),
+      toolSelection: v.string(),
+      toolProficiency: v.string(),
+      toolStandardAdherence: v.string(),
+      selfTalkQuality: v.string(),
+      questionAppropriateness: v.string(),
+      activeListening: v.string(),
+      praiseEnergy: v.string(),
+    }),
+    averageScore: v.optional(v.number()),   // 평균 점수
+    strengths: v.string(),                  // 가장 잘한 점
+    improvements: v.string(),               // 가장 개선이 필요한 점
+    nextActionPlan: v.string(),             // 다음 코칭에서 연습할 과제
+    createdAt: v.number(),
+  })
+    .index("by_coach", ["coachId"])
+    .index("by_trainee_name", ["traineeName"]),
 });

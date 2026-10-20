@@ -86,14 +86,14 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
       { label: "과제 제출 (독후감/에세이)", href: "/submissions", icon: <FileCheck className="w-4 h-4" /> },
       {
-        label: "실습 및 슈퍼비전 기록",
+        label: "실습 및 수퍼비전 기록",
         href: "/practice-group",
         icon: <ClipboardList className="w-4 h-4" />,
         items: [
           { label: "일반 코칭실습 기록", href: "/coaching-log" },
           { label: "버디코칭 실습 기록", href: "/bcp" },
           { label: "멘토코칭 실습 기록", href: "/mentor-coaching" },
-          { label: "슈퍼비전 기록", href: "/supervision" },
+          { label: "수퍼비전 기록", href: "/supervision" },
         ]
       },
       { label: "멘토코치 매칭 및 신청", href: "/mentors", icon: <UserCheck className="w-4 h-4" /> },
@@ -104,7 +104,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "성찰 일지", href: "/reflection", icon: <NotebookPen className="w-4 h-4" /> },
       { label: "공지사항", href: "/announcements", icon: <Megaphone className="w-4 h-4" /> },
       { label: "자료실", href: "/resources", icon: <FolderOpen className="w-4 h-4" /> },
-      { label: "슈퍼바이저 피드백", href: "/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
+      { label: "수퍼바이저 피드백", href: "/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
       { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
       { label: "교육장 예약", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },
       { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
@@ -124,7 +124,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "SMPCC 자격 관리", href: "/admin/smpcc", icon: <Award className="w-4 h-4" /> },
       { label: "종합 보고서", href: "/admin/report", icon: <BarChart2 className="w-4 h-4" /> },
       { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
-      { label: "교육생 슈퍼바이저 배정", href: "/admin/assignments", icon: <UserCheck className="w-4 h-4" /> },
+      { label: "교육생 수퍼바이저 배정", href: "/admin/assignments", icon: <UserCheck className="w-4 h-4" /> },
       { label: "인증 신청 관리", href: "/admin/certification", icon: <Award className="w-4 h-4" /> },
       { label: "공지사항 관리", href: "/admin/announcements", icon: <Megaphone className="w-4 h-4" /> },
       { label: "자료실 관리", href: "/admin/resources", icon: <FolderOpen className="w-4 h-4" /> },
@@ -190,14 +190,14 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
     { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
     { label: "과제 제출 (독후감/에세이)", href: "/submissions", icon: <FileCheck className="w-4 h-4" /> },
     {
-      label: "실습 및 슈퍼비전 기록",
+      label: "실습 및 수퍼비전 기록",
       href: "/practice-group",
       icon: <ClipboardList className="w-4 h-4" />,
       items: [
         { label: "일반 코칭실습 기록", href: "/coaching-log" },
         { label: "버디코칭 실습 기록", href: "/bcp" },
         { label: "멘토코칭 실습 기록", href: "/mentor-coaching" },
-        { label: "슈퍼비전 기록", href: "/supervision" },
+        { label: "수퍼비전 기록", href: "/supervision" },
       ]
     },
     { label: "멘토코치 매칭 및 신청", href: "/mentors", icon: <UserCheck className="w-4 h-4" /> },
@@ -208,7 +208,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
     { label: "성찰 일지", href: "/reflection", icon: <NotebookPen className="w-4 h-4" /> },
     { label: "공지사항", href: "/announcements", icon: <Megaphone className="w-4 h-4" /> },
     { label: "자료실", href: "/resources", icon: <FolderOpen className="w-4 h-4" /> },
-    { label: "슈퍼바이저 피드백", href: "/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
+    { label: "수퍼바이저 피드백", href: "/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
     { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
     { label: "교육장 예약", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },
     { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
@@ -221,7 +221,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
 function RoleLabel({ role }: { role: string }) {
   const map: Record<string, string> = {
     admin: "관리자",
-    senior_coach: "슈퍼바이저",
+    senior_coach: "수퍼바이저",
     trainee: "교육생",
     admin3: "관리자3(실습)",
   };

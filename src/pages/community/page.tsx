@@ -99,7 +99,7 @@ export default function CommunityPage() {
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-foreground">커뮤니티</h1>
             <p className="text-muted-foreground text-xs md:text-sm hidden sm:block">
-              교육생·슈퍼바이저가 함께 소통하는 공간입니다.
+              교육생·수퍼바이저가 함께 소통하는 공간입니다.
             </p>
           </div>
         </div>

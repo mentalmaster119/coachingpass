@@ -212,7 +212,7 @@ function ReportContent({ records, user, summary }: Omit<Props, "open" | "onOpenC
           <tr>
             {[
               { role: "제출자", name: user.name ?? "성명" },
-              { role: "슈퍼바이저", name: "" },
+              { role: "수퍼바이저", name: "" },
               { role: "심사위원", name: "" },
             ].map(({ role, name }) => (
               <td key={role} style={{ width: "33%", padding: "16px 8px 8px", verticalAlign: "bottom" }}>

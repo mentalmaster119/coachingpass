@@ -367,13 +367,13 @@ export const assignCoach = mutation({
     const trainee = await ctx.db.get(args.traineeId);
     if (!trainee) throw new ConvexError({ message: "교육생을 찾을 수 없습니다.", code: "NOT_FOUND" });
     if (trainee.role !== "trainee") {
-      throw new ConvexError({ message: "교육생만 슈퍼바이저를 배정할 수 있습니다.", code: "BAD_REQUEST" });
+      throw new ConvexError({ message: "교육생만 수퍼바이저를 배정할 수 있습니다.", code: "BAD_REQUEST" });
     }
 
     if (args.coachId) {
       const coach = await ctx.db.get(args.coachId);
       if (!coach || coach.role !== "senior_coach") {
-        throw new ConvexError({ message: "유효한 슈퍼바이저를 선택해 주세요.", code: "BAD_REQUEST" });
+        throw new ConvexError({ message: "유효한 수퍼바이저를 선택해 주세요.", code: "BAD_REQUEST" });
       }
     }
 
@@ -589,7 +589,7 @@ export const getMyAssignedTrainees = query({
       .unique();
     if (!me) throw new ConvexError({ message: "User not found", code: "NOT_FOUND" });
     if (me.role !== "senior_coach" && me.role !== "admin") {
-      throw new ConvexError({ message: "슈퍼바이저 권한이 필요합니다.", code: "FORBIDDEN" });
+      throw new ConvexError({ message: "수퍼바이저 권한이 필요합니다.", code: "FORBIDDEN" });
     }
 
     const allUsers = await ctx.db.query("users").collect();

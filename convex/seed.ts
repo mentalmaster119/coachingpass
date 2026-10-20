@@ -455,9 +455,9 @@ export const run = mutation({
       userId: traineeId,
       sessionDate: "2026-03-30",
       sessionType: "mentor_coaching",
-      coachName: "김동식 슈퍼바이저",
+      coachName: "김동식 수퍼바이저",
       durationMinutes: 60,
-      topic: "1차 야구 투수 코칭 세션에 대한 1:1 슈퍼비전",
+      topic: "1차 야구 투수 코칭 세션에 대한 1:1 수퍼비전",
       content: "김철수 선수와의 1회차 녹음 파일을 토대로 대화 흐름을 분석함. 코칭 초반 코치 주도의 질문이 너무 많아 선수가 열린 답변을 할 기회가 부족했음을 성찰하고 다음 세션 개방형 질문 리스트를 작성함.",
       approvalStatus: "approved",
       reviewedBy: coachId
@@ -467,7 +467,7 @@ export const run = mutation({
       userId: traineeId,
       sessionDate: "2026-05-10",
       sessionType: "coder_co",
-      coachName: "김동식 슈퍼바이저",
+      coachName: "김동식 수퍼바이저",
       durationMinutes: 120,
       topic: "그룹 코칭 세션 및 원팀 스피릿 구축 활동 피드백",
       content: "중학교 축구부 A팀 대상 그룹코칭의 구조화 방법을 피드백 받음. 선수들의 갈등 상황을 회피하지 않고 안전한 피드백 공간으로 승화시키는 진행 역량을 높이 평가받음.",
@@ -479,10 +479,10 @@ export const run = mutation({
       userId: traineeId,
       sessionDate: "2026-06-15",
       sessionType: "mentor_coaching",
-      coachName: "김동식 슈퍼바이저",
+      coachName: "김동식 수퍼바이저",
       durationMinutes: 60,
       topic: "양궁 청소년 대표 수행 루틴 수립 개입안 검토",
-      content: "긴장 상황 시 셋업 동작을 단순화하려는 계획의 타당성을 논의함. 복잡한 신체 제어 단계를 단순한 2가지 키워드('단단하게', '부드럽게')로 축약하는 방안을 슈퍼바이저에게 제안하여 승인받음.",
+      content: "긴장 상황 시 셋업 동작을 단순화하려는 계획의 타당성을 논의함. 복잡한 신체 제어 단계를 단순한 2가지 키워드('단단하게', '부드럽게')로 축약하는 방안을 수퍼바이저에게 제안하여 승인받음.",
       approvalStatus: "pending"
     });
 
@@ -534,7 +534,7 @@ export const run = mutation({
       userId: traineeId,
       entryDate: "2026-06-12",
       title: "조급한 답변에서 침묵의 경청으로",
-      content: "최근 세션에서 선수가 고민을 말할 때 마음 깊이 조급함이 올라왔다. 김동식 슈퍼바이저님의 '코치가 먼저 정답을 주지 말라'는 멘토링이 기억났다. 3초간 머물고, 선수가 스스로 생각할 수 있도록 대화의 문을 활짝 열어주는 훈련을 계속하겠다.",
+      content: "최근 세션에서 선수가 고민을 말할 때 마음 깊이 조급함이 올라왔다. 김동식 수퍼바이저님의 '코치가 먼저 정답을 주지 말라'는 멘토링이 기억났다. 3초간 머물고, 선수가 스스로 생각할 수 있도록 대화의 문을 활짝 열어주는 훈련을 계속하겠다.",
       relatedType: "mentor_coaching",
       mood: "great"
     });
@@ -642,7 +642,7 @@ export const run = mutation({
       date: "2026-06-23",
       timeSlot: "16:00-18:00",
       coachingType: "supervision",
-      notes: "슈퍼바이저 참관 피드백 세션",
+      notes: "수퍼바이저 참관 피드백 세션",
       createdAt: new Date().toISOString(),
     });
 

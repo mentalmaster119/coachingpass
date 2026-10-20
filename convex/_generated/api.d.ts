@@ -49,6 +49,7 @@ import type * as seed from "../seed.js";
 import type * as seminars from "../seminars.js";
 import type * as smpcc from "../smpcc.js";
 import type * as submissions from "../submissions.js";
+import type * as supervisionJournals from "../supervisionJournals.js";
 import type * as trainingHistory from "../trainingHistory.js";
 import type * as users from "../users.js";
 
@@ -100,6 +101,7 @@ declare const fullApi: ApiFromModules<{
   seminars: typeof seminars;
   smpcc: typeof smpcc;
   submissions: typeof submissions;
+  supervisionJournals: typeof supervisionJournals;
   trainingHistory: typeof trainingHistory;
   users: typeof users;
 }>;

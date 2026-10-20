@@ -99,7 +99,7 @@ export default function AdminFeedbackPage() {
         >
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="교육생, 슈퍼바이저명 검색..."
+            placeholder="교육생, 수퍼바이저명 검색..."
             className="pl-9"
             value={search}
             onChange={(e) => setSearch(e.target.value)}

@@ -94,7 +94,7 @@ function activityLabel(type: string) {
   switch (type) {
     case "education": return "교육";
     case "coaching": return "코칭";
-    case "mentor_coaching": return "개인 슈퍼비전";
+    case "mentor_coaching": return "개인 수퍼비전";
     default: return "활동";
   }
 }
@@ -150,7 +150,7 @@ export default function PortfolioView({
     },
     {
       icon: <MessageSquare className="w-5 h-5" />,
-      label: "슈퍼비전",
+      label: "수퍼비전",
       value: `${stats.approvedMentorCoachingHours}h`,
       sub: "승인된 시간",
       color: "bg-emerald-500/10 text-emerald-600",

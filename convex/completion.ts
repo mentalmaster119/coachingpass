@@ -17,7 +17,7 @@ import type { Id } from "./_generated/dataModel.d.ts";
 //  2. 그 중 스포츠 선수 대상 8건 이상
 //  3. 독후감 승인 2건 이상
 //  4. 멘탈코칭 에세이 승인 1건 이상
-//  5. 슈퍼비전/멘토링 승인 1건 이상 (mentorCoachingLogs)
+//  5. 수퍼비전/멘토링 승인 1건 이상 (mentorCoachingLogs)
 
 async function requireAuth(ctx: QueryCtx) {
   const identity = await ctx.auth.getUserIdentity();
