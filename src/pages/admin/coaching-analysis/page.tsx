@@ -301,14 +301,14 @@ export default function AdminCoachingAnalysisPage() {
         <div className="flex items-center gap-2 self-start md:self-center flex-wrap">
           {currentUserId && (
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               onClick={() => navigate(`/coaching-quality?userId=${currentUserId}`)}
-              className="text-xs h-9 border-purple-300 text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30"
-              title="해당 교육생의 5대 지표 품질 점수 및 5·10·15·20회 구간 피드백 리포트를 확인합니다."
+              className="text-xs h-9 bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-sm"
+              title="해당 교육생의 5대 항목 품질 점수 및 3개 그룹 분류, 5·10·15·20회 마일스톤 피드백 리포트를 확인합니다."
             >
-              <Award className="w-3.5 h-3.5 mr-1.5 text-purple-600" />
-              품질 점수·구간 리포트
+              <Award className="w-3.5 h-3.5 mr-1.5" />
+              🎖️ AI 품질 점수 & 3개 그룹 리포트
             </Button>
           )}
           <Button
@@ -452,7 +452,15 @@ export default function AdminCoachingAnalysisPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 self-start sm:self-center flex-shrink-0">
+                  <div className="flex items-center gap-2 self-start sm:self-center flex-wrap flex-shrink-0">
+                    <Button
+                      size="sm"
+                      onClick={() => navigate(`/coaching-quality?userId=${analysis.trainee._id}`)}
+                      className="text-xs h-8 bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-sm"
+                    >
+                      <Award className="w-3.5 h-3.5 mr-1" />
+                      AI 품질 점수 & 3개 그룹 리포트
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"

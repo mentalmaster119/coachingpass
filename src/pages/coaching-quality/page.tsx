@@ -44,13 +44,37 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog.tsx";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select.tsx";
+import { Users } from "lucide-react";
 
 export default function CoachingQualityPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const userIdParam = searchParams.get("userId");
+
+  const currentUser = useQuery(api.users.getCurrentUser);
+  const isAdmin =
+    currentUser?.role === "admin" ||
+    currentUser?.role === "senior_coach" ||
+    currentUser?.role === "admin3";
+
+  const trainees = useQuery(
+    api.coachingAnalysis.listTraineesForAnalysis,
+    isAdmin ? {} : "skip",
+  );
+
+  const effectiveUserId =
+    userIdParam ||
+    (isAdmin && trainees && trainees.length > 0 ? trainees[0]._id : undefined);
+
   const report = useQuery(
     api.coachingQuality.getMyCoachingQualityReport,
-    userIdParam ? { userId: userIdParam as any } : {},
+    effectiveUserId ? { userId: effectiveUserId as any } : {},
   );
 
   const [mainNavTab, setMainNavTab] = useState<string>("feedback");
@@ -98,12 +122,21 @@ export default function CoachingQualityPage() {
       {/* Top Breadcrumb & Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
         <div className="flex items-center gap-2">
-          <Link to="/coaching-log">
-            <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="w-4 h-4" />
-              <span>실습 목록으로</span>
-            </Button>
-          </Link>
+          {isAdmin ? (
+            <Link to="/admin/coaching-analysis">
+              <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="w-4 h-4" />
+                <span>교육생 실습 분석으로</span>
+              </Button>
+            </Link>
+          ) : (
+            <Link to="/coaching-log">
+              <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="w-4 h-4" />
+                <span>실습 목록으로</span>
+              </Button>
+            </Link>
+          )}
           <span className="text-muted-foreground">/</span>
           <span className="text-xs font-semibold text-foreground">코칭실습 품질 분석 & AI 피드백</span>
         </div>
@@ -135,6 +168,34 @@ export default function CoachingQualityPage() {
           </Button>
         </div>
       </div>
+
+      {/* Admin Mode Trainee Selector */}
+      {isAdmin && trainees && trainees.length > 0 && (
+        <div className="bg-purple-50/80 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/60 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Badge className="bg-purple-600 text-white text-xs">관리자 모드</Badge>
+            <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-purple-600" />
+              분석 대상 교육생 선택:
+            </span>
+          </div>
+          <Select
+            value={effectiveUserId ?? ""}
+            onValueChange={(val) => setSearchParams({ userId: val })}
+          >
+            <SelectTrigger className="h-8 text-xs bg-card min-w-[260px]">
+              <SelectValue placeholder="교육생을 선택하세요" />
+            </SelectTrigger>
+            <SelectContent className="max-h-80">
+              {trainees.map((t: any) => (
+                <SelectItem key={t._id} value={t._id} className="text-xs">
+                  {t.name} ({t.cohortName || "기수미정"}) · 실습 {t.totalCount}건 ({t.approvedHours}h)
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Hero Header Card: Current Total Score & Group Classification */}
       <motion.div
