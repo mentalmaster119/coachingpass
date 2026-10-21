@@ -1,9 +1,9 @@
+import { Navigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { useCurrentUser } from "@/hooks/use-current-user.ts";
 import { useViewMode } from "@/components/layout/app-layout.tsx";
 import TraineeDashboard from "./_components/trainee-dashboard.tsx";
 import SeniorCoachDashboard from "./_components/senior-coach-dashboard.tsx";
-import AdminOverview from "./_components/admin-overview.tsx";
 
 export default function DashboardPage() {
   const { user, isLoading } = useCurrentUser();
@@ -32,7 +32,7 @@ export default function DashboardPage() {
   }
 
   if (user.role === "admin") {
-    return <AdminOverview user={user} />;
+    return <Navigate to="/admin" replace />;
   }
 
   if (user.role === "senior_coach") {
