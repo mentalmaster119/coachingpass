@@ -18,7 +18,10 @@ import {
   Save,
   BookOpen,
   FileText,
+  QrCode,
+  Maximize2,
 } from "lucide-react";
+import AdminQrAttendanceDialog from "./_components/admin-qr-modal.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
@@ -581,6 +584,7 @@ function AttendanceSheet({ seminar, cohortId }: { seminar: Seminar; cohortId: Id
   const [localRecords, setLocalRecords] = useState<Record<string, LocalRecord>>({});
   const [initialized, setInitialized] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
 
   const dates = useMemo(() => {
     if (seminar.startDate === seminar.endDate) {
@@ -775,13 +779,24 @@ function AttendanceSheet({ seminar, cohortId }: { seminar: Seminar; cohortId: Id
                 </p>
               </div>
             </div>
-            <div className="flex gap-3 text-sm">
-              {(["present","late","excused","absent"] as AttendanceStatus[]).map((s) => (
-                <span key={s} className={cn("flex items-center gap-1 font-medium", STATUS_CONFIG[s].color)}>
-                  {STATUS_CONFIG[s].icon}
-                  {counts[s]}
-                </span>
-              ))}
+            <div className="flex items-center gap-3 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 cursor-pointer shadow-xs"
+                onClick={() => setQrOpen(true)}
+              >
+                <QrCode className="w-4 h-4" />
+                <span>출석 QR 열기</span>
+              </Button>
+              <div className="flex gap-3 text-sm">
+                {(["present","late","excused","absent"] as AttendanceStatus[]).map((s) => (
+                  <span key={s} className={cn("flex items-center gap-1 font-medium", STATUS_CONFIG[s].color)}>
+                    {STATUS_CONFIG[s].icon}
+                    {counts[s]}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -885,6 +900,22 @@ function AttendanceSheet({ seminar, cohortId }: { seminar: Seminar; cohortId: Id
           ))}
         </div>
       </Card>
+
+      {/* QR Attendance Dialog */}
+      <AdminQrAttendanceDialog
+        seminar={{
+          _id: seminar._id,
+          title: seminar.title,
+          startDate: seminar.startDate,
+          endDate: seminar.endDate,
+          startTime: seminar.startTime,
+          endTime: seminar.endTime,
+          location: seminar.location,
+          isOnline: seminar.isOnline,
+        }}
+        open={qrOpen}
+        onOpenChange={setQrOpen}
+      />
     </div>
   );
 }

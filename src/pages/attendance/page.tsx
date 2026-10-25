@@ -22,7 +22,10 @@ import {
   Zap,
   ChevronDown,
   Layers,
+  Camera,
+  QrCode,
 } from "lucide-react";
+import QrScannerModal from "./_components/qr-scanner-modal.tsx";
 import { Card, CardContent } from "@/components/ui/card.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
@@ -110,6 +113,26 @@ export default function AttendancePage() {
   const [checkingIn, setCheckingIn] = useState<string | null>(null);
   const [celebrationOpen, setCelebrationOpen] = useState(false);
   const [celebrationMsg, setCelebrationMsg] = useState(CHECKIN_MESSAGES[0]);
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  const handleQrSuccess = (result: {
+    seminarTitle: string;
+    date: string;
+    alreadyCheckedIn: boolean;
+    checkedInAt: string;
+  }) => {
+    if (result.alreadyCheckedIn) {
+      toast.info(`${result.seminarTitle}은(는) 이미 출석 체크가 완료되었습니다.`);
+    } else {
+      const msg = CHECKIN_MESSAGES[Math.floor(Math.random() * CHECKIN_MESSAGES.length)];
+      setCelebrationMsg({
+        ...msg,
+        title: `${result.seminarTitle} 출석 완료!`,
+        body: `출석 일자: ${result.date} · ${msg.body}`,
+      });
+      setCelebrationOpen(true);
+    }
+  };
 
   const handleCheckIn = async (seminarId: Id<"seminars">, date: string) => {
     const key = `${seminarId}_${date}`;
@@ -148,13 +171,22 @@ export default function AttendancePage() {
 
   return (
     <div className="p-6 space-y-6 max-w-3xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold">출석 체크</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          {isMultiCohort
-            ? "소속 기수 전체 일정이 통합 표시됩니다. 보강 세션도 함께 확인하세요."
-            : "기수 전체 세미나 출석 현황을 확인하고 체크할 수 있습니다"}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">출석 체크</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            {isMultiCohort
+              ? "소속 기수 전체 일정이 통합 표시됩니다. 보강 세션도 함께 확인하세요."
+              : "기수 전체 세미나 출석 현황을 확인하고 체크할 수 있습니다"}
+          </p>
+        </div>
+        <Button
+          onClick={() => setScannerOpen(true)}
+          className="gap-2 h-10 px-4 text-sm font-semibold shadow-sm shrink-0 bg-primary hover:bg-primary/90 cursor-pointer"
+        >
+          <Camera className="w-4 h-4" />
+          <span>QR 출석 스캔</span>
+        </Button>
       </div>
 
       {/* 보강 안내 배너 (여러 기수 소속인 경우) */}
@@ -312,6 +344,13 @@ export default function AttendancePage() {
           </motion.div>
         </DialogContent>
       </Dialog>
+
+      {/* QR Scanner Modal */}
+      <QrScannerModal
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onSuccess={handleQrSuccess}
+      />
     </div>
   );
 }

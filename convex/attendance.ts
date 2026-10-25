@@ -556,6 +556,126 @@ export const selfCheckIn = mutation({
   },
 });
 
+// ── Trainee QR code check-in ──────────────────────────────────────────────────
+
+export const qrCheckIn = mutation({
+  args: {
+    seminarId: v.id("seminars"),
+    date: v.string(),
+    code: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new ConvexError({ message: "로그인이 필요합니다.", code: "UNAUTHENTICATED" });
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+    if (!user) throw new ConvexError({ message: "사용자를 찾을 수 없습니다.", code: "NOT_FOUND" });
+
+    const seminar = await ctx.db.get(args.seminarId);
+    if (!seminar) throw new ConvexError({ message: "세미나 정보를 찾을 수 없습니다.", code: "NOT_FOUND" });
+
+    // Validate date: allows checking in if date matches seminar start/end date
+    const validDates = seminar.startDate === seminar.endDate
+      ? [seminar.startDate]
+      : [seminar.startDate, seminar.endDate];
+
+    if (!validDates.includes(args.date)) {
+      throw new ConvexError({
+        message: `세미나 진행 일정이 아닙니다. (진행일: ${validDates.join(", ")})`,
+        code: "BAD_REQUEST",
+      });
+    }
+
+    const existing = await ctx.db
+      .query("attendances")
+      .withIndex("by_seminar_and_user_and_date", (q) =>
+        q.eq("seminarId", args.seminarId).eq("userId", user._id).eq("date", args.date)
+      )
+      .unique();
+
+    const now = new Date().toISOString();
+
+    if (existing) {
+      if (existing.status === "present") {
+        return {
+          alreadyCheckedIn: true,
+          seminarTitle: seminar.title,
+          date: args.date,
+          checkedInAt: existing.checkedInAt ?? now,
+          userName: user.name ?? "교육생",
+        };
+      }
+      await ctx.db.patch(existing._id, {
+        status: "present",
+        selfCheckedIn: true,
+        checkedInAt: now,
+        recordedBy: user._id,
+        note: existing.note ? `${existing.note} (QR)` : "QR 출석",
+      });
+    } else {
+      let cohortId = seminar.cohortId;
+      if (!cohortId) {
+        const membership = await ctx.db
+          .query("cohortMembers")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .first();
+        if (membership) {
+          cohortId = membership.cohortId;
+        }
+      }
+
+      await ctx.db.insert("attendances", {
+        seminarId: args.seminarId,
+        cohortId,
+        userId: user._id,
+        date: args.date,
+        status: "present",
+        selfCheckedIn: true,
+        checkedInAt: now,
+        recordedBy: user._id,
+        note: "QR 출석",
+      });
+    }
+
+    return {
+      success: true,
+      alreadyCheckedIn: false,
+      seminarTitle: seminar.title,
+      date: args.date,
+      checkedInAt: now,
+      userName: user.name ?? "교육생",
+    };
+  },
+});
+
+export const getSeminarForQr = query({
+  args: { seminarId: v.id("seminars") },
+  handler: async (ctx, args) => {
+    const seminar = await ctx.db.get(args.seminarId);
+    if (!seminar) return null;
+    let cohortName = "";
+    if (seminar.cohortId) {
+      const cohort = await ctx.db.get(seminar.cohortId);
+      cohortName = cohort?.name ?? "";
+    }
+    return {
+      _id: seminar._id,
+      title: seminar.title,
+      sessionNumber: seminar.sessionNumber,
+      startDate: seminar.startDate,
+      endDate: seminar.endDate,
+      startTime: seminar.startTime,
+      endTime: seminar.endTime,
+      seminarType: seminar.seminarType,
+      cohortName,
+      location: seminar.location,
+      isOnline: seminar.isOnline,
+    };
+  },
+});
+
 // Get ALL seminars across all cohorts the user belongs to (for combined view)
 export const getAllMySeminars = query({
   args: {},

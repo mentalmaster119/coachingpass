@@ -45,6 +45,7 @@ import AdminCompletionPage from "./pages/admin/completion/page.tsx";
 import AdminReportPage from "./pages/admin/report/page.tsx";
 import TrainingHistoryPage from "./pages/training-history/page.tsx";
 import TraineeAttendancePage from "./pages/attendance/page.tsx";
+import QrCheckInLandingPage from "./pages/attendance/qr-checkin/page.tsx";
 import SupervisionPage from "./pages/supervision/page.tsx";
 import AdminSmpccPage from "./pages/admin/smpcc/page.tsx";
 import MentalForumPage from "./pages/mental-forum/page.tsx";
@@ -113,6 +114,7 @@ export default function App() {
             <Route path="/admin/report" element={<AdminReportPage />} />
             <Route path="/training-history" element={<TrainingHistoryPage />} />
             <Route path="/attendance" element={<TraineeAttendancePage />} />
+            <Route path="/attendance/qr-checkin" element={<QrCheckInLandingPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/admin/smpcc" element={<AdminSmpccPage />} />
             <Route path="/mental-forum" element={<MentalForumPage />} />
