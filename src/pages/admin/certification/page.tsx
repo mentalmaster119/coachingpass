@@ -13,6 +13,8 @@ import {
   CheckSquare,
   Square,
   ListChecks,
+  AlertCircle,
+  Calendar,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -85,6 +87,12 @@ type Application = {
   userName: string;
   userEmail: string;
   reviewerName: string | null;
+  examTitle?: string;
+  examDate?: string;
+  targetCohort?: string;
+  examType?: string;
+  phone?: string;
+  hasPrerequisiteDeficiency?: boolean;
 };
 
 function ReviewDialog({
@@ -168,12 +176,44 @@ function ReviewDialog({
 
         <div className="space-y-4 py-2">
           {/* Applicant info */}
-          <div className="rounded-lg border p-3 space-y-2 text-sm">
-            <div className="flex justify-between">
+          <div className="rounded-lg border p-3 space-y-2 text-sm bg-card">
+            <div className="flex justify-between items-center">
               <span className="text-muted-foreground">신청자</span>
-              <span className="font-medium">{application.userName}</span>
+              <span className="font-semibold text-foreground">{application.userName}</span>
             </div>
-            <div className="flex justify-between">
+            {application.examTitle && (
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">응시 시험</span>
+                <span className="font-semibold text-primary">{application.examTitle}</span>
+              </div>
+            )}
+            {application.targetCohort && (
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">소속 기수</span>
+                <Badge variant="outline" className="text-xs font-semibold text-primary border-primary/30">
+                  {application.targetCohort}
+                </Badge>
+              </div>
+            )}
+            {application.examType && (
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">응시 전형</span>
+                <span className="text-xs">
+                  {application.examType === "comprehensive"
+                    ? "종합 응시 (필기+실기)"
+                    : application.examType === "practical_only"
+                      ? "실기 전형만 응시"
+                      : "필기 전형만 응시"}
+                </span>
+              </div>
+            )}
+            {application.phone && (
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">연락처</span>
+                <span className="font-mono text-xs">{application.phone}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center">
               <span className="text-muted-foreground">자격증</span>
               {application.certificationGoal && (
                 <Badge className={`text-[11px] px-1.5 py-0 ${CERT_COLORS[application.certificationGoal] ?? ""}`}>
@@ -181,11 +221,11 @@ function ReviewDialog({
                 </Badge>
               )}
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">신청일</span>
-              <span>{format(new Date(application.submittedAt), "yyyy.MM.dd", { locale: ko })}</span>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">신청 접수일</span>
+              <span className="text-xs">{format(new Date(application.submittedAt), "yyyy.MM.dd", { locale: ko })}</span>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 pt-1 border-t border-border/50">
               <div className="flex items-center gap-1.5 text-xs">
                 <BookOpen className="w-3.5 h-3.5 text-chart-3" />
                 <span>교육 {application.educationHoursAtSubmission}h</span>
@@ -196,6 +236,19 @@ function ReviewDialog({
               </div>
             </div>
           </div>
+
+          {/* Deficiency alert for admin consideration */}
+          {application.hasPrerequisiteDeficiency && (
+            <div className="rounded-lg p-3 bg-amber-500/10 border border-amber-500/25 text-xs text-amber-900 dark:text-amber-300 space-y-1">
+              <div className="font-semibold flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                신청 시 요건 미달 대상자 (최종 자격증 발급 시 확인 요망)
+              </div>
+              <p className="leading-relaxed">
+                신청 당시 교육 이수({application.educationHoursAtSubmission}h/60h) 또는 실습({application.coachingHoursAtSubmission}h/100h) 시간이 부족한 상태였습니다. 시험 전후 과제 제출 및 실습 이수 현황을 확인하신 후 최종 자격증 수여(승인)를 결정해 주세요.
+              </p>
+            </div>
+          )}
 
           {/* Personal statement */}
           <div className="space-y-1">
@@ -484,9 +537,19 @@ export default function AdminCertificationPage() {
                           >
                             <div className="min-w-0 space-y-1">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-medium text-foreground">
+                                <p className="font-semibold text-foreground">
                                   {app.userName}
                                 </p>
+                                {app.targetCohort && (
+                                  <Badge variant="outline" className="text-[11px] px-1.5 py-0 border-primary/30 text-primary bg-primary/5 font-semibold">
+                                    {app.targetCohort}
+                                  </Badge>
+                                )}
+                                {app.examTitle && (
+                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-medium">
+                                    {app.examTitle.includes("2026") ? "2026 하반기 시험" : app.examTitle}
+                                  </Badge>
+                                )}
                                 {app.certificationGoal && (
                                   <Badge className={`text-[11px] px-1.5 py-0 ${CERT_COLORS[app.certificationGoal] ?? ""}`}>
                                     {app.certificationGoal}
@@ -495,6 +558,11 @@ export default function AdminCertificationPage() {
                                 <Badge className={`text-[11px] px-1.5 py-0 ${cfg.color}`}>
                                   {cfg.label}
                                 </Badge>
+                                {app.hasPrerequisiteDeficiency && (
+                                  <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30">
+                                    요건 유예
+                                  </Badge>
+                                )}
                               </div>
                               <p className="text-xs text-muted-foreground truncate">{app.userEmail}</p>
                               <div className="flex gap-4 text-xs text-muted-foreground">

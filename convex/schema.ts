@@ -616,6 +616,13 @@ export default defineSchema({
     // Progress snapshot at time of application
     educationHoursAtSubmission: v.number(),
     coachingHoursAtSubmission: v.number(),
+    // Exam specific fields
+    examTitle: v.optional(v.string()),
+    examDate: v.optional(v.string()),
+    targetCohort: v.optional(v.string()),
+    examType: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    hasPrerequisiteDeficiency: v.optional(v.boolean()),
   })
     .index("by_user", ["userId"])
     .index("by_status", ["status"]),

@@ -14,6 +14,11 @@ const REQUIREMENTS = {
 export const submit = mutation({
   args: {
     personalStatement: v.string(),
+    examTitle: v.optional(v.string()),
+    examDate: v.optional(v.string()),
+    targetCohort: v.optional(v.string()),
+    examType: v.optional(v.string()),
+    phone: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
@@ -32,7 +37,7 @@ export const submit = mutation({
     const active = existing.find((a) => a.status === "submitted" || a.status === "under_review");
     if (active) {
       throw new ConvexError({
-        message: "이미 진행 중인 신청이 있습니다. 검토 결과를 기다려 주세요.",
+        message: "이미 진행 중인 인증시험/자격증 신청이 있습니다. 검토 결과를 기다려 주세요.",
         code: "CONFLICT",
       });
     }
@@ -57,13 +62,27 @@ export const submit = mutation({
         .filter((l) => l.approvalStatus === "approved")
         .reduce((s, l) => s + l.durationMinutes, 0) / 60;
 
-    // Validate minimum requirements
+    // Check if requirements are incomplete (deficiency)
+    // Note: As per policy, deficiency does NOT block application; it is flagged for final review upon granting.
     const req = REQUIREMENTS[goal];
-    if (educationHours < req.education || coachingHours < req.coaching) {
-      throw new ConvexError({
-        message: `아직 필수 요건을 충족하지 못했습니다. (교육 ${Math.round(educationHours * 10) / 10}/${req.education}h, 코칭 ${Math.round(coachingHours * 10) / 10}/${req.coaching}h)`,
-        code: "BAD_REQUEST",
-      });
+    const hasDeficiency = educationHours < req.education || coachingHours < req.coaching;
+
+    // Resolve target cohort
+    let targetCohort = args.targetCohort;
+    if (!targetCohort) {
+      const membership = await ctx.db
+        .query("cohortMembers")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .first();
+      if (membership) {
+        const c = await ctx.db.get(membership.cohortId);
+        if (c) targetCohort = c.name;
+      }
+    }
+
+    // If phone is provided, update user profile if not set
+    if (args.phone && !user.phone) {
+      await ctx.db.patch(user._id, { phone: args.phone });
     }
 
     return await ctx.db.insert("certificationApplications", {
@@ -74,7 +93,123 @@ export const submit = mutation({
       personalStatement: args.personalStatement,
       educationHoursAtSubmission: Math.round(educationHours * 10) / 10,
       coachingHoursAtSubmission: Math.round(coachingHours * 10) / 10,
+      examTitle: args.examTitle || "2026년 하반기 SMPCC 멘탈코칭 전문가 인증시험",
+      examDate: args.examDate || "2026-11-28",
+      targetCohort: targetCohort || "17기",
+      examType: args.examType || "comprehensive",
+      phone: args.phone || user.phone,
+      hasPrerequisiteDeficiency: hasDeficiency,
     });
+  },
+});
+
+// ── Exam Schedule Queries & Event Sync ─────────────────────────────────────────
+
+export const getUpcomingExamSchedule = query({
+  args: {},
+  handler: async (ctx) => {
+    // 1. Look for any shared calendar events with "인증시험" or "시험"
+    const sharedEvents = await ctx.db
+      .query("calendarEvents")
+      .withIndex("by_shared", (q) => q.eq("isShared", true))
+      .collect();
+
+    const examEvents = sharedEvents
+      .filter((e) => e.title.includes("인증시험") || e.title.includes("SMPCC 시험") || e.title.includes("자격시험"))
+      .sort((a, b) => a.eventDate.localeCompare(b.eventDate));
+
+    // Default 2026 하반기 SMPCC 인증시험 schedule
+    const defaultExam = {
+      id: "smpcc_2026_second_half",
+      title: "2026년 하반기 SMPCC 멘탈코칭 전문가 자격 인증시험",
+      shortTitle: "2026년 하반기 SMPCC 인증시험",
+      targetCohorts: ["16기", "17기"],
+      targetCohortDisplay: "16기, 17기 (및 이전 기수 동문/재응시자)",
+      applicationPeriod: "2026. 10. 20 (월) ~ 2026. 11. 15 (일)",
+      applicationStartDate: "2026-10-20",
+      applicationEndDate: "2026-11-15",
+      examDate: "2026-11-28",
+      examTimeDisplay: "2026년 11월 28일 (토) 10:00 ~ 17:00",
+      location: "MCCI 본원 대강당 (서울 강남) 및 비대면 화상 심사 병행",
+      subjects: "1차 필기 (코칭 이론 및 윤리 규정) + 2차 실기 (코칭 시연 및 구술 면접)",
+      isOpen: true,
+      description: "16기, 17기 교육생 및 수료생을 위한 2026년 하반기 공식 인증시험입니다. 과제 제출 또는 실습 시간 일부 미달 항목이 있더라도 응시 신청이 가능하며, 최종 자격증 발급 시 심사위원회에서 이수 기준을 최종 검토합니다.",
+    };
+
+    if (examEvents.length > 0) {
+      const latest = examEvents[0];
+      return {
+        ...defaultExam,
+        id: latest._id,
+        title: latest.title,
+        shortTitle: latest.title,
+        examDate: latest.eventDate,
+        examTimeDisplay: `${latest.eventDate} ${latest.startTime ? `${latest.startTime}~${latest.endTime ?? ""}` : "10:00~17:00"}`,
+        description: latest.description || defaultExam.description,
+        calendarEventId: latest._id,
+      };
+    }
+
+    return defaultExam;
+  },
+});
+
+// Ensure the exam is registered as a shared calendar event
+export const ensureExamCalendarEvent = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await ctx.auth.getUserIdentity();
+    if (!user) return null;
+
+    const existing = await ctx.db
+      .query("calendarEvents")
+      .withIndex("by_shared", (q) => q.eq("isShared", true))
+      .collect();
+
+    const alreadyExists = existing.some(
+      (e) => e.title.includes("2026년 하반기 SMPCC") || (e.title.includes("인증시험") && e.eventDate === "2026-11-28"),
+    );
+
+    if (alreadyExists) return null;
+
+    // Find admin user to assign creation
+    const admin = await ctx.db
+      .query("users")
+      .withIndex("by_role", (q) => q.eq("role", "admin"))
+      .first();
+
+    if (!admin) return null;
+
+    return await ctx.db.insert("calendarEvents", {
+      userId: admin._id,
+      title: "2026년 하반기 SMPCC 인증시험 (16기, 17기 대상)",
+      description: "2026년 하반기 SMPCC 멘탈코칭 전문가 자격 인증시험\n일시: 2026년 11월 28일 (토) 10:00~17:00\n장소: MCCI 본원 대강당 및 비대면 화상 심사 병행\n원서 접수 기간: 10월 20일 ~ 11월 15일",
+      eventDate: "2026-11-28",
+      startTime: "10:00",
+      endTime: "17:00",
+      eventType: "shared",
+      isShared: true,
+      color: "#059669",
+    });
+  },
+});
+
+// Get trainee's active cohort name
+export const getMyCohort = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getAuthenticatedUser(ctx);
+    const memberships = await ctx.db
+      .query("cohortMembers")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    if (memberships.length === 0) return null;
+
+    // Get latest cohort
+    const latest = memberships[memberships.length - 1];
+    const cohort = await ctx.db.get(latest.cohortId);
+    return cohort ? { _id: cohort._id, name: cohort.name, number: cohort.number } : null;
   },
 });
 
