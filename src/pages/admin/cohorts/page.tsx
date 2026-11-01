@@ -16,7 +16,9 @@ import {
   UserPlus,
   UserMinus,
   GraduationCap,
+  Mail,
 } from "lucide-react";
+import AdminInviteModal from "@/components/admin/admin-invite-modal.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
@@ -136,6 +138,8 @@ export default function AdminCohortsPage() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Id<"cohorts"> | null>(null);
   const [selectedCohort, setSelectedCohort] = useState<Id<"cohorts"> | null>(null);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [inviteCohortId, setInviteCohortId] = useState<Id<"cohorts"> | undefined>(undefined);
 
   const openCreate = () => {
     setEditingCohort(null);
@@ -228,15 +232,28 @@ export default function AdminCohortsPage() {
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">기수 관리</h1>
           <p className="text-muted-foreground text-sm mt-1">멘탈코칭전문가과정 기수를 생성하고 교육생을 배정합니다</p>
         </div>
-        <Button onClick={openCreate} className="gap-2">
-          <Plus className="w-4 h-4" />
-          기수 추가
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setInviteCohortId(undefined);
+              setInviteModalOpen(true);
+            }}
+            className="gap-2 cursor-pointer border-primary/30 text-primary hover:bg-primary/10 font-semibold"
+          >
+            <Mail className="w-4 h-4" />
+            초대장 발행 / 링크 복사
+          </Button>
+          <Button onClick={openCreate} className="gap-2 cursor-pointer">
+            <Plus className="w-4 h-4" />
+            기수 추가
+          </Button>
+        </div>
       </div>
 
       {/* Cohort list */}
@@ -281,6 +298,20 @@ export default function AdminCohortsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     {statusBadge(cohort.status)}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setInviteCohortId(cohort._id);
+                        setInviteModalOpen(true);
+                      }}
+                      className="cursor-pointer h-7 text-xs gap-1 border-primary/30 text-primary hover:bg-primary/10"
+                      title={`${cohort.name} 가입 초대장 발행`}
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>초대장</span>
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -493,6 +524,13 @@ export default function AdminCohortsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Invite Modal */}
+      <AdminInviteModal
+        open={inviteModalOpen}
+        onOpenChange={setInviteModalOpen}
+        initialCohortId={inviteCohortId}
+      />
     </div>
   );
 }

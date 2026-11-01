@@ -7,6 +7,7 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import PendingPage from "./pages/pending/page.tsx";
 import OnboardingPage from "./pages/onboarding/page.tsx";
+import InviteLandingPage from "./pages/invite/page.tsx";
 import DashboardPage from "./pages/dashboard/page.tsx";
 import AdminDashboardPage from "./pages/admin/page.tsx";
 import AdminUsersPage from "./pages/admin/users/page.tsx";
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="/" element={<Index />} />
           <Route path="/pending" element={<PendingPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/invite" element={<InviteLandingPage />} />
 
           {/* Protected routes with sidebar layout */}
           <Route element={<AppLayout />}>

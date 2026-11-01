@@ -393,3 +393,47 @@ export const migrateCohortMaxMentors = mutation({
     return { updated, total: cohorts.length };
   },
 });
+
+// Public: Get cohort invitation info (does not require login)
+export const getCohortInviteInfo = query({
+  args: { cohortId: v.optional(v.id("cohorts")) },
+  handler: async (ctx, args) => {
+    let cohort: Doc<"cohorts"> | null = null;
+    if (args.cohortId) {
+      cohort = await ctx.db.get(args.cohortId);
+    }
+    if (!cohort) {
+      const allCohorts = await ctx.db.query("cohorts").collect();
+      cohort =
+        allCohorts.find((c) => c.status === "active") ||
+        allCohorts.find((c) => c.name.includes("18기")) ||
+        allCohorts[0] ||
+        null;
+    }
+    if (!cohort) return null;
+
+    const members = await ctx.db
+      .query("cohortMembers")
+      .withIndex("by_cohort", (q) => q.eq("cohortId", cohort._id))
+      .collect();
+
+    const seminars = await ctx.db
+      .query("seminars")
+      .withIndex("by_cohort", (q) => q.eq("cohortId", cohort._id))
+      .collect();
+
+    return {
+      _id: cohort._id,
+      name: cohort.name,
+      number: cohort.number,
+      term: cohort.term,
+      startDate: cohort.startDate,
+      endDate: cohort.endDate,
+      status: cohort.status,
+      description: cohort.description ?? "",
+      educationCategory: getResolvedCohortCategory(cohort),
+      memberCount: members.length,
+      seminarCount: seminars.length,
+    };
+  },
+});

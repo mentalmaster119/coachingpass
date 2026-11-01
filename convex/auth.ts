@@ -12,6 +12,7 @@ export const signUp = mutation({
     name: v.string(),
     email: v.string(),
     password: v.string(),
+    cohortId: v.optional(v.id("cohorts")),
   },
   handler: async (ctx, args) => {
     const emailNormalized = args.email.trim().toLowerCase();
@@ -52,6 +53,19 @@ export const signUp = mutation({
       passwordHash,
       tokenIdentifier: "temporary-token-id", // will patch in next step
     });
+
+    // If cohortId is provided, link member to cohort
+    if (args.cohortId) {
+      const cohort = await ctx.db.get(args.cohortId);
+      if (cohort) {
+        await ctx.db.insert("cohortMembers", {
+          cohortId: args.cohortId,
+          userId,
+          joinedAt: new Date().toISOString(),
+          status: "active",
+        });
+      }
+    }
 
     // Generate standard tokenIdentifier based on Convex Site issuer domain
     const issuer = process.env.CONVEX_SITE_URL || DEFAULT_ISSUER;

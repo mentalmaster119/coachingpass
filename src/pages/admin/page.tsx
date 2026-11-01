@@ -22,7 +22,9 @@ import {
   ExternalLink,
   Layers,
   ChevronRight,
+  Mail,
 } from "lucide-react";
+import AdminInviteModal from "@/components/admin/admin-invite-modal.tsx";
 import { api } from "@/convex/_generated/api.js";
 import type { Id } from "@/convex/_generated/dataModel.d.ts";
 import { Button } from "@/components/ui/button.tsx";
@@ -365,6 +367,7 @@ export default function AdminDashboardPage() {
   const resetAllData = useMutation(api.admin.resetData.resetAllData);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
   const isLoading = dashboardData === undefined;
   const activeCohort = dashboardData?.currentActiveCohort;
@@ -507,6 +510,16 @@ export default function AdminDashboardPage() {
           <Button
             variant="outline"
             size="sm"
+            className="h-9 text-xs gap-1.5 shrink-0 bg-primary/5 border-primary/30 text-primary hover:bg-primary/10 cursor-pointer font-semibold"
+            onClick={() => setInviteModalOpen(true)}
+          >
+            <Mail className="w-3.5 h-3.5" />
+            초대장 발행
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
             className="h-9 text-xs gap-1.5 hidden sm:flex shrink-0"
             onClick={() => navigate("/admin/cohorts")}
           >
@@ -544,6 +557,15 @@ export default function AdminDashboardPage() {
 
             {/* Quick Cohort Action Buttons */}
             <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-card text-xs gap-1.5 shadow-xs hover:bg-primary/5 text-primary border-primary/30 font-semibold cursor-pointer"
+                onClick={() => setInviteModalOpen(true)}
+              >
+                <Mail className="w-3.5 h-3.5" />
+                {currentCohort.name} 초대장
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -978,6 +1000,13 @@ export default function AdminDashboardPage() {
           </p>
         </motion.div>
       )}
+
+      {/* ── Invite Modal ── */}
+      <AdminInviteModal
+        open={inviteModalOpen}
+        onOpenChange={setInviteModalOpen}
+        initialCohortId={currentCohort?._id}
+      />
     </div>
   );
 }
