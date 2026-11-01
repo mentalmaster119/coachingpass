@@ -13,6 +13,8 @@ export const signUp = mutation({
     email: v.string(),
     password: v.string(),
     cohortId: v.optional(v.id("cohorts")),
+    cohortNumber: v.optional(v.number()),
+    cohortName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const emailNormalized = args.email.trim().toLowerCase();
@@ -54,15 +56,45 @@ export const signUp = mutation({
       tokenIdentifier: "temporary-token-id", // will patch in next step
     });
 
-    // If cohortId is provided, link member to cohort
-    if (args.cohortId) {
-      const cohort = await ctx.db.get(args.cohortId);
+    // If cohortId is provided, or cohortNumber/cohortName is provided, link member to cohort
+    let targetCohortId = args.cohortId;
+
+    if (!targetCohortId && (args.cohortNumber || args.cohortName)) {
+      const allCohorts = await ctx.db.query("cohorts").collect();
+      const existing = allCohorts.find((c) => {
+        if (args.cohortNumber && c.number === args.cohortNumber) return true;
+        if (args.cohortName && c.name === args.cohortName) return true;
+        if (args.cohortNumber && c.name.includes(`${args.cohortNumber}기`)) return true;
+        return false;
+      });
+
+      if (existing) {
+        targetCohortId = existing._id;
+      } else {
+        const cohortNum = args.cohortNumber ?? (args.cohortName ? parseInt(args.cohortName.replace(/[^0-9]/g, ""), 10) || 1 : 1);
+        const name = args.cohortName || `${cohortNum}기`;
+        const isCompleted = cohortNum < 18;
+        targetCohortId = await ctx.db.insert("cohorts", {
+          name,
+          number: cohortNum,
+          term: "second",
+          startDate: "2020-01-01",
+          endDate: "2025-12-31",
+          status: isCompleted ? "completed" : "active",
+          description: `MCCI-SMPCC ${name} 멘탈코칭 전문가 과정`,
+          createdBy: existingAdmin?._id ?? userId,
+        });
+      }
+    }
+
+    if (targetCohortId) {
+      const cohort = await ctx.db.get(targetCohortId);
       if (cohort) {
         await ctx.db.insert("cohortMembers", {
-          cohortId: args.cohortId,
+          cohortId: targetCohortId,
           userId,
           joinedAt: new Date().toISOString(),
-          status: "active",
+          status: cohort.status === "completed" ? "completed" : "active",
         });
       }
     }

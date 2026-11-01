@@ -398,42 +398,64 @@ export const migrateCohortMaxMentors = mutation({
 export const getCohortInviteInfo = query({
   args: { cohortId: v.optional(v.id("cohorts")) },
   handler: async (ctx, args) => {
+    const allCohorts = await ctx.db.query("cohorts").collect();
+
+    // Sort cohorts: active first, then number descending (18기, 17기, 16기...)
+    const sortedCohorts = [...allCohorts].sort((a, b) => {
+      if (a.status === "active" && b.status !== "active") return -1;
+      if (b.status === "active" && a.status !== "active") return 1;
+      return (b.number ?? 0) - (a.number ?? 0);
+    });
+
     let cohort: Doc<"cohorts"> | null = null;
     if (args.cohortId) {
       cohort = await ctx.db.get(args.cohortId);
     }
     if (!cohort) {
-      const allCohorts = await ctx.db.query("cohorts").collect();
       cohort =
-        allCohorts.find((c) => c.status === "active") ||
-        allCohorts.find((c) => c.name.includes("18기")) ||
-        allCohorts[0] ||
+        sortedCohorts.find((c) => c.status === "active") ||
+        sortedCohorts.find((c) => c.name.includes("18기")) ||
+        sortedCohorts[0] ||
         null;
     }
-    if (!cohort) return null;
 
-    const members = await ctx.db
-      .query("cohortMembers")
-      .withIndex("by_cohort", (q) => q.eq("cohortId", cohort._id))
-      .collect();
+    let membersCount = 0;
+    let seminarsCount = 0;
 
-    const seminars = await ctx.db
-      .query("seminars")
-      .withIndex("by_cohort", (q) => q.eq("cohortId", cohort._id))
-      .collect();
+    if (cohort) {
+      const members = await ctx.db
+        .query("cohortMembers")
+        .withIndex("by_cohort", (q) => q.eq("cohortId", cohort._id))
+        .collect();
+      membersCount = members.length;
+
+      const seminars = await ctx.db
+        .query("seminars")
+        .withIndex("by_cohort", (q) => q.eq("cohortId", cohort._id))
+        .collect();
+      seminarsCount = seminars.length;
+    }
 
     return {
-      _id: cohort._id,
-      name: cohort.name,
-      number: cohort.number,
-      term: cohort.term,
-      startDate: cohort.startDate,
-      endDate: cohort.endDate,
-      status: cohort.status,
-      description: cohort.description ?? "",
-      educationCategory: getResolvedCohortCategory(cohort),
-      memberCount: members.length,
-      seminarCount: seminars.length,
+      _id: cohort?._id ?? ("" as any),
+      name: cohort?.name ?? "MCCI-SMPCC",
+      number: cohort?.number ?? 18,
+      term: cohort?.term ?? "second",
+      startDate: cohort?.startDate ?? "",
+      endDate: cohort?.endDate ?? "",
+      status: cohort?.status ?? "active",
+      description: cohort?.description ?? "",
+      educationCategory: cohort ? getResolvedCohortCategory(cohort) : "expert",
+      memberCount: membersCount,
+      seminarCount: seminarsCount,
+      isGeneralInvite: !args.cohortId,
+      allCohorts: sortedCohorts.map((c) => ({
+        _id: c._id,
+        name: c.name,
+        number: c.number,
+        status: c.status,
+        term: c.term,
+      })),
     };
   },
 });

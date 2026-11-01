@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { motion } from "motion/react";
@@ -31,6 +31,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.t
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { toast } from "sonner";
@@ -55,6 +62,75 @@ export default function InviteLandingPage() {
   const signUpMutation = useMutation(api.auth.signUp);
   const signInMutation = useMutation(api.auth.signIn);
 
+  const isGeneral = Boolean(cohort?.isGeneralInvite);
+
+  // Cohort options list (merging DB cohorts with previous alumni cohorts 1~16)
+  const cohortOptions = useMemo(() => {
+    const dbCohorts = cohort?.allCohorts || [];
+
+    // Find numbers that are already present in DB
+    const presentNumbers = new Set(
+      dbCohorts
+        .map((c) => {
+          if (typeof c.number === "number") return c.number;
+          const match = c.name.match(/\d+/);
+          return match ? parseInt(match[0], 10) : null;
+        })
+        .filter(Boolean),
+    );
+
+    const result: Array<{
+      value: string;
+      label: string;
+      status?: string;
+      isVirtual?: boolean;
+      group: "current" | "alumni";
+    }> = [];
+
+    // Add DB cohorts
+    for (const c of dbCohorts) {
+      const isCurrent = c.status === "active" || c.status === "upcoming";
+      result.push({
+        value: c._id,
+        label: c.name,
+        status: c.status === "active" ? "진행중" : c.status === "upcoming" ? "예정" : "수료",
+        group: isCurrent ? "current" : "alumni",
+      });
+    }
+
+    // Add virtual previous cohorts (16 down to 1) if not in DB
+    for (let n = 16; n >= 1; n--) {
+      if (!presentNumbers.has(n)) {
+        result.push({
+          value: `num:${n}`,
+          label: `${n}기`,
+          status: "수료",
+          isVirtual: true,
+          group: "alumni",
+        });
+      }
+    }
+
+    return result;
+  }, [cohort?.allCohorts]);
+
+  // Selected cohort in sign up form
+  const [selectedCohortVal, setSelectedCohortVal] = useState<string>("");
+
+  useEffect(() => {
+    if (cohortIdParam) {
+      setSelectedCohortVal(cohortIdParam);
+    } else if (!selectedCohortVal && cohort && !cohort.isGeneralInvite) {
+      setSelectedCohortVal(cohort._id);
+    }
+  }, [cohortIdParam, cohort]);
+
+  const selectedCohortLabel = useMemo(() => {
+    if (!selectedCohortVal) return "";
+    const opt = cohortOptions.find((o) => o.value === selectedCohortVal);
+    return opt ? opt.label : "";
+  }, [selectedCohortVal, cohortOptions]);
+
   // Sign up form state
   const [signUpName, setSignUpName] = useState("");
   const [signUpEmail, setSignUpEmail] = useState("");
@@ -72,6 +148,10 @@ export default function InviteLandingPage() {
       toast.error("이름, 이메일, 비밀번호를 모두 입력해 주세요.");
       return;
     }
+    if (!selectedCohortVal) {
+      toast.error("소속 기수를 선택해 주세요.");
+      return;
+    }
     if (signUpPassword.length < 6) {
       toast.error("비밀번호는 최소 6자 이상이어야 합니다.");
       return;
@@ -79,15 +159,30 @@ export default function InviteLandingPage() {
 
     setIsSubmitting(true);
     try {
+      let targetCohortId: Id<"cohorts"> | undefined = undefined;
+      let targetCohortNumber: number | undefined = undefined;
+      let targetCohortName: string | undefined = undefined;
+
+      if (selectedCohortVal.startsWith("num:")) {
+        targetCohortNumber = parseInt(selectedCohortVal.replace("num:", ""), 10);
+        targetCohortName = `${targetCohortNumber}기`;
+      } else {
+        targetCohortId = selectedCohortVal as Id<"cohorts">;
+        const found = cohortOptions.find((o) => o.value === selectedCohortVal);
+        targetCohortName = found ? found.label : undefined;
+      }
+
       const result = await signUpMutation({
         name: signUpName.trim(),
         email: signUpEmail.trim(),
         password: signUpPassword.trim(),
-        cohortId: cohort?._id,
+        cohortId: targetCohortId,
+        cohortNumber: targetCohortNumber,
+        cohortName: targetCohortName,
       });
 
       if (result.success && result.token) {
-        toast.success(`${signUpName.trim()}님, ${cohort?.name ?? "과정"} 가입 신청이 완료되었습니다!`);
+        toast.success(`${signUpName.trim()}님, ${targetCohortName ?? "과정"} 가입 신청이 완료되었습니다!`);
         await auth.signin(result.token);
         navigate("/dashboard");
       }
@@ -175,12 +270,18 @@ export default function InviteLandingPage() {
           >
             <Badge className="bg-primary text-primary-foreground font-semibold px-3 py-1 text-xs shadow-xs">
               <Sparkles className="w-3 h-3 mr-1" />
-              {cohort ? `${cohort.name} 공식 초대장` : "신규 기수 공식 초대장"}
+              {isGeneral ? "MCCI-SMPCC 동문 공식 초대장" : (cohort ? `${cohort.name} 공식 초대장` : "신규 기수 공식 초대장")}
             </Badge>
-            {cohort?.status === "active" && (
-              <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-500/30 bg-emerald-500/10">
-                🟢 현재 진행중
+            {isGeneral ? (
+              <Badge variant="outline" className="text-xs text-primary border-primary/30 bg-primary/10">
+                🏛️ 16기 이전 및 전체 수료 동문 환영
               </Badge>
+            ) : (
+              cohort?.status === "active" && (
+                <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-500/30 bg-emerald-500/10">
+                  🟢 현재 진행중
+                </Badge>
+              )
             )}
           </motion.div>
 
@@ -190,9 +291,19 @@ export default function InviteLandingPage() {
             transition={{ duration: 0.45, delay: 0.1 }}
             className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-balance leading-tight"
           >
-            차세대 멘탈코칭 전문가의 여정,
-            <br />
-            <span className="text-primary">{cohortName} 코칭패스</span>에 초대합니다
+            {isGeneral ? (
+              <>
+                멘탈코칭 전문가 과정 수료 동문,
+                <br />
+                <span className="text-primary">MCCI 동문 코칭패스</span>에 초대합니다
+              </>
+            ) : (
+              <>
+                차세대 멘탈코칭 전문가의 여정,
+                <br />
+                <span className="text-primary">{cohortName} 코칭패스</span>에 초대합니다
+              </>
+            )}
           </motion.h1>
 
           <motion.p
@@ -201,26 +312,39 @@ export default function InviteLandingPage() {
             transition={{ duration: 0.45, delay: 0.2 }}
             className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto text-balance leading-relaxed"
           >
-            국제멘탈코칭센터(MCCI) 정규 커리큘럼 기반의 출석 체크, 실습일지 작성,
-            그리고 AI 역량 품질분석까지 한 곳에서 스마트하게 관리하세요.
+            {isGeneral
+              ? "16기 이전 수료 코치님 및 동문 여러분의 지속적인 코칭 실습일지 기록, 6대 역량 AI 품질분석 및 자격증 관리를 스마트하게 지원합니다."
+              : "국제멘탈코칭센터(MCCI) 정규 커리큘럼 기반의 출석 체크, 실습일지 작성, 그리고 AI 역량 품질분석까지 한 곳에서 스마트하게 관리하세요."}
           </motion.p>
 
-          {/* Cohort Summary Box */}
-          {cohort && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.25 }}
-              className="mt-6 p-4 rounded-2xl bg-card border border-border/80 shadow-xs max-w-lg mx-auto text-left text-xs sm:text-sm space-y-2"
-            >
+          {/* Cohort / Alumni Summary Box */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
+            className="mt-6 p-4 rounded-2xl bg-card border border-border/80 shadow-xs max-w-lg mx-auto text-left text-xs sm:text-sm space-y-2"
+          >
+            <div className="flex items-center justify-between border-b border-border/50 pb-2">
+              <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
+                <GraduationCap className="w-4 h-4 text-primary" />
+                {isGeneral ? "과정 구분" : "과정명"}
+              </span>
+              <span className="font-bold text-foreground">
+                {isGeneral ? "MCCI-SMPCC 전문가 과정 (전체 동문 / 수료생)" : `${cohort?.name ?? cohortName} 코칭 전문가 과정`}
+              </span>
+            </div>
+            {isGeneral ? (
               <div className="flex items-center justify-between border-b border-border/50 pb-2">
                 <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
-                  <GraduationCap className="w-4 h-4 text-primary" />
-                  과정명
+                  <Users className="w-4 h-4 text-primary" />
+                  초대 대상
                 </span>
-                <span className="font-bold text-foreground">{cohort.name} 코칭 전문가 과정</span>
+                <span className="font-semibold text-foreground">
+                  16기 이전 수료 코치 및 전 기수 동문
+                </span>
               </div>
-              {cohort.startDate && cohort.endDate && (
+            ) : (
+              cohort?.startDate && cohort?.endDate && (
                 <div className="flex items-center justify-between border-b border-border/50 pb-2">
                   <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
                     <CalendarDays className="w-4 h-4 text-primary" />
@@ -230,14 +354,14 @@ export default function InviteLandingPage() {
                     {cohort.startDate} ~ {cohort.endDate}
                   </span>
                 </div>
-              )}
-              {cohort.description && (
-                <div className="pt-1 text-xs text-muted-foreground leading-relaxed">
-                  • {cohort.description}
-                </div>
-              )}
-            </motion.div>
-          )}
+              )
+            )}
+            <div className="pt-1 text-xs text-muted-foreground leading-relaxed">
+              {isGeneral
+                ? "💡 아래 가입 양식에서 본인의 소속 기수(1~16기 등)를 선택하시면 해당 기수로 자동 등록 배정됩니다."
+                : (cohort?.description ? `• ${cohort.description}` : "• 국제멘탈코칭센터 공인 멘탈코칭 전문가 양성 커리큘럼")}
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -309,11 +433,15 @@ export default function InviteLandingPage() {
         <section id="register-section" className="max-w-md mx-auto space-y-4">
           <div className="text-center space-y-1">
             <Badge variant="outline" className="text-xs border-primary/30 text-primary font-semibold">
-              간편 참가 신청
+              {isGeneral ? "동문 간편 참가 등록" : "간편 참가 신청"}
             </Badge>
-            <h2 className="text-2xl font-bold text-foreground">{cohortName} 참가 등록</h2>
+            <h2 className="text-2xl font-bold text-foreground">
+              {isGeneral ? "MCCI 동문 참가 등록" : `${cohortName} 참가 등록`}
+            </h2>
             <p className="text-xs text-muted-foreground">
-              이름과 이메일을 입력하시면 {cohortName} 교육생으로 바로 등록 접수됩니다.
+              {isGeneral
+                ? "소속 기수와 기본 정보를 입력하시면 동문 코치로 바로 등록 접수됩니다."
+                : `소속 기수를 확인하고 기본 정보를 입력하시면 ${cohortName} 교육생으로 등록됩니다.`}
             </p>
           </div>
 
@@ -351,6 +479,64 @@ export default function InviteLandingPage() {
                   {/* Tab 1: Sign Up */}
                   <TabsContent value="signup" className="space-y-4 mt-0">
                     <form onSubmit={handleSignUp} className="space-y-3.5">
+                      {/* Cohort Selector Field */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <GraduationCap className="w-3.5 h-3.5 text-primary" />
+                            소속 기수 선택 *
+                          </span>
+                          {!isGeneral && (
+                            <span className="text-[11px] text-muted-foreground font-normal">
+                              (다른 기수이신 경우 변경 가능)
+                            </span>
+                          )}
+                        </label>
+                        <Select
+                          value={selectedCohortVal}
+                          onValueChange={setSelectedCohortVal}
+                        >
+                          <SelectTrigger className="h-9 text-xs bg-background">
+                            <SelectValue placeholder="소속 기수를 선택해 주세요 (예: 16기, 15기...)" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-64">
+                            {cohortOptions.some((o) => o.group === "current") && (
+                              <>
+                                <div className="px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+                                  현재 진행 / 예정 기수
+                                </div>
+                                {cohortOptions
+                                  .filter((o) => o.group === "current")
+                                  .map((opt) => (
+                                    <SelectItem key={opt.value} value={opt.value}>
+                                      <div className="flex items-center gap-2">
+                                        <span>{opt.label}</span>
+                                        {opt.status && (
+                                          <span className="text-[11px] text-emerald-600 font-semibold">({opt.status})</span>
+                                        )}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                <div className="my-1 border-t border-border/50" />
+                              </>
+                            )}
+                            <div className="px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+                              이전 수료 기수 (16기 이전 동문)
+                            </div>
+                            {cohortOptions
+                              .filter((o) => o.group === "alumni")
+                              .map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                  <div className="flex items-center gap-2">
+                                    <span>{opt.label}</span>
+                                    <span className="text-[11px] text-muted-foreground">({opt.status ?? "수료"})</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-foreground">성명 (실명 입력)</label>
                         <Input
@@ -391,12 +577,16 @@ export default function InviteLandingPage() {
                           className="w-full h-10 text-xs font-semibold gap-1.5 shadow-sm"
                         >
                           <UserPlus className="w-4 h-4" />
-                          {isSubmitting ? "신청 등록 중..." : `${cohortName} 참가 등록 및 가입`}
+                          {isSubmitting
+                            ? "신청 등록 중..."
+                            : isGeneral
+                              ? "동문 참가 등록 및 가입"
+                              : `${selectedCohortLabel || cohortName} 참가 등록 및 가입`}
                         </Button>
                       </div>
 
                       <p className="text-[11px] text-muted-foreground text-center pt-1">
-                        가입 신청 완료 즉시 {cohortName} 수강 명단에 등록됩니다.
+                        가입 신청 완료 즉시 {selectedCohortLabel || (isGeneral ? "동문 과정" : cohortName)} 수강 명단에 등록됩니다.
                       </p>
                     </form>
                   </TabsContent>

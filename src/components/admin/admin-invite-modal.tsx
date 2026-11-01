@@ -73,11 +73,13 @@ export default function AdminInviteModal({
     return cohorts.find((c) => c._id === selectedCohortId) || null;
   }, [cohorts, selectedCohortId]);
 
+  const isGeneral = selectedCohortId === "general";
+
   // Invite URL
   const inviteUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
     const origin = window.location.origin;
-    if (selectedCohortId) {
+    if (selectedCohortId && selectedCohortId !== "general") {
       return `${origin}/invite?cohortId=${selectedCohortId}`;
     }
     return `${origin}/invite`;
@@ -85,6 +87,26 @@ export default function AdminInviteModal({
 
   // KakaoTalk / SMS text template
   const inviteText = useMemo(() => {
+    if (isGeneral) {
+      return `[MCCI-SMPCC] 멘탈코칭 전문가 과정 동문 공식 초대장 💌
+
+안녕하세요, MCCI-SMPCC 수료 코치님!
+16기 이전 수료 코치님 및 전 기수 동문 여러분의 지속적인 코칭 실습일지 작성과 자격증 관리를 위해 MCCI 공식 웹앱(Coachingpass)에 초대합니다.
+
+✨ 주요 혜택 및 기능:
+• 코칭 실습일지 기록 및 6대 역량 AI 품질 분석 피드백
+• SMPCC / KPC 자격증 이수 요건 및 실습 시간 실시간 집계
+• MCCI 세미나 및 동문 포럼 일정 확인
+• 멘토코칭 및 동문 코치 네트워크 연동
+
+🔗 동문 공식 참가 신청 링크:
+${inviteUrl}
+(가입 페이지에서 본인의 소속 기수를 선택해 주세요)
+
+📱 앱 설치 안내 (간편 홈 화면 추가):
+링크 접속 후 브라우저(Safari/Chrome) 메뉴에서 '홈 화면에 추가'를 누르시면 앱스토어 설치 없이 스마트폰 앱처럼 바로 편리하게 사용하실 수 있습니다!`;
+    }
+
     const name = selectedCohort ? selectedCohort.name : "18기";
     return `[MCCI-SMPCC] ${name} 멘탈코칭 전문가 과정 공식 초대장 💌
 
@@ -102,7 +124,7 @@ ${inviteUrl}
 
 📱 앱 설치 안내 (간편 홈 화면 추가):
 링크 접속 후 브라우저(Safari/Chrome) 메뉴에서 '홈 화면에 추가'를 누르시면 앱스토어 설치 없이 스마트폰 앱처럼 바로 사용하실 수 있습니다!`;
-  }, [selectedCohort, inviteUrl]);
+  }, [isGeneral, selectedCohort, inviteUrl]);
 
   // Render QR Code
   useEffect(() => {
@@ -154,7 +176,7 @@ ${inviteUrl}
   const handleDownloadQr = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const name = selectedCohort ? selectedCohort.name : "신규기수";
+    const name = isGeneral ? "동문통합초대장" : (selectedCohort ? selectedCohort.name : "신규기수");
     const link = document.createElement("a");
     link.download = `Coachingpass_초대QR_${name}.png`;
     link.href = canvas.toDataURL("image/png");
@@ -165,7 +187,12 @@ ${inviteUrl}
   const handlePrint = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const name = selectedCohort ? selectedCohort.name : "신규기수";
+    const name = isGeneral ? "동문 통합 공식 초대장" : (selectedCohort ? `${selectedCohort.name} 공식 초대장` : "신규 기수 초대장");
+    const badgeText = isGeneral ? "🏛️ 16기 이전 및 전체 동문 초대장" : (selectedCohort ? `${selectedCohort.name} 공식 초대장` : "공식 초대장");
+    const descText = isGeneral
+      ? "스마트폰 기본 카메라로 QR 코드를 비추시면<br/><strong>MCCI-SMPCC 동문 공식 가입 페이지</strong>로 바로 연결되며, 가입 시 소속 기수를 선택하실 수 있습니다."
+      : `스마트폰 기본 카메라로 QR 코드를 비추시면<br/><strong>${selectedCohort?.name ?? ""} 공식 가입 페이지</strong>로 바로 연결됩니다.`;
+
     const dataUrl = canvas.toDataURL("image/png");
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
@@ -176,7 +203,7 @@ ${inviteUrl}
       <!DOCTYPE html>
       <html>
         <head>
-          <title>${name} 초대장 - MCCI-SMPCC</title>
+          <title>${name} - MCCI-SMPCC</title>
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; padding: 40px 20px; }
             h1 { font-size: 26px; color: #1e293b; margin-bottom: 6px; }
@@ -190,16 +217,13 @@ ${inviteUrl}
         </head>
         <body>
           <h1>MCCI-SMPCC 멘탈코칭 전문가 과정</h1>
-          <div class="badge">${name} 공식 초대장</div>
+          <div class="badge">${badgeText}</div>
           <div>
             <div class="qr-box">
               <img class="qr-img" src="${dataUrl}" alt="가입 QR" />
             </div>
           </div>
-          <div class="desc">
-            스마트폰 기본 카메라로 QR 코드를 비추시면<br/>
-            <strong>${name} 공식 가입 페이지</strong>로 바로 연결됩니다.
-          </div>
+          <div class="desc">${descText}</div>
           <div class="install-tip">
             💡 가입 후 브라우저 메뉴에서 <strong>'홈 화면에 추가'</strong>를 누르시면 앱처럼 편리하게 사용하실 수 있습니다.
           </div>
@@ -224,10 +248,12 @@ ${inviteUrl}
             </span>
           </div>
           <DialogTitle className="text-xl font-bold text-foreground">
-            기수별 가입 초대장 발행 및 공유
+            {isGeneral ? "동문 통합 가입 초대장 발행 및 공유" : "기수별 가입 초대장 발행 및 공유"}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            새 기수 교육생들에게 전달할 모바일 초대 링크와 카카오톡 공지 문구, 인쇄용 QR을 생성합니다.
+            {isGeneral
+              ? "16기 이전 수료 코치님 및 전체 동문 대상 초대 링크, 추천 공지 문구, 인쇄용 QR을 생성합니다."
+              : "새 기수 교육생들에게 전달할 모바일 초대 링크와 카카오톡 공지 문구, 인쇄용 QR을 생성합니다."}
           </DialogDescription>
         </DialogHeader>
 
@@ -246,6 +272,18 @@ ${inviteUrl}
                 <SelectValue placeholder="기수 선택..." />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="general" className="font-semibold text-primary">
+                  <div className="flex items-center gap-2">
+                    <span>🏛️ 16기 이전 / 전체 동문 통합 초대장</span>
+                    <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                      가입 시 기수 직접 선택
+                    </Badge>
+                  </div>
+                </SelectItem>
+                <div className="my-1 border-t border-border/50" />
+                <div className="px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+                  기수별 전용 초대장
+                </div>
                 {cohorts?.map((c) => (
                   <SelectItem key={c._id} value={c._id}>
                     <div className="flex items-center gap-2">
@@ -255,6 +293,9 @@ ${inviteUrl}
                       )}
                       {c.status === "upcoming" && (
                         <span className="text-[11px] text-muted-foreground">(예정)</span>
+                      )}
+                      {c.status === "completed" && (
+                        <span className="text-[11px] text-muted-foreground">(수료)</span>
                       )}
                     </div>
                   </SelectItem>
@@ -268,7 +309,7 @@ ${inviteUrl}
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                 <Share2 className="w-3.5 h-3.5 text-primary" />
-                모바일 초대 링크 (전용 가입 페이지)
+                {isGeneral ? "동문 통합 모바일 초대 링크" : "기수 전용 모바일 초대 링크"}
               </span>
               <Button
                 variant="ghost"
@@ -296,7 +337,11 @@ ${inviteUrl}
               </Button>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              * 위 링크로 가입한 교육생은 자동으로 <strong>{selectedCohort?.name ?? "선택 기수"}</strong>로 등록 배정됩니다.
+              {isGeneral ? (
+                <span>* <strong>16기 이전 수료 코치님 및 동문용 링크</strong>입니다. 교육생이 가입 시 본인의 소속 기수를 직접 선택합니다.</span>
+              ) : (
+                <span>* 위 링크로 가입한 교육생은 자동으로 <strong>{selectedCohort?.name ?? "선택 기수"}</strong>로 등록 배정됩니다. (가입 시 변경 가능)</span>
+              )}
             </p>
           </div>
 
