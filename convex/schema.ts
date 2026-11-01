@@ -627,6 +627,24 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_status", ["status"]),
 
+  // 인증시험 일정 및 공지 관리 (안내 카드 커스텀 및 원서 접수 일정)
+  examSchedules: defineTable({
+    title: v.string(),                         // 시험명 (예: 2026년 하반기 SMPCC 자격 인증시험)
+    targetCohorts: v.string(),                 // 대상 기수 (예: 16기, 17기 및 동문)
+    applicationStartDate: v.string(),          // 접수 시작일 (YYYY-MM-DD)
+    applicationEndDate: v.string(),            // 접수 마감일 (YYYY-MM-DD)
+    applicationPeriod: v.optional(v.string()), // 접수 기간 표시 문구
+    examDate: v.string(),                      // 시험일 (YYYY-MM-DD)
+    examTimeDisplay: v.string(),               // 시험 일시 표시 문구
+    location: v.string(),                      // 시험 장소
+    subjects: v.string(),                      // 전형 과목
+    isOpen: v.boolean(),                       // 접수 활성화 여부
+    description: v.optional(v.string()),       // 안내문 / 공지사항
+    updatedBy: v.optional(v.id("users")),
+    updatedAt: v.optional(v.string()),
+  })
+    .index("by_examDate", ["examDate"]),
+
   // SMPCC 자격 취득 기록 (인증시험 통과 후 관리자가 등록)
   smpccCertifications: defineTable({
     userId: v.id("users"),

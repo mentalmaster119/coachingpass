@@ -15,7 +15,11 @@ import {
   ListChecks,
   AlertCircle,
   Calendar,
+  Edit3,
+  Megaphone,
+  Sparkles,
 } from "lucide-react";
+import AdminExamScheduleModal from "./_components/admin-exam-schedule-modal.tsx";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { toast } from "sonner";
@@ -318,7 +322,9 @@ function ReviewDialog({
 
 export default function AdminCertificationPage() {
   const applications = useQuery(api.certification.getAllApplications);
+  const upcomingExam = useQuery(api.certification.getUpcomingExamSchedule);
   const bulkUpdateStatus = useMutation(api.certification.bulkUpdateStatus);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
@@ -395,18 +401,104 @@ export default function AdminCertificationPage() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
             <Award className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">자격증 신청 관리</h1>
+            <h1 className="text-xl font-bold text-foreground">자격증 및 인증시험 관리</h1>
             <p className="text-sm text-muted-foreground">
-              수강생의 자격증 신청을 검토하고 승인/반려합니다.
+              인증시험 공지 카드를 게시·수정하고 수강생의 응시 신청서를 검토합니다.
             </p>
           </div>
         </div>
+
+        <Button
+          onClick={() => setScheduleModalOpen(true)}
+          className="gap-2 font-semibold shadow-sm shrink-0 self-start sm:self-auto"
+        >
+          <Calendar className="w-4 h-4" />
+          인증시험 공지 및 일정 관리
+        </Button>
+      </motion.div>
+
+      {/* Exam Announcement Preview Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.05 }}
+      >
+        <Card className="border-border/60 bg-gradient-to-br from-card via-card to-muted/20 shadow-sm overflow-hidden">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+              <div className="space-y-2 flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="gap-1 border-primary/30 text-primary font-medium">
+                    <Megaphone className="w-3 h-3 text-primary" />
+                    교육생 화면 공지 카드 미리보기
+                  </Badge>
+                  {upcomingExam?.isOpen ? (
+                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
+                      접수 진행 중 (신청 가능)
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-muted-foreground">
+                      접수 마감 (비공개)
+                    </Badge>
+                  )}
+                  {upcomingExam?.targetCohortDisplay && (
+                    <Badge variant="secondary" className="text-xs">
+                      대상: {upcomingExam.targetCohortDisplay}
+                    </Badge>
+                  )}
+                </div>
+
+                <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
+                  {upcomingExam?.title || "인증시험 일정이 등록되지 않았습니다"}
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-muted-foreground pt-1">
+                  <div>
+                    <span className="font-semibold text-foreground/80">접수 기간:</span>{" "}
+                    {upcomingExam?.applicationPeriod || "미설정"}
+                  </div>
+                  <div>
+                    <span className="font-semibold text-foreground/80">시험 일시:</span>{" "}
+                    {upcomingExam?.examTimeDisplay || "미설정"}
+                  </div>
+                  <div>
+                    <span className="font-semibold text-foreground/80">시험 장소:</span>{" "}
+                    {upcomingExam?.location || "미설정"}
+                  </div>
+                  <div>
+                    <span className="font-semibold text-foreground/80">시험 과목:</span>{" "}
+                    {upcomingExam?.subjects || "미설정"}
+                  </div>
+                </div>
+
+                {upcomingExam?.description && (
+                  <p className="text-xs text-muted-foreground/90 bg-muted/40 p-2.5 rounded-lg border border-border/40 mt-2 line-clamp-2">
+                    {upcomingExam.description}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex sm:flex-col gap-2 shrink-0 pt-1 md:pt-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setScheduleModalOpen(true)}
+                  className="gap-1.5 text-xs font-medium w-full"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  공지/일정 변경
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Search */}
@@ -652,6 +744,12 @@ export default function AdminCertificationPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Admin Exam Schedule Modal */}
+      <AdminExamScheduleModal
+        open={scheduleModalOpen}
+        onOpenChange={setScheduleModalOpen}
+      />
     </div>
   );
 }

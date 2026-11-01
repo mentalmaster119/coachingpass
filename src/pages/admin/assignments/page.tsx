@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "motion/react";
 import { UserCheck, Search, Users, UserX } from "lucide-react";
@@ -42,6 +42,21 @@ export default function AdminAssignmentsPage() {
   const assignCoach = useMutation(api.admin.assignCoach);
   const [search, setSearch] = useState("");
   const [assigningId, setAssigningId] = useState<Id<"users"> | null>(null);
+
+  // Deduplicate coaches by email or id to prevent any duplicated cards
+  const uniqueCoaches = useMemo(() => {
+    if (!coaches) return [];
+    const seen = new Set<string>();
+    const list = [];
+    for (const c of coaches) {
+      const key = (c.email || c._id).toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push(c);
+      }
+    }
+    return list;
+  }, [coaches]);
 
   const filteredTrainees =
     trainees?.filter(
@@ -131,7 +146,7 @@ export default function AdminAssignmentsPage() {
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-sm">
             <UserCheck className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>상위코치 <strong>{coaches.length}명</strong></span>
+            <span>상위코치 <strong>{uniqueCoaches.length}명</strong></span>
           </div>
         </motion.div>
       )}
@@ -151,11 +166,11 @@ export default function AdminAssignmentsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {coaches.length === 0 ? (
+              {uniqueCoaches.length === 0 ? (
                 <p className="text-sm text-muted-foreground italic">등록된 상위코치가 없습니다.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {coaches.map((coach) => {
+                  {uniqueCoaches.map((coach) => {
                     const matched = trainees.filter((t) => 
                       t.assignedCoachId === coach._id || 
                       t.assignedCoachId2 === coach._id ||
@@ -321,7 +336,7 @@ export default function AdminAssignmentsPage() {
                                 <SelectItem value="none">
                                   <span className="text-muted-foreground">배정 안함</span>
                                 </SelectItem>
-                                {coaches.map((coach) => (
+                                {uniqueCoaches.map((coach) => (
                                   <SelectItem key={coach._id} value={coach._id}>
                                     {coach.name ?? "이름 미설정"}
                                   </SelectItem>
@@ -344,7 +359,7 @@ export default function AdminAssignmentsPage() {
       </motion.div>
 
       {/* No coaches warning */}
-      {!isLoading && coaches.length === 0 && (
+      {!isLoading && uniqueCoaches.length === 0 && (
         <Card className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-start gap-3">

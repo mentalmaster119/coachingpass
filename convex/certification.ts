@@ -108,18 +108,38 @@ export const submit = mutation({
 export const getUpcomingExamSchedule = query({
   args: {},
   handler: async (ctx) => {
-    // 1. Look for any shared calendar events with "인증시험" or "시험"
-    const sharedEvents = await ctx.db
-      .query("calendarEvents")
-      .withIndex("by_shared", (q) => q.eq("isShared", true))
-      .collect();
+    // 1. Check custom configured examSchedules in DB
+    const dbSchedules = await ctx.db.query("examSchedules").collect();
+    if (dbSchedules.length > 0) {
+      // Sort open ones first, then by examDate descending
+      const sorted = [...dbSchedules].sort((a, b) => {
+        if (a.isOpen && !b.isOpen) return -1;
+        if (!a.isOpen && b.isOpen) return 1;
+        return b.examDate.localeCompare(a.examDate);
+      });
+      const top = sorted[0];
+      return {
+        _id: top._id,
+        id: top._id,
+        title: top.title,
+        shortTitle: top.title.length > 25 ? top.title.slice(0, 25) + "..." : top.title,
+        targetCohorts: [top.targetCohorts],
+        targetCohortDisplay: top.targetCohorts,
+        applicationPeriod: top.applicationPeriod || `${top.applicationStartDate} ~ ${top.applicationEndDate}`,
+        applicationStartDate: top.applicationStartDate,
+        applicationEndDate: top.applicationEndDate,
+        examDate: top.examDate,
+        examTimeDisplay: top.examTimeDisplay,
+        location: top.location,
+        subjects: top.subjects,
+        isOpen: top.isOpen,
+        description: top.description || "",
+      };
+    }
 
-    const examEvents = sharedEvents
-      .filter((e) => e.title.includes("인증시험") || e.title.includes("SMPCC 시험") || e.title.includes("자격시험"))
-      .sort((a, b) => a.eventDate.localeCompare(b.eventDate));
-
-    // Default 2026 하반기 SMPCC 인증시험 schedule
+    // 2. Default 2026 하반기 SMPCC 인증시험 schedule if not yet configured
     const defaultExam = {
+      _id: undefined,
       id: "smpcc_2026_second_half",
       title: "2026년 하반기 SMPCC 멘탈코칭 전문가 자격 인증시험",
       shortTitle: "2026년 하반기 SMPCC 인증시험",
@@ -136,21 +156,126 @@ export const getUpcomingExamSchedule = query({
       description: "16기, 17기 교육생 및 수료생을 위한 2026년 하반기 공식 인증시험입니다. 과제 제출 또는 실습 시간 일부 미달 항목이 있더라도 응시 신청이 가능하며, 최종 자격증 발급 시 심사위원회에서 이수 기준을 최종 검토합니다.",
     };
 
-    if (examEvents.length > 0) {
-      const latest = examEvents[0];
-      return {
-        ...defaultExam,
-        id: latest._id,
-        title: latest.title,
-        shortTitle: latest.title,
-        examDate: latest.eventDate,
-        examTimeDisplay: `${latest.eventDate} ${latest.startTime ? `${latest.startTime}~${latest.endTime ?? ""}` : "10:00~17:00"}`,
-        description: latest.description || defaultExam.description,
-        calendarEventId: latest._id,
-      };
+    return defaultExam;
+  },
+});
+
+// Admin: list all exam schedules
+export const getAllExamSchedules = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireRole(ctx, ["admin", "senior_coach"]);
+    return await ctx.db.query("examSchedules").order("desc").collect();
+  },
+});
+
+// Admin: create or update exam schedule & sync to calendar
+export const upsertExamSchedule = mutation({
+  args: {
+    scheduleId: v.optional(v.id("examSchedules")),
+    title: v.string(),
+    targetCohorts: v.string(),
+    applicationStartDate: v.string(),
+    applicationEndDate: v.string(),
+    applicationPeriod: v.optional(v.string()),
+    examDate: v.string(),
+    examTimeDisplay: v.string(),
+    location: v.string(),
+    subjects: v.string(),
+    isOpen: v.boolean(),
+    description: v.optional(v.string()),
+    syncToCalendar: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const admin = await requireRole(ctx, ["admin"]);
+
+    const applicationPeriod =
+      args.applicationPeriod?.trim() || `${args.applicationStartDate} ~ ${args.applicationEndDate}`;
+
+    let scheduleId = args.scheduleId;
+    if (scheduleId) {
+      await ctx.db.patch(scheduleId, {
+        title: args.title.trim(),
+        targetCohorts: args.targetCohorts.trim(),
+        applicationStartDate: args.applicationStartDate.trim(),
+        applicationEndDate: args.applicationEndDate.trim(),
+        applicationPeriod,
+        examDate: args.examDate.trim(),
+        examTimeDisplay: args.examTimeDisplay.trim(),
+        location: args.location.trim(),
+        subjects: args.subjects.trim(),
+        isOpen: args.isOpen,
+        description: args.description?.trim() || undefined,
+        updatedBy: admin._id,
+        updatedAt: new Date().toISOString(),
+      });
+    } else {
+      scheduleId = await ctx.db.insert("examSchedules", {
+        title: args.title.trim(),
+        targetCohorts: args.targetCohorts.trim(),
+        applicationStartDate: args.applicationStartDate.trim(),
+        applicationEndDate: args.applicationEndDate.trim(),
+        applicationPeriod,
+        examDate: args.examDate.trim(),
+        examTimeDisplay: args.examTimeDisplay.trim(),
+        location: args.location.trim(),
+        subjects: args.subjects.trim(),
+        isOpen: args.isOpen,
+        description: args.description?.trim() || undefined,
+        updatedBy: admin._id,
+        updatedAt: new Date().toISOString(),
+      });
     }
 
-    return defaultExam;
+    // Sync to calendarEvents (enabled by default)
+    if (args.syncToCalendar !== false) {
+      const sharedEvents = await ctx.db
+        .query("calendarEvents")
+        .withIndex("by_shared", (q) => q.eq("isShared", true))
+        .collect();
+
+      const existingMatch = sharedEvents.find(
+        (e) =>
+          e.title.includes(args.title) ||
+          (e.title.includes("인증시험") && e.eventDate === args.examDate),
+      );
+
+      const eventDesc =
+        args.description?.trim() ||
+        `${args.title.trim()}\n일시: ${args.examTimeDisplay}\n장소: ${args.location}\n원서 접수: ${applicationPeriod}\n대상: ${args.targetCohorts}`;
+
+      if (existingMatch) {
+        await ctx.db.patch(existingMatch._id, {
+          title: args.title.trim(),
+          description: eventDesc,
+          eventDate: args.examDate.trim(),
+          color: "#059669",
+        });
+      } else {
+        await ctx.db.insert("calendarEvents", {
+          userId: admin._id,
+          title: args.title.trim(),
+          description: eventDesc,
+          eventDate: args.examDate.trim(),
+          startTime: "10:00",
+          endTime: "17:00",
+          eventType: "shared",
+          isShared: true,
+          color: "#059669",
+        });
+      }
+    }
+
+    return scheduleId;
+  },
+});
+
+// Admin: delete exam schedule
+export const deleteExamSchedule = mutation({
+  args: { scheduleId: v.id("examSchedules") },
+  handler: async (ctx, args) => {
+    await requireRole(ctx, ["admin"]);
+    await ctx.db.delete(args.scheduleId);
   },
 });
 

@@ -686,10 +686,41 @@ export const getAllSeniorCoaches = query({
   args: {},
   handler: async (ctx) => {
     await requireAdmin(ctx);
-    return await ctx.db
+
+    // 1. Fetch all senior coaches
+    const seniorCoaches = await ctx.db
       .query("users")
       .withIndex("by_role", (q) => q.eq("role", "senior_coach"))
       .collect();
+
+    // 2. Fetch admins or other users designated as mentor coach or 천비키
+    const mentorAdmins = await ctx.db
+      .query("users")
+      .filter((q) =>
+        q.and(
+          q.neq(q.field("role"), "senior_coach"),
+          q.or(
+            q.eq(q.field("isMentorCoach"), true),
+            q.eq(q.field("email"), "cheonvickey@gmail.com")
+          )
+        )
+      )
+      .collect();
+
+    // 3. Deduplicate by email and id
+    const combined = [...seniorCoaches, ...mentorAdmins];
+    const seen = new Set<string>();
+    const result = [];
+    for (const coach of combined) {
+      const key = (coach.email || coach._id).toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(coach);
+      }
+    }
+
+    // Sort Korean alphabetical by name
+    return result.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", "ko"));
   },
 });
 
@@ -767,7 +798,12 @@ export const assignCoach = mutation({
 
     if (args.coachId) {
       const coach = await ctx.db.get(args.coachId);
-      if (!coach || coach.role !== "senior_coach") {
+      if (
+        !coach ||
+        (coach.role !== "senior_coach" &&
+          !coach.isMentorCoach &&
+          coach.email !== "cheonvickey@gmail.com")
+      ) {
         throw new ConvexError({ message: "유효한 수퍼바이저를 선택해 주세요.", code: "BAD_REQUEST" });
       }
     }
