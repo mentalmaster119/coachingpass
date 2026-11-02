@@ -79,6 +79,7 @@ export default function App() {
           {/* Protected routes with sidebar layout */}
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/practice-group" element={<Navigate to="/coaching-log" replace />} />
             <Route path="/education" element={<Navigate to="/training-history" replace />} />
             <Route path="/coaching-log" element={<CoachingLogPage />} />
             <Route path="/coaching-quality" element={<CoachingQualityPage />} />

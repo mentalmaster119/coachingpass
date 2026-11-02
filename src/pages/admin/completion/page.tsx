@@ -108,9 +108,9 @@ export default function AdminCompletionPage() {
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold">수료 및 인증 관리</h1>
+        <h1 className="text-2xl font-bold">과정 수료 사정</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          기수별 교육생의 수료 및 인증시험 응시 자격을 확인하고, 제출된 독후감·에세이 과제를 검토합니다
+          기수별 코치의 세미나 출석과 필수 과제 이수를 검토하여 수료 여부를 사정합니다
         </p>
       </div>
 

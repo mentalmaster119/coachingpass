@@ -51,8 +51,8 @@ import IncompleteProfilesTab from "./_components/incomplete-profiles-tab.tsx";
 type User = Doc<"users"> & { cohortId?: Id<"cohorts"> | null; cohortName?: string | null; cohortNumber?: number | null };
 
 const ROLE_LABELS: Record<string, string> = {
-  trainee: "수강생",
-  senior_coach: "상위코치",
+  trainee: "코치",
+  senior_coach: "멘토코치",
   admin: "관리자",
   admin3: "관리자3",
 };
@@ -516,8 +516,8 @@ function AllUsersTable({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="trainee">수강생</SelectItem>
-                            <SelectItem value="senior_coach">상위코치</SelectItem>
+                            <SelectItem value="trainee">코치</SelectItem>
+                            <SelectItem value="senior_coach">멘토코치</SelectItem>
                             <SelectItem value="admin">관리자</SelectItem>
                             <SelectItem value="admin3">관리자3</SelectItem>
                           </SelectContent>

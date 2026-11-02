@@ -364,9 +364,6 @@ export default function AdminDashboardPage() {
     cohortId: cohortQueryArg,
   });
 
-  const resetAllData = useMutation(api.admin.resetData.resetAllData);
-  const [showResetDialog, setShowResetDialog] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
   const isLoading = dashboardData === undefined;
@@ -403,52 +400,12 @@ export default function AdminDashboardPage() {
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
   }, [trainees]);
 
-  const handleReset = async () => {
-    setIsResetting(true);
-    try {
-      await resetAllData({});
-      toast.success("모든 테스트 데이터가 삭제되었습니다.");
-      setShowResetDialog(false);
-    } catch {
-      toast.error("데이터 삭제에 실패했습니다.");
-    } finally {
-      setIsResetting(false);
-    }
-  };
-
   const handleAnalyzeTrainee = (userId: string) => {
     navigate(`/admin/coaching-analysis/${userId}`);
   };
 
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-7">
-      {/* ── Reset confirm dialog ── */}
-      <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <Trash2 className="w-5 h-5" />
-              테스트 데이터 초기화
-            </DialogTitle>
-            <DialogDescription className="pt-2 space-y-2">
-              <span className="block font-medium text-foreground">정말 모든 데이터를 삭제할까요?</span>
-              <span className="block text-sm">
-                기수, 세미나, 출석, 교육 기록, 코칭 기록 등 모든 테스트 데이터가 영구 삭제됩니다.
-                관리자 계정은 유지됩니다. 이 작업은 되돌릴 수 없습니다.
-              </span>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setShowResetDialog(false)} disabled={isResetting}>
-              취소
-            </Button>
-            <Button variant="destructive" onClick={handleReset} disabled={isResetting}>
-              {isResetting ? "삭제 중..." : "전체 삭제 확인"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* ── Page Header with Cohort Selector ── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -716,7 +673,7 @@ export default function AdminDashboardPage() {
             <QuickActionCard
               icon={<UserCheck className="w-4 h-4" />}
               title="수퍼바이저 매칭 관리"
-              description="수강생별 담당 코치 배정 현황"
+              description="코치별 멘토/수퍼바이저 배정 현황"
               href="/admin/assignments"
               delay={0.4}
             />
@@ -924,7 +881,7 @@ export default function AdminDashboardPage() {
                 <thead>
                   <tr className="border-b border-border/60 bg-muted/30">
                     <th className="px-4 py-2.5 text-xs font-semibold text-muted-foreground">
-                      수강생
+                      코치
                     </th>
                     <th className="px-4 py-2.5 text-xs font-semibold text-muted-foreground hidden md:table-cell">
                       수퍼바이저

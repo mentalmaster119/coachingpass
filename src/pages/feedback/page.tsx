@@ -57,8 +57,8 @@ function FeedbackPageInner() {
             <MessageSquareDot className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-bold">코치 피드백</h1>
-            <p className="text-sm text-muted-foreground">담당 코치로부터 받은 피드백을 확인합니다</p>
+            <h1 className="text-xl font-bold">수퍼바이저 피드백</h1>
+            <p className="text-sm text-muted-foreground">수퍼바이저 및 멘토코치로부터 받은 피드백을 확인합니다</p>
           </div>
         </div>
       </motion.div>
@@ -126,7 +126,7 @@ function FeedbackPageInner() {
               <EmptyMedia variant="icon"><MessageSquareDot /></EmptyMedia>
               <EmptyTitle>피드백이 없습니다</EmptyTitle>
               <EmptyDescription>
-                담당 코치가 피드백을 작성하면 여기에 표시됩니다.
+                수퍼바이저나 멘토코치가 피드백을 작성하면 여기에 표시됩니다.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

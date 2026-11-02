@@ -469,15 +469,15 @@ export default function AdminSmpccPage() {
             <Award className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">SMPCC 자격 관리</h1>
-            <p className="text-sm text-muted-foreground">자격 발급·갱신, 멘탈 포럼, 인정시간 관리</p>
+            <h1 className="text-xl font-bold text-foreground">SMPCC 레벨 및 자격 관리</h1>
+            <p className="text-sm text-muted-foreground">인증 취득 코치의 SMPCC 레벨 부여, 자격 갱신, 멘탈 포럼 및 인정시간 관리</p>
           </div>
         </div>
       </motion.div>
 
       <Tabs defaultValue="certifications">
         <TabsList className="mb-6 flex-wrap h-auto gap-1">
-          <TabsTrigger value="certifications" className="gap-1.5"><Award className="w-3.5 h-3.5" /> 자격 현황</TabsTrigger>
+          <TabsTrigger value="certifications" className="gap-1.5"><Award className="w-3.5 h-3.5" /> 자격 및 레벨 현황</TabsTrigger>
           <TabsTrigger value="forums" className="gap-1.5"><CalendarDays className="w-3.5 h-3.5" /> 멘탈 포럼</TabsTrigger>
           <TabsTrigger value="credits" className="gap-1.5"><Clock className="w-3.5 h-3.5" /> 인정시간 설정</TabsTrigger>
         </TabsList>
@@ -486,7 +486,7 @@ export default function AdminSmpccPage() {
         <TabsContent value="certifications">
           <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-400/20 text-sm text-amber-700 dark:text-amber-400">
             SMPCC 자격은 3년간 유효하며, 갱신을 위해 3년 내 20시간 이상의 추가 교육이 필요합니다.
-            수료 기준을 통과한 수강생만 표시됩니다.
+            수료 및 인증을 완료한 코치만 표시됩니다.
           </div>
 
           {/* 정렬 버튼 */}

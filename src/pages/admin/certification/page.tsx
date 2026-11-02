@@ -408,9 +408,9 @@ export default function AdminCertificationPage() {
             <Award className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">자격증 및 인증시험 관리</h1>
+            <h1 className="text-xl font-bold text-foreground">인증시험 및 자격 관리</h1>
             <p className="text-sm text-muted-foreground">
-              인증시험 공지 카드를 게시·수정하고 수강생의 응시 신청서를 검토합니다.
+              실습 인증기준 충족 여부를 확인하고, 인증시험 일정 공지 및 코치의 응시 신청서를 검토합니다.
             </p>
           </div>
         </div>
@@ -437,7 +437,7 @@ export default function AdminCertificationPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className="gap-1 border-primary/30 text-primary font-medium">
                     <Megaphone className="w-3 h-3 text-primary" />
-                    교육생 화면 공지 카드 미리보기
+                    코치 화면 공지 카드 미리보기
                   </Badge>
                   {upcomingExam?.isOpen ? (
                     <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">

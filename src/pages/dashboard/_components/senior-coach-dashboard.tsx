@@ -42,9 +42,9 @@ export default function SeniorCoachDashboard({ user }: { user: User }) {
         className="flex flex-col sm:flex-row sm:items-start justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-bold">안녕하세요, {user.name || "상위코치"}님!</h1>
+          <h1 className="text-2xl font-bold">안녕하세요, {user.name || "멘토코치"}님!</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            담당 수강생들의 성장을 함께 이끌어 주세요.
+            담당 코치님들의 성장을 함께 이끌어 주세요.
           </p>
         </div>
         <Button onClick={() => { navigate("/coach/feedback"); }}>

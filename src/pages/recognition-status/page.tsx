@@ -207,10 +207,10 @@ export default function RecognitionStatusPage() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <ShieldCheck className="w-6 h-6 text-primary" />
-              코칭실습 인정 기준 달성 현황
+              SMPCC 실습 인증요건 달성 현황
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              멘탈코칭전문가 자격 취득을 위한 코칭실습 인정 기준입니다.
+              SMPCC 멘탈코칭전문가 자격 취득을 위한 실습 인증요건 충족 현황입니다.
             </p>
           </div>
           {!isLoading && (

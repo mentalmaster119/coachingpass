@@ -69,12 +69,16 @@ function AuthRedirect() {
     if (isLoading) return;
     if (!user) return;
 
+    const searchParams = new URLSearchParams(window.location.search);
+    const returnTo = searchParams.get("returnTo");
+    const targetUrl = returnTo && returnTo.startsWith("/") ? returnTo : "/dashboard";
+
     if (user.approvalStatus === "pending" || user.approvalStatus === "rejected") {
       navigate("/pending", { replace: true });
     } else if (user.approvalStatus === "approved" && !user.onboardingCompleted) {
       navigate("/onboarding", { replace: true });
     } else {
-      navigate("/dashboard", { replace: true });
+      navigate(targetUrl, { replace: true });
     }
   }, [user, isLoading, navigate]);
 

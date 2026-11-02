@@ -10,8 +10,8 @@ type User = Doc<"users">;
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "관리자",
-  senior_coach: "상위코치",
-  trainee: "수강생",
+  senior_coach: "멘토코치",
+  trainee: "코치",
 };
 
 const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {

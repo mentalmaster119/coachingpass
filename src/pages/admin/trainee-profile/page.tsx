@@ -31,8 +31,8 @@ import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
 const ROLE_LABELS: Record<string, string> = {
-  trainee: "수강생",
-  senior_coach: "상위코치",
+  trainee: "코치",
+  senior_coach: "멘토코치",
   admin: "관리자",
 };
 

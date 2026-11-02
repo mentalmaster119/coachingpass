@@ -99,9 +99,9 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
         ]
       },
       { label: "멘토코치 매칭 및 신청", href: "/mentors", icon: <UserCheck className="w-4 h-4" /> },
-      { label: "인정 기준 달성 현황", href: "/recognition-status", icon: <ShieldCheck className="w-4 h-4" /> },
+      { label: "실습 인증요건 달성 현황", href: "/recognition-status", icon: <ShieldCheck className="w-4 h-4" /> },
       { label: "멘탈 포럼", href: "/mental-forum", icon: <Award className="w-4 h-4" /> },
-      { label: "인증 신청", href: "/certification", icon: <Award className="w-4 h-4" /> },
+      { label: "인증시험 및 자격 신청", href: "/certification", icon: <Award className="w-4 h-4" /> },
       { label: "역량 자가 평가", href: "/competency-assessment", icon: <BarChart2 className="w-4 h-4" /> },
       { label: "성찰 일지", href: "/reflection", icon: <NotebookPen className="w-4 h-4" /> },
       { label: "공지사항", href: "/announcements", icon: <Megaphone className="w-4 h-4" /> },
@@ -122,12 +122,12 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "기수 관리", href: "/admin/cohorts", icon: <GraduationCap className="w-4 h-4" /> },
       { label: "세미나 일정 관리", href: "/admin/seminars", icon: <CalendarDays className="w-4 h-4" /> },
       { label: "출석 관리", href: "/admin/attendance", icon: <Users className="w-4 h-4" /> },
-      { label: "수료 및 인증 관리", href: "/admin/completion", icon: <Award className="w-4 h-4" /> },
-      { label: "SMPCC 자격 관리", href: "/admin/smpcc", icon: <Award className="w-4 h-4" /> },
+      { label: "과정 수료 사정", href: "/admin/completion", icon: <Award className="w-4 h-4" /> },
+      { label: "SMPCC 레벨 및 자격 관리", href: "/admin/smpcc", icon: <Award className="w-4 h-4" /> },
       { label: "종합 보고서", href: "/admin/report", icon: <BarChart2 className="w-4 h-4" /> },
       { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
-      { label: "교육생 수퍼바이저 배정", href: "/admin/assignments", icon: <UserCheck className="w-4 h-4" /> },
-      { label: "인증 신청 관리", href: "/admin/certification", icon: <Award className="w-4 h-4" /> },
+      { label: "코치 멘토/수퍼바이저 배정", href: "/admin/assignments", icon: <UserCheck className="w-4 h-4" /> },
+      { label: "인증시험 및 자격 관리", href: "/admin/certification", icon: <Award className="w-4 h-4" /> },
       { label: "공지사항 관리", href: "/admin/announcements", icon: <Megaphone className="w-4 h-4" /> },
       { label: "자료실 관리", href: "/admin/resources", icon: <FolderOpen className="w-4 h-4" /> },
       { label: "피드백 현황", href: "/admin/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
@@ -136,7 +136,7 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "사용자 관리", href: "/admin/users", icon: <Users className="w-4 h-4" /> },
       { label: "교육 기록 검토", href: "/admin/education", icon: <BookOpen className="w-4 h-4" /> },
       { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
-      { label: "교육생 코칭 실습 분석", href: "/admin/coaching-analysis", icon: <Sparkles className="w-4 h-4" /> },
+      { label: "코치 실습 심층 분석", href: "/admin/coaching-analysis", icon: <Sparkles className="w-4 h-4" /> },
       { label: "코칭실습 AI 품질 분석 & 리포트", href: "/coaching-quality", icon: <Award className="w-4 h-4" /> },
       { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
       { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
@@ -169,12 +169,12 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
       { label: "교육 기록 검토", href: "/admin/education", icon: <BookOpen className="w-4 h-4" /> },
       { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
-      { label: "교육생 코칭 실습 분석", href: "/admin/coaching-analysis", icon: <Sparkles className="w-4 h-4" /> },
+      { label: "코치 실습 심층 분석", href: "/admin/coaching-analysis", icon: <Sparkles className="w-4 h-4" /> },
       { label: "코칭실습 AI 품질 분석 & 리포트", href: "/coaching-quality", icon: <Award className="w-4 h-4" /> },
       { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
       { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
-      { label: "인증 신청 관리", href: "/admin/certification", icon: <Award className="w-4 h-4" /> },
-      { label: "담당 교육생", href: "/coach/trainees", icon: <UserCheck className="w-4 h-4" /> },
+      { label: "인증시험 및 자격 관리", href: "/admin/certification", icon: <Award className="w-4 h-4" /> },
+      { label: "담당 코치", href: "/coach/trainees", icon: <UserCheck className="w-4 h-4" /> },
       { label: "멘토링 누적 실적", href: "/coach/mentoring-history", icon: <Award className="w-4 h-4" /> },
       { label: "피드백 관리", href: "/coach/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
       { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
@@ -208,9 +208,9 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
       ]
     },
     { label: "멘토코치 매칭 및 신청", href: "/mentors", icon: <UserCheck className="w-4 h-4" /> },
-    { label: "인정 기준 달성 현황", href: "/recognition-status", icon: <ShieldCheck className="w-4 h-4" /> },
+    { label: "실습 인증요건 달성 현황", href: "/recognition-status", icon: <ShieldCheck className="w-4 h-4" /> },
     { label: "멘탈 포럼", href: "/mental-forum", icon: <Award className="w-4 h-4" /> },
-    { label: "인증 신청", href: "/certification", icon: <Award className="w-4 h-4" /> },
+    { label: "인증시험 및 자격 신청", href: "/certification", icon: <Award className="w-4 h-4" /> },
     { label: "역량 자가 평가", href: "/competency-assessment", icon: <BarChart2 className="w-4 h-4" /> },
     { label: "성찰 일지", href: "/reflection", icon: <NotebookPen className="w-4 h-4" /> },
     { label: "공지사항", href: "/announcements", icon: <Megaphone className="w-4 h-4" /> },
@@ -228,8 +228,8 @@ function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
 function RoleLabel({ role }: { role: string }) {
   const map: Record<string, string> = {
     admin: "관리자",
-    senior_coach: "수퍼바이저",
-    trainee: "교육생",
+    senior_coach: "멘토코치",
+    trainee: "코치",
     admin3: "관리자3(실습)",
   };
   return <span>{map[role] ?? role}</span>;
@@ -549,7 +549,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                     : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
                 )}
               >
-                교육생
+                코치
               </button>
             </div>
           </div>
@@ -569,7 +569,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
             ) : (
               <>
                 <Eye className="w-4 h-4" />
-                교육생 화면으로 보기
+                코치 화면으로 보기
               </>
             )}
           </button>
@@ -767,13 +767,34 @@ function AppLayoutInner() {
       navigate("/onboarding", { replace: true });
       return;
     }
-    // Trainees cannot access admin pages
-    if (user.role === "trainee" && window.location.pathname.startsWith("/admin")) {
+    // Trainees cannot access admin or coach pages
+    if (user.role === "trainee" && (window.location.pathname.startsWith("/admin") || window.location.pathname.startsWith("/coach"))) {
       navigate("/dashboard", { replace: true });
+      return;
     }
     // Admin in preview mode should not be on admin pages
     if ((user.role === "admin" || user.role === "admin3") && isPreviewMode && window.location.pathname.startsWith("/admin")) {
       navigate("/dashboard", { replace: true });
+      return;
+    }
+    // Senior coaches cannot access full admin-only pages
+    if (user.role === "senior_coach" && window.location.pathname.startsWith("/admin")) {
+      const allowedCoachAdminPaths = [
+        "/admin/education",
+        "/admin/coaching",
+        "/admin/coaching-analysis",
+        "/admin/coaching-quality",
+        "/admin/bcp",
+        "/admin/mentor-coaching",
+        "/admin/certification",
+        "/admin/feedback",
+        "/admin/resources",
+      ];
+      const isAllowed = allowedCoachAdminPaths.some((p) => window.location.pathname.startsWith(p));
+      if (!isAllowed) {
+        navigate("/dashboard", { replace: true });
+        return;
+      }
     }
     // Admin3 restricted path checks
     if (user.role === "admin3") {
@@ -787,6 +808,7 @@ function AppLayoutInner() {
       const isPathAllowed = allowedAdminPaths.some((p) => window.location.pathname.startsWith(p));
       if (window.location.pathname.startsWith("/admin") && !isPathAllowed) {
         navigate("/admin/coaching", { replace: true });
+        return;
       }
     }
   }, [user, isLoading, navigate, isPreviewMode]);

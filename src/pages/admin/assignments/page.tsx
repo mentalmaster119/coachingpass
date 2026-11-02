@@ -116,9 +116,9 @@ export default function AdminAssignmentsPage() {
             <UserCheck className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">수강생 코치 배정</h1>
+            <h1 className="text-xl font-bold text-foreground">코치 멘토/수퍼바이저 배정</h1>
             <p className="text-sm text-muted-foreground">
-              수강생에게 담당 상위코치를 배정하거나 변경합니다.
+              코치에게 멘토코치 및 수퍼바이저를 배정하거나 변경합니다.
             </p>
           </div>
         </div>
@@ -134,7 +134,7 @@ export default function AdminAssignmentsPage() {
         >
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-sm">
             <Users className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>전체 수강생 <strong>{trainees.length}명</strong></span>
+            <span>전체 코치 <strong>{trainees.length}명</strong></span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-chart-4/10 text-chart-4 text-sm">
             <UserCheck className="w-3.5 h-3.5" />
@@ -146,7 +146,7 @@ export default function AdminAssignmentsPage() {
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-sm">
             <UserCheck className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>상위코치 <strong>{uniqueCoaches.length}명</strong></span>
+            <span>멘토코치 <strong>{uniqueCoaches.length}명</strong></span>
           </div>
         </motion.div>
       )}
@@ -167,7 +167,7 @@ export default function AdminAssignmentsPage() {
             </CardHeader>
             <CardContent>
               {uniqueCoaches.length === 0 ? (
-                <p className="text-sm text-muted-foreground italic">등록된 상위코치가 없습니다.</p>
+                <p className="text-sm text-muted-foreground italic">등록된 멘토코치가 없습니다.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {uniqueCoaches.map((coach) => {
@@ -208,7 +208,7 @@ export default function AdminAssignmentsPage() {
                         </div>
                         <div className="space-y-1">
                           {matched.length === 0 ? (
-                            <p className="text-[11px] text-muted-foreground italic">배정된 교육생 없음</p>
+                            <p className="text-[11px] text-muted-foreground italic">배정된 코치 없음</p>
                           ) : (
                             matched.map((t) => (
                               <div
@@ -241,7 +241,7 @@ export default function AdminAssignmentsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             className="pl-9"
-            placeholder="수강생 이름 또는 이메일로 검색"
+            placeholder="코치 이름 또는 이메일로 검색"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -264,9 +264,9 @@ export default function AdminAssignmentsPage() {
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon"><Users /></EmptyMedia>
-              <EmptyTitle>수강생이 없습니다</EmptyTitle>
+              <EmptyTitle>코치가 없습니다</EmptyTitle>
               <EmptyDescription>
-                {search ? "검색 조건에 맞는 수강생이 없습니다." : "승인된 수강생이 없습니다."}
+                {search ? "검색 조건에 맞는 코치가 없습니다." : "승인된 코치가 없습니다."}
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -302,7 +302,7 @@ export default function AdminAssignmentsPage() {
                       <p className="text-xs text-muted-foreground truncate">{trainee.email}</p>
                       {trainee.coachNames && trainee.coachNames.filter(Boolean).length > 0 && (
                         <p className="text-xs text-muted-foreground">
-                          현재 담당: <span className="text-foreground font-medium">{trainee.coachNames.filter(Boolean).join(", ")}</span>
+                          배정 멘토: <span className="text-foreground font-medium">{trainee.coachNames.filter(Boolean).join(", ")}</span>
                         </p>
                       )}
                     </div>
@@ -330,7 +330,7 @@ export default function AdminAssignmentsPage() {
                               disabled={assigningId === trainee._id}
                             >
                               <SelectTrigger className="w-32 h-8 text-xs">
-                                <SelectValue placeholder={`코치 ${index + 1} 선택`} />
+                                <SelectValue placeholder={`멘토 ${index + 1} 선택`} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">
@@ -365,9 +365,9 @@ export default function AdminAssignmentsPage() {
             <div className="flex items-start gap-3">
               <UserCheck className="w-4.5 h-4.5 text-amber-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-amber-700 dark:text-amber-400">상위코치가 없습니다</p>
+                <p className="text-sm font-medium text-amber-700 dark:text-amber-400">멘토코치가 없습니다</p>
                 <p className="text-xs text-amber-600/80 dark:text-amber-500 mt-0.5">
-                  사용자 관리 페이지에서 먼저 상위코치 역할을 부여하세요.
+                  사용자 관리 페이지에서 먼저 멘토코치 역할을 부여하세요.
                 </p>
               </div>
             </div>
