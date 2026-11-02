@@ -52,6 +52,7 @@ import { api } from "@/convex/_generated/api.js";
 import { usePushNotifications } from "@/hooks/use-push-notifications.ts";
 import PWAInstallBanner from "@/components/pwa/pwa-install-banner.tsx";
 import { ErrorBoundary } from "@/components/ui/error-boundary.tsx";
+import { NetworkStatusBanner } from "@/components/common/network-status-banner.tsx";
 
 // Context for admin preview mode (admin viewing as trainee/coach)
 type ViewModeContextType = {
@@ -1027,6 +1028,7 @@ function AppLayoutInner() {
         </header>
 
         {/* Main content — extra bottom padding on mobile for the bottom nav */}
+        <NetworkStatusBanner />
         <main className="flex-1 overflow-y-auto bg-background pb-20 md:pb-0">
           {/* Preview mode top banner */}
           {isPreviewMode && (

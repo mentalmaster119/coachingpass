@@ -3,6 +3,7 @@ import { mutation, query } from "./mockAuth";
 import { requireAdmin } from "./helpers";
 import { calculateUserCohortAttendance } from "./attendance";
 import { calculateUserEducation } from "./educationCalculator";
+import type { Id, Doc } from "./_generated/dataModel.d.ts";
 
 // ── SMPCC 자격 취득 기록 ────────────────────────────────────────────────────
 
@@ -25,6 +26,44 @@ export const getMyCertification = query({
 
     const active = certs.find((c) => c.status === "active");
     return { cert: active ?? null, history: certs };
+  },
+});
+
+/** 공개용: 자격증 ID/번호로 진위 여부 검증 (로그인 불필요) */
+export const verifyCertification = query({
+  args: { certId: v.string() },
+  handler: async (ctx, args) => {
+    if (!args.certId || args.certId.trim().length === 0) return null;
+    try {
+      const cert = (await ctx.db.get(args.certId as Id<"smpccCertifications">)) as Doc<"smpccCertifications"> | null;
+      if (!cert || !("status" in cert)) return null;
+      const user = (await ctx.db.get(cert.userId)) as Doc<"users"> | null;
+      if (!user || !("role" in user)) return null;
+
+      const member = await ctx.db
+        .query("cohortMembers")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .first();
+      let cohortName: string | null = null;
+      if (member) {
+        const cohort = await ctx.db.get(member.cohortId);
+        if (cohort) cohortName = cohort.name;
+      }
+
+      const isValid = cert.status === "active" && (!cert.expiresAt || new Date(cert.expiresAt) >= new Date());
+
+      return {
+        certId: cert._id,
+        userName: user.name ?? "코치",
+        cohortName,
+        status: cert.status,
+        issuedAt: cert.issuedAt,
+        expiresAt: cert.expiresAt,
+        isValid,
+      };
+    } catch {
+      return null;
+    }
   },
 });
 

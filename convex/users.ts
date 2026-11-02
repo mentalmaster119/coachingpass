@@ -144,12 +144,16 @@ export const getCurrentUser = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
 
-    return await ctx.db
+    const user = await ctx.db
       .query("users")
       .withIndex("by_token", (q) =>
         q.eq("tokenIdentifier", identity.tokenIdentifier),
       )
       .unique();
+
+    if (!user) return null;
+    const { passwordHash: _, ...safeUser } = user;
+    return safeUser;
   },
 });
 
@@ -362,18 +366,28 @@ export const getRealUser = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
 
-    return await ctx.db
+    const user = await ctx.db
       .query("users")
       .withIndex("by_token", (q) =>
         q.eq("tokenIdentifier", identity.tokenIdentifier),
       )
       .unique();
+
+    if (!user) return null;
+    const { passwordHash: _, ...safeUser } = user;
+    return safeUser;
   },
 });
 
 export const getMockUserByRole = query({
   args: { role: v.union(v.literal("trainee"), v.literal("senior_coach"), v.literal("admin")) },
   handler: async (ctx, args) => {
+    const sanitize = (u: any) => {
+      if (!u) return null;
+      const { passwordHash: _, ...safe } = u;
+      return safe;
+    };
+
     if (args.role === "trainee") {
       const u = await ctx.db
         .query("users")
@@ -388,8 +402,8 @@ export const getMockUserByRole = query({
                 user.name?.includes("철수"))
           )
         );
-      if (u) return u;
-    } else    if (args.role === "senior_coach") {
+      if (u) return sanitize(u);
+    } else if (args.role === "senior_coach") {
       const u = await ctx.db
         .query("users")
         .collect()
@@ -401,12 +415,13 @@ export const getMockUserByRole = query({
                 user.email?.toLowerCase().includes("mentalcoach119"))
           )
         );
-      if (u) return u;
+      if (u) return sanitize(u);
     }
-    return await ctx.db
+    const fallback = await ctx.db
       .query("users")
       .withIndex("by_role", (q) => q.eq("role", args.role))
       .first();
+    return sanitize(fallback);
   },
 });
 

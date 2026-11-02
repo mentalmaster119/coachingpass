@@ -1,4 +1,4 @@
-const CACHE_NAME = "coachpass-v3";
+const CACHE_NAME = "coachpass-v4";
 const urlsToCache = ["/", "/icon/icon-192.png", "/icon/icon-512.png", "/offline.html"];
 
 // Install event - cache core assets
@@ -11,14 +11,14 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Fetch event - network first, fall back to cache
+// Fetch event - network first for static assets, bypass cache for API/Convex
 self.addEventListener("fetch", (event) => {
   // Only handle GET requests - POST/PUT/DELETE cannot be cached
   if (event.request.method !== "GET") {
     return;
   }
 
-  // Handle navigation requests differently
+  // Handle navigation requests
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request).catch(() =>
@@ -28,11 +28,31 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Network-first for other GET requests
+  const url = new URL(event.request.url);
+
+  // Bypass cache completely for dynamic APIs, Convex Cloud, and non-HTTP
+  if (
+    url.hostname.includes("convex.cloud") ||
+    url.pathname.startsWith("/api") ||
+    !url.protocol.startsWith("http")
+  ) {
+    return;
+  }
+
+  // Only cache same-origin static assets
+  const isStaticAsset =
+    url.origin === self.location.origin &&
+    (/\.(js|css|png|jpg|jpeg|svg|webp|ico|woff2?|ttf|eot)$/i.test(url.pathname) ||
+      url.pathname.startsWith("/assets/"));
+
+  if (!isStaticAsset) {
+    return;
+  }
+
+  // Network-first for static assets with cache fallback
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Only cache successful responses (status 200-299)
         if (!response.ok) {
           return response;
         }
