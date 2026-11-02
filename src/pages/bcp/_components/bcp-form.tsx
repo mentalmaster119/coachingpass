@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { Paperclip, X } from "lucide-react";
+import { Paperclip, X, Sparkles } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
 import type { Id } from "@/convex/_generated/dataModel.d.ts";
 import type { Doc } from "@/convex/_generated/dataModel.d.ts";
@@ -147,9 +147,12 @@ function getDefaultValues(editLog?: BcpLog): FormState {
   };
 }
 
+const AUTOSAVE_KEY = "coachingpass_autosave_bcp";
+
 export default function BcpForm({ open, onOpenChange, editLog }: Props) {
   const [values, setValues] = useState<FormState>(() => getDefaultValues(editLog));
   const [loading, setLoading] = useState(false);
+  const [hasLocalAutosave, setHasLocalAutosave] = useState(false);
 
   const buddies = useQuery(api.bcp.getCohortBuddies);
   const createLog = useMutation(api.bcp.create);
@@ -170,11 +173,60 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
   // Sync form values when dialog opens or editLog changes
   useEffect(() => {
     if (open) {
-      setValues(getDefaultValues(editLog));
-      setFile(null);
-      setExistingEvidenceId(editLog?.evidenceStorageId);
+      if (editLog) {
+        setValues(getDefaultValues(editLog));
+        setFile(null);
+        setExistingEvidenceId(editLog?.evidenceStorageId);
+        setHasLocalAutosave(false);
+      } else {
+        setValues(getDefaultValues());
+        setFile(null);
+        setExistingEvidenceId(undefined);
+
+        const saved = localStorage.getItem(AUTOSAVE_KEY);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.topic || parsed.content || parsed.reflection) {
+              setHasLocalAutosave(true);
+            }
+          } catch {
+            setHasLocalAutosave(false);
+          }
+        } else {
+          setHasLocalAutosave(false);
+        }
+      }
     }
   }, [open, editLog]);
+
+  // Real-time local draft autosave
+  useEffect(() => {
+    if (open && !isEdit) {
+      if (values.topic.trim() || values.content.trim() || values.reflection.trim()) {
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(values));
+      }
+    }
+  }, [open, isEdit, values]);
+
+  const handleRestoreLocalDraft = () => {
+    const saved = localStorage.getItem(AUTOSAVE_KEY);
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved);
+      setValues((prev) => ({ ...prev, ...parsed }));
+      setHasLocalAutosave(false);
+      toast.success("임시 저장된 버디코칭 기록을 불러왔습니다.");
+    } catch {
+      toast.error("임시 저장 데이터를 불러오지 못했습니다.");
+    }
+  };
+
+  const handleDiscardLocalDraft = () => {
+    localStorage.removeItem(AUTOSAVE_KEY);
+    setHasLocalAutosave(false);
+    toast.info("임시 저장 내용이 삭제되었습니다.");
+  };
 
   const set = <K extends keyof FormState>(key: K) =>
     (val: FormState[K]) => setValues((prev) => ({ ...prev, [key]: val }));
@@ -271,6 +323,8 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
       } else {
         await saveDraft(payload);
       }
+      localStorage.removeItem(AUTOSAVE_KEY);
+      setHasLocalAutosave(false);
       toast.success("임시저장되었습니다.");
       handleOpenChange(false);
     } catch (err) {
@@ -331,6 +385,8 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
         await createLog(payload);
         toast.success("버디코칭 기록이 추가되었습니다. 검토 후 승인됩니다.");
       }
+      localStorage.removeItem(AUTOSAVE_KEY);
+      setHasLocalAutosave(false);
       handleOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "저장에 실패했습니다. 다시 시도해 주세요.");
@@ -348,6 +404,35 @@ export default function BcpForm({ open, onOpenChange, editLog }: Props) {
             버디코칭 실습 정보를 입력하세요.
           </DialogDescription>
         </DialogHeader>
+
+        {hasLocalAutosave && !isEdit && (
+          <div className="flex items-center justify-between p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              <span>이전에 작성 중이던 임시 저장 기록이 있습니다.</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 cursor-pointer"
+                onClick={handleRestoreLocalDraft}
+              >
+                불러오기
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-muted-foreground hover:text-destructive cursor-pointer"
+                onClick={handleDiscardLocalDraft}
+              >
+                삭제
+              </Button>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Date */}

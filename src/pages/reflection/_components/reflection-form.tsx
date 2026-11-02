@@ -99,6 +99,8 @@ interface ReflectionFormProps {
   editEntry?: ReflectionDoc | null;
 }
 
+const AUTOSAVE_KEY = "coachingpass_autosave_reflection";
+
 export default function ReflectionForm({ open, onOpenChange, editEntry }: ReflectionFormProps) {
   const createJournal = useMutation(api.reflections.create);
   const updateJournal = useMutation(api.reflections.update);
@@ -110,6 +112,7 @@ export default function ReflectionForm({ open, onOpenChange, editEntry }: Reflec
   const [mood, setMood] = useState<Mood | "">("");
   const [saving, setSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [hasAutosave, setHasAutosave] = useState(false);
 
   const isEdit = !!editEntry;
 
@@ -122,15 +125,70 @@ export default function ReflectionForm({ open, onOpenChange, editEntry }: Reflec
         setContent(editEntry.content);
         setRelatedType(editEntry.relatedType ?? "");
         setMood(editEntry.mood ?? "");
+        setHasAutosave(false);
       } else {
         setEntryDate(new Date().toISOString().slice(0, 10));
         setTitle("");
         setContent("");
         setRelatedType("general");
         setMood("");
+
+        // Check if autosave exists
+        const saved = localStorage.getItem(AUTOSAVE_KEY);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.title || parsed.content) {
+              setHasAutosave(true);
+            }
+          } catch {
+            setHasAutosave(false);
+          }
+        } else {
+          setHasAutosave(false);
+        }
       }
     }
   }, [open, editEntry]);
+
+  // Real-time autosave
+  useEffect(() => {
+    if (open && !isEdit) {
+      if (title.trim() || content.trim()) {
+        const data = {
+          entryDate,
+          title,
+          content,
+          relatedType,
+          mood,
+        };
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
+      }
+    }
+  }, [open, isEdit, entryDate, title, content, relatedType, mood]);
+
+  const handleRestoreDraft = () => {
+    const saved = localStorage.getItem(AUTOSAVE_KEY);
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed.entryDate) setEntryDate(parsed.entryDate);
+      if (parsed.title) setTitle(parsed.title);
+      if (parsed.content) setContent(parsed.content);
+      if (parsed.relatedType) setRelatedType(parsed.relatedType);
+      if (parsed.mood) setMood(parsed.mood);
+      setHasAutosave(false);
+      toast.success("임시 저장된 내용을 불러왔습니다.");
+    } catch {
+      toast.error("임시 저장 데이터를 불러오지 못했습니다.");
+    }
+  };
+
+  const handleDiscardDraft = () => {
+    localStorage.removeItem(AUTOSAVE_KEY);
+    setHasAutosave(false);
+    toast.info("임시 저장 내용이 삭제되었습니다.");
+  };
 
   const errors = {
     entryDate: submitted && !entryDate ? "날짜를 선택해 주세요." : null,
@@ -163,6 +221,8 @@ export default function ReflectionForm({ open, onOpenChange, editEntry }: Reflec
           relatedType: (relatedType as RelatedType) || undefined,
           mood: (mood as Mood) || undefined,
         });
+        localStorage.removeItem(AUTOSAVE_KEY);
+        setHasAutosave(false);
         toast.success("성찰 일지가 저장되었습니다.");
       }
       onOpenChange(false);
@@ -179,6 +239,35 @@ export default function ReflectionForm({ open, onOpenChange, editEntry }: Reflec
         <DialogHeader>
           <DialogTitle>{isEdit ? "성찰 일지 수정" : "성찰 일지 작성"}</DialogTitle>
         </DialogHeader>
+
+        {hasAutosave && !isEdit && (
+          <div className="flex items-center justify-between p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              <span>이전에 작성 중이던 임시 저장 글이 있습니다.</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 cursor-pointer"
+                onClick={handleRestoreDraft}
+              >
+                불러오기
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-muted-foreground hover:text-destructive cursor-pointer"
+                onClick={handleDiscardDraft}
+              >
+                삭제
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-4 py-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

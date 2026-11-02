@@ -76,152 +76,256 @@ type NavItem = {
   items?: { label: string; href: string }[];
 };
 
-function getNavItems(role: string, isPreviewMode?: boolean): NavItem[] {
+type NavSection = {
+  title: string;
+  items: NavItem[];
+};
+
+function getNavSections(role: string, isPreviewMode?: boolean): NavSection[] {
   // Admin or admin3 in preview mode sees the trainee nav
   if ((role === "admin" || role === "admin3") && isPreviewMode) {
     return [
-      { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
-      { label: "매일 체크인 & 감사일기", href: "/daily-checkin", icon: <Heart className="w-4 h-4" /> },
-      { label: "출석 체크", href: "/attendance", icon: <CalendarDays className="w-4 h-4" /> },
-      { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
-      { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
-      { label: "과제 제출 (독후감/에세이)", href: "/submissions", icon: <FileCheck className="w-4 h-4" /> },
       {
-        label: "실습 및 수퍼비전 기록",
-        href: "/practice-group",
-        icon: <ClipboardList className="w-4 h-4" />,
+        title: "학습 & 출석",
         items: [
-          { label: "일반 코칭실습 기록", href: "/coaching-log" },
-          { label: "버디코칭 실습 기록", href: "/bcp" },
-          { label: "멘토코칭 실습 기록", href: "/mentor-coaching" },
-          { label: "수퍼비전 기록", href: "/supervision" },
-          { label: "코칭실습 AI 품질 분석 & 피드백", href: "/coaching-quality" },
-        ]
+          { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
+          { label: "매일 체크인 & 감사일기", href: "/daily-checkin", icon: <Heart className="w-4 h-4" /> },
+          { label: "출석 체크", href: "/attendance", icon: <CalendarDays className="w-4 h-4" /> },
+          { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
+          { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
+          { label: "과제 제출 (독후감/에세이)", href: "/submissions", icon: <FileCheck className="w-4 h-4" /> },
+        ],
       },
-      { label: "멘토코치 매칭 및 신청", href: "/mentors", icon: <UserCheck className="w-4 h-4" /> },
-      { label: "실습 인증요건 달성 현황", href: "/recognition-status", icon: <ShieldCheck className="w-4 h-4" /> },
-      { label: "멘탈 포럼", href: "/mental-forum", icon: <Award className="w-4 h-4" /> },
-      { label: "인증시험 및 자격 신청", href: "/certification", icon: <Award className="w-4 h-4" /> },
-      { label: "역량 자가 평가", href: "/competency-assessment", icon: <BarChart2 className="w-4 h-4" /> },
-      { label: "성찰 일지", href: "/reflection", icon: <NotebookPen className="w-4 h-4" /> },
-      { label: "공지사항", href: "/announcements", icon: <Megaphone className="w-4 h-4" /> },
-      { label: "자료실", href: "/resources", icon: <FolderOpen className="w-4 h-4" /> },
-      { label: "수퍼바이저 피드백", href: "/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
-      { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
-      { label: "교육장 예약", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },
-      { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
-      { label: "내 프로필", href: "/profile", icon: <UserCircle className="w-4 h-4" /> },
-      { label: "설정", href: "/settings", icon: <Settings className="w-4 h-4" /> },
-      { label: "앱 설치 안내", href: "/install-guide", icon: <Smartphone className="w-4 h-4" /> },
+      {
+        title: "실습 및 수퍼비전",
+        items: [
+          {
+            label: "실습 및 수퍼비전 기록",
+            href: "/practice-group",
+            icon: <ClipboardList className="w-4 h-4" />,
+            items: [
+              { label: "일반 코칭실습 기록", href: "/coaching-log" },
+              { label: "버디코칭 실습 기록", href: "/bcp" },
+              { label: "멘토코칭 실습 기록", href: "/mentor-coaching" },
+              { label: "수퍼비전 기록", href: "/supervision" },
+              { label: "코칭실습 AI 품질 분석 & 피드백", href: "/coaching-quality" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "인증 및 자격 취득",
+        items: [
+          { label: "멘토코치 매칭 및 신청", href: "/mentors", icon: <UserCheck className="w-4 h-4" /> },
+          { label: "실습 인증요건 달성 현황", href: "/recognition-status", icon: <ShieldCheck className="w-4 h-4" /> },
+          { label: "인증시험 및 자격 신청", href: "/certification", icon: <Award className="w-4 h-4" /> },
+          { label: "멘탈 포럼", href: "/mental-forum", icon: <Award className="w-4 h-4" /> },
+          { label: "역량 자가 평가", href: "/competency-assessment", icon: <BarChart2 className="w-4 h-4" /> },
+          { label: "성찰 일지", href: "/reflection", icon: <NotebookPen className="w-4 h-4" /> },
+        ],
+      },
+      {
+        title: "소통 및 지원",
+        items: [
+          { label: "공지사항", href: "/announcements", icon: <Megaphone className="w-4 h-4" /> },
+          { label: "자료실", href: "/resources", icon: <FolderOpen className="w-4 h-4" /> },
+          { label: "수퍼바이저 피드백", href: "/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
+          { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
+          { label: "교육장 예약", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },
+          { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
+          { label: "내 프로필", href: "/profile", icon: <UserCircle className="w-4 h-4" /> },
+          { label: "설정", href: "/settings", icon: <Settings className="w-4 h-4" /> },
+          { label: "앱 설치 안내", href: "/install-guide", icon: <Smartphone className="w-4 h-4" /> },
+        ],
+      },
     ];
   }
+
   if (role === "admin") {
     return [
-      { label: "관리자 대시보드", href: "/admin", icon: <LayoutDashboard className="w-4 h-4" /> },
-      { label: "자기 체크인 현황", href: "/admin/checkin", icon: <Heart className="w-4 h-4" /> },
-      { label: "기수 관리", href: "/admin/cohorts", icon: <GraduationCap className="w-4 h-4" /> },
-      { label: "세미나 일정 관리", href: "/admin/seminars", icon: <CalendarDays className="w-4 h-4" /> },
-      { label: "출석 관리", href: "/admin/attendance", icon: <Users className="w-4 h-4" /> },
-      { label: "과정 수료 사정", href: "/admin/completion", icon: <Award className="w-4 h-4" /> },
-      { label: "SMPCC 레벨 및 자격 관리", href: "/admin/smpcc", icon: <Award className="w-4 h-4" /> },
-      { label: "종합 보고서", href: "/admin/report", icon: <BarChart2 className="w-4 h-4" /> },
-      { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
-      { label: "코치 멘토/수퍼바이저 배정", href: "/admin/assignments", icon: <UserCheck className="w-4 h-4" /> },
-      { label: "인증시험 및 자격 관리", href: "/admin/certification", icon: <Award className="w-4 h-4" /> },
-      { label: "공지사항 관리", href: "/admin/announcements", icon: <Megaphone className="w-4 h-4" /> },
-      { label: "자료실 관리", href: "/admin/resources", icon: <FolderOpen className="w-4 h-4" /> },
-      { label: "피드백 현황", href: "/admin/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
-      { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
-      { label: "교육장 예약 관리", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },
-      { label: "사용자 관리", href: "/admin/users", icon: <Users className="w-4 h-4" /> },
-      { label: "교육 기록 검토", href: "/admin/education", icon: <BookOpen className="w-4 h-4" /> },
-      { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
-      { label: "코치 실습 심층 분석", href: "/admin/coaching-analysis", icon: <Sparkles className="w-4 h-4" /> },
-      { label: "코칭실습 AI 품질 분석 & 리포트", href: "/coaching-quality", icon: <Award className="w-4 h-4" /> },
-      { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
-      { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
-      { label: "과제(독후감/에세이) 검토", href: "/admin/completion?tab=submissions", icon: <FileCheck className="w-4 h-4" /> },
-      { label: "데이터 내보내기", href: "/admin/export", icon: <FileSpreadsheet className="w-4 h-4" /> },
-      { label: "내 프로필", href: "/profile", icon: <UserCircle className="w-4 h-4" /> },
-      { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
-      { label: "설정", href: "/settings", icon: <Settings className="w-4 h-4" /> },
-      { label: "앱 설치 안내", href: "/install-guide", icon: <Smartphone className="w-4 h-4" /> },
+      {
+        title: "대시보드 & 현황",
+        items: [
+          { label: "관리자 대시보드", href: "/admin", icon: <LayoutDashboard className="w-4 h-4" /> },
+          { label: "자기 체크인 현황", href: "/admin/checkin", icon: <Heart className="w-4 h-4" /> },
+          { label: "종합 보고서", href: "/admin/report", icon: <BarChart2 className="w-4 h-4" /> },
+          { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
+        ],
+      },
+      {
+        title: "기수 및 학사 관리",
+        items: [
+          { label: "기수 관리", href: "/admin/cohorts", icon: <GraduationCap className="w-4 h-4" /> },
+          { label: "세미나 일정 관리", href: "/admin/seminars", icon: <CalendarDays className="w-4 h-4" /> },
+          { label: "출석 관리", href: "/admin/attendance", icon: <Users className="w-4 h-4" /> },
+          { label: "코치 멘토/수퍼바이저 배정", href: "/admin/assignments", icon: <UserCheck className="w-4 h-4" /> },
+          { label: "사용자 관리", href: "/admin/users", icon: <Users className="w-4 h-4" /> },
+        ],
+      },
+      {
+        title: "실습 및 과제 검토",
+        items: [
+          { label: "교육 기록 검토", href: "/admin/education", icon: <BookOpen className="w-4 h-4" /> },
+          { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
+          { label: "코치 실습 심층 분석", href: "/admin/coaching-analysis", icon: <Sparkles className="w-4 h-4" /> },
+          { label: "코칭실습 AI 품질 분석 & 리포트", href: "/coaching-quality", icon: <Award className="w-4 h-4" /> },
+          { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
+          { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
+          { label: "과제(독후감/에세이) 검토", href: "/admin/completion?tab=submissions", icon: <FileCheck className="w-4 h-4" /> },
+          { label: "피드백 현황", href: "/admin/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
+        ],
+      },
+      {
+        title: "수료 및 인증·자격",
+        items: [
+          { label: "과정 수료 사정", href: "/admin/completion", icon: <Award className="w-4 h-4" /> },
+          { label: "인증시험 및 자격 관리", href: "/admin/certification", icon: <Award className="w-4 h-4" /> },
+          { label: "SMPCC 레벨 및 자격 관리", href: "/admin/smpcc", icon: <Award className="w-4 h-4" /> },
+        ],
+      },
+      {
+        title: "소통 및 운영 도구",
+        items: [
+          { label: "공지사항 관리", href: "/admin/announcements", icon: <Megaphone className="w-4 h-4" /> },
+          { label: "자료실 관리", href: "/admin/resources", icon: <FolderOpen className="w-4 h-4" /> },
+          { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
+          { label: "교육장 예약 관리", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },
+          { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
+          { label: "데이터 내보내기", href: "/admin/export", icon: <FileSpreadsheet className="w-4 h-4" /> },
+          { label: "내 프로필", href: "/profile", icon: <UserCircle className="w-4 h-4" /> },
+          { label: "설정", href: "/settings", icon: <Settings className="w-4 h-4" /> },
+          { label: "앱 설치 안내", href: "/install-guide", icon: <Smartphone className="w-4 h-4" /> },
+        ],
+      },
     ];
   }
+
   if (role === "admin3") {
     return [
-      { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
-      { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
-      { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
-      { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
-      { label: "교육장 예약 관리", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },
-      { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
-      { label: "자료실 관리", href: "/admin/resources", icon: <FolderOpen className="w-4 h-4" /> },
-      { label: "피드백 현황", href: "/admin/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
-      { label: "내 프로필", href: "/profile", icon: <UserCircle className="w-4 h-4" /> },
-      { label: "설정", href: "/settings", icon: <Settings className="w-4 h-4" /> },
-      { label: "앱 설치 안내", href: "/install-guide", icon: <Smartphone className="w-4 h-4" /> },
+      {
+        title: "실습 기록 검토",
+        items: [
+          { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
+          { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
+          { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
+          { label: "피드백 현황", href: "/admin/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
+        ],
+      },
+      {
+        title: "소통 및 운영 지원",
+        items: [
+          { label: "자료실 관리", href: "/admin/resources", icon: <FolderOpen className="w-4 h-4" /> },
+          { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
+          { label: "교육장 예약 관리", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },
+          { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
+          { label: "내 프로필", href: "/profile", icon: <UserCircle className="w-4 h-4" /> },
+          { label: "설정", href: "/settings", icon: <Settings className="w-4 h-4" /> },
+          { label: "앱 설치 안내", href: "/install-guide", icon: <Smartphone className="w-4 h-4" /> },
+        ],
+      },
     ];
   }
+
   if (role === "senior_coach") {
     return [
-      { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
-      { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
-      { label: "교육 기록 검토", href: "/admin/education", icon: <BookOpen className="w-4 h-4" /> },
-      { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
-      { label: "코치 실습 심층 분석", href: "/admin/coaching-analysis", icon: <Sparkles className="w-4 h-4" /> },
-      { label: "코칭실습 AI 품질 분석 & 리포트", href: "/coaching-quality", icon: <Award className="w-4 h-4" /> },
-      { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
-      { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
-      { label: "인증시험 및 자격 관리", href: "/admin/certification", icon: <Award className="w-4 h-4" /> },
-      { label: "담당 코치", href: "/coach/trainees", icon: <UserCheck className="w-4 h-4" /> },
-      { label: "멘토링 누적 실적", href: "/coach/mentoring-history", icon: <Award className="w-4 h-4" /> },
-      { label: "피드백 관리", href: "/coach/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
-      { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
-      { label: "교육장 예약", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },
-      { label: "공지사항", href: "/announcements", icon: <Megaphone className="w-4 h-4" /> },
-      { label: "자료실", href: "/resources", icon: <FolderOpen className="w-4 h-4" /> },
-      { label: "내 프로필", href: "/profile", icon: <UserCircle className="w-4 h-4" /> },
-      { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
-      { label: "설정", href: "/settings", icon: <Settings className="w-4 h-4" /> },
-      { label: "앱 설치 안내", href: "/install-guide", icon: <Smartphone className="w-4 h-4" /> },
+      {
+        title: "대시보드 & 현황",
+        items: [
+          { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
+          { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
+        ],
+      },
+      {
+        title: "담당 코치 & 멘토링",
+        items: [
+          { label: "담당 코치", href: "/coach/trainees", icon: <UserCheck className="w-4 h-4" /> },
+          { label: "멘토링 누적 실적", href: "/coach/mentoring-history", icon: <Award className="w-4 h-4" /> },
+          { label: "피드백 관리", href: "/coach/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
+        ],
+      },
+      {
+        title: "기록 검토 & 실습 분석",
+        items: [
+          { label: "코칭 기록 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" /> },
+          { label: "교육 기록 검토", href: "/admin/education", icon: <BookOpen className="w-4 h-4" /> },
+          { label: "코치 실습 심층 분석", href: "/admin/coaching-analysis", icon: <Sparkles className="w-4 h-4" /> },
+          { label: "코칭실습 AI 품질 분석 & 리포트", href: "/coaching-quality", icon: <Award className="w-4 h-4" /> },
+          { label: "BCP 기록 검토", href: "/admin/bcp", icon: <Users className="w-4 h-4" /> },
+          { label: "멘토코칭 검토", href: "/admin/mentor-coaching", icon: <MessageSquare className="w-4 h-4" /> },
+          { label: "인증시험 및 자격 관리", href: "/admin/certification", icon: <Award className="w-4 h-4" /> },
+        ],
+      },
+      {
+        title: "소통 및 지원",
+        items: [
+          { label: "공지사항", href: "/announcements", icon: <Megaphone className="w-4 h-4" /> },
+          { label: "자료실", href: "/resources", icon: <FolderOpen className="w-4 h-4" /> },
+          { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
+          { label: "교육장 예약", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },
+          { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
+          { label: "내 프로필", href: "/profile", icon: <UserCircle className="w-4 h-4" /> },
+          { label: "설정", href: "/settings", icon: <Settings className="w-4 h-4" /> },
+          { label: "앱 설치 안내", href: "/install-guide", icon: <Smartphone className="w-4 h-4" /> },
+        ],
+      },
     ];
   }
-  // trainee
+
+  // trainee (코치)
   return [
-    { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
-    { label: "매일 체크인 & 감사일기", href: "/daily-checkin", icon: <Heart className="w-4 h-4" /> },
-    { label: "출석 체크", href: "/attendance", icon: <CalendarDays className="w-4 h-4" /> },
-    { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
-    { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
-    { label: "과제 제출 (독후감/에세이)", href: "/submissions", icon: <FileCheck className="w-4 h-4" /> },
     {
-      label: "실습 및 수퍼비전 기록",
-      href: "/practice-group",
-      icon: <ClipboardList className="w-4 h-4" />,
+      title: "학습 & 출석",
       items: [
-        { label: "일반 코칭실습 기록", href: "/coaching-log" },
-        { label: "버디코칭 실습 기록", href: "/bcp" },
-        { label: "멘토코칭 실습 기록", href: "/mentor-coaching" },
-        { label: "수퍼비전 기록", href: "/supervision" },
-        { label: "코칭실습 AI 품질 분석 & 피드백", href: "/coaching-quality" },
-      ]
+        { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "매일 체크인 & 감사일기", href: "/daily-checkin", icon: <Heart className="w-4 h-4" /> },
+        { label: "출석 체크", href: "/attendance", icon: <CalendarDays className="w-4 h-4" /> },
+        { label: "목표설정 및 진행 현황", href: "/progress", icon: <TrendingUp className="w-4 h-4" /> },
+        { label: "교육이력 및 자격증", href: "/training-history", icon: <GraduationCap className="w-4 h-4" /> },
+        { label: "과제 제출 (독후감/에세이)", href: "/submissions", icon: <FileCheck className="w-4 h-4" /> },
+      ],
     },
-    { label: "멘토코치 매칭 및 신청", href: "/mentors", icon: <UserCheck className="w-4 h-4" /> },
-    { label: "실습 인증요건 달성 현황", href: "/recognition-status", icon: <ShieldCheck className="w-4 h-4" /> },
-    { label: "멘탈 포럼", href: "/mental-forum", icon: <Award className="w-4 h-4" /> },
-    { label: "인증시험 및 자격 신청", href: "/certification", icon: <Award className="w-4 h-4" /> },
-    { label: "역량 자가 평가", href: "/competency-assessment", icon: <BarChart2 className="w-4 h-4" /> },
-    { label: "성찰 일지", href: "/reflection", icon: <NotebookPen className="w-4 h-4" /> },
-    { label: "공지사항", href: "/announcements", icon: <Megaphone className="w-4 h-4" /> },
-    { label: "자료실", href: "/resources", icon: <FolderOpen className="w-4 h-4" /> },
-    { label: "수퍼바이저 피드백", href: "/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
-    { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
-    { label: "교육장 예약", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },
-    { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
-    { label: "내 프로필", href: "/profile", icon: <UserCircle className="w-4 h-4" /> },
-    { label: "설정", href: "/settings", icon: <Settings className="w-4 h-4" /> },
-    { label: "앱 설치 안내", href: "/install-guide", icon: <Smartphone className="w-4 h-4" /> },
+    {
+      title: "실습 및 수퍼비전",
+      items: [
+        {
+          label: "실습 및 수퍼비전 기록",
+          href: "/practice-group",
+          icon: <ClipboardList className="w-4 h-4" />,
+          items: [
+            { label: "일반 코칭실습 기록", href: "/coaching-log" },
+            { label: "버디코칭 실습 기록", href: "/bcp" },
+            { label: "멘토코칭 실습 기록", href: "/mentor-coaching" },
+            { label: "수퍼비전 기록", href: "/supervision" },
+            { label: "코칭실습 AI 품질 분석 & 피드백", href: "/coaching-quality" },
+          ],
+        },
+      ],
+    },
+    {
+      title: "인증 및 자격 취득",
+      items: [
+        { label: "멘토코치 매칭 및 신청", href: "/mentors", icon: <UserCheck className="w-4 h-4" /> },
+        { label: "실습 인증요건 달성 현황", href: "/recognition-status", icon: <ShieldCheck className="w-4 h-4" /> },
+        { label: "인증시험 및 자격 신청", href: "/certification", icon: <Award className="w-4 h-4" /> },
+        { label: "멘탈 포럼", href: "/mental-forum", icon: <Award className="w-4 h-4" /> },
+        { label: "역량 자가 평가", href: "/competency-assessment", icon: <BarChart2 className="w-4 h-4" /> },
+        { label: "성찰 일지", href: "/reflection", icon: <NotebookPen className="w-4 h-4" /> },
+      ],
+    },
+    {
+      title: "소통 및 지원",
+      items: [
+        { label: "공지사항", href: "/announcements", icon: <Megaphone className="w-4 h-4" /> },
+        { label: "자료실", href: "/resources", icon: <FolderOpen className="w-4 h-4" /> },
+        { label: "수퍼바이저 피드백", href: "/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
+        { label: "일정 캘린더", href: "/calendar", icon: <CalendarDays className="w-4 h-4" /> },
+        { label: "교육장 예약", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },
+        { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
+        { label: "내 프로필", href: "/profile", icon: <UserCircle className="w-4 h-4" /> },
+        { label: "설정", href: "/settings", icon: <Settings className="w-4 h-4" /> },
+        { label: "앱 설치 안내", href: "/install-guide", icon: <Smartphone className="w-4 h-4" /> },
+      ],
+    },
   ];
 }
 
@@ -247,7 +351,15 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const { theme, setTheme } = useTheme();
 
   const realRole = realUser?.role || localStorage.getItem("real_role");
-  const navItems = user ? getNavItems(user.role, isPreviewMode) : [];
+  const navSections = user ? getNavSections(user.role, isPreviewMode) : [];
+
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const toggleSection = (title: string) => {
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [title]: !prev[title],
+    }));
+  };
 
   const [practiceOpen, setPracticeOpen] = useState(() => {
     const practiceRoutes = ["/coaching-log", "/bcp", "/mentor-coaching", "/supervision", "/coaching-quality"];
@@ -365,7 +477,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         <div className="mx-3 mt-3 px-3 py-2 rounded-md bg-amber-500/15 border border-amber-400/30 flex items-center gap-2">
           <Eye className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
           <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-            {previewRole === "senior_coach" ? "멘토코치" : "교육생"} 화면 미리보기 중
+            {previewRole === "senior_coach" ? "멘토코치" : "코치"} 화면 미리보기 중
           </span>
         </div>
       )}
@@ -383,109 +495,145 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.href || (item.items && item.items.some(sub => location.pathname === sub.href));
-          
-          if (item.items) {
-            return (
-              <div key={item.href} className="space-y-1">
-                <button
-                  type="button"
-                  onClick={() => setPracticeOpen(!practiceOpen)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors text-left",
-                    isActive && !practiceOpen
-                      ? "bg-sidebar-primary/10 text-sidebar-primary font-semibold"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  )}
-                >
-                  {item.icon}
-                  <span className="flex-1">{item.label}</span>
-                  {practiceOpen ? (
-                    <ChevronDown className="w-3.5 h-3.5 opacity-60" />
-                  ) : (
-                    <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-                  )}
-                </button>
-                {practiceOpen && (
-                  <div className="pl-4 mt-0.5 space-y-1 border-l border-sidebar-border ml-4.5">
-                    {item.items.map((subItem) => {
-                      const isSubActive = location.pathname === subItem.href;
-                      return (
-                        <button
-                          key={subItem.href}
-                          type="button"
-                          onClick={() => {
-                            navigate(subItem.href);
-                            onClose?.();
-                          }}
-                          className={cn(
-                            "w-full flex items-center gap-2 px-3 py-2 rounded-md text-[12px] font-medium transition-colors text-left",
-                            isSubActive
-                              ? "bg-sidebar-primary/10 text-sidebar-primary font-semibold border-l-2 border-sidebar-primary"
-                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                          )}
-                        >
-                          <span className="flex-1 truncate">{subItem.label}</span>
-                          {isSubActive && <ChevronRight className="w-3 h-3 opacity-60" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          }
+      <nav className="flex-1 px-3 py-3 space-y-3 overflow-y-auto">
+        {navSections.map((section) => {
+          const isCollapsed = collapsedSections[section.title] ?? false;
+          const hasActiveChild = section.items.some(
+            (it) =>
+              location.pathname === it.href ||
+              (it.items && it.items.some((sub) => location.pathname === sub.href))
+          );
+          const isSectionOpen = !isCollapsed || hasActiveChild;
 
           return (
-            <button
-              key={item.href}
-              type="button"
-              onClick={() => handleNavClick(item)}
-              className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors text-left",
-                isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                item.comingSoon && "opacity-60"
-              )}
-            >
-              {item.icon}
-              <span className="flex-1">{item.label}</span>
-              {item.label === "앱 설치 안내" && (realRole === "admin" || realRole === "admin3") && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const origin = window.location.origin;
-                    const guideText = `[MCCI-SMPCC 코칭패스 가입 및 설치 안내]\n\n안녕하세요! MCCI-SMPCC 과정의 실습 관리를 위한 웹 앱(App) 가입 및 설치 링크를 공유해 드립니다.\n\n1. 가입 신청 및 로그인 주소:\n   ${origin}/\n\n2. 스마트폰 홈 화면 앱 설치 안내 (PWA):\n   ${origin}/install-guide\n\n※ 아이폰(Safari) 또는 안드로이드(Chrome) 브라우저를 통해 접속하시면 폰 홈 화면에 바로가기 앱 아이콘을 추가하여 더욱 편리하게 사용하실 수 있습니다.`;
-                    navigator.clipboard.writeText(guideText)
-                      .then(() => {
-                        toast.success("가입 및 설치 안내 문구가 복사되었습니다!", {
-                          description: "SNS나 카카오톡 등에 붙여넣어 공유하세요."
-                        });
-                      })
-                      .catch((err) => {
-                        console.error("Copy failed:", err);
-                        toast.error("안내 복사에 실패했습니다.");
-                      });
-                  }}
-                  className="p-1.5 rounded bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white dark:hover:text-sidebar transition-all flex items-center justify-center cursor-pointer border border-amber-500/20"
-                  title="가입 및 설치 안내 복사"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                </button>
-              )}
-              {item.comingSoon && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-sidebar-border/50 text-sidebar-foreground/50">
-                  준비중
+            <div key={section.title} className="space-y-1">
+              <button
+                type="button"
+                onClick={() => toggleSection(section.title)}
+                className="w-full pt-2 pb-1 px-2 flex items-center justify-between text-sidebar-foreground/50 hover:text-sidebar-foreground/80 transition-colors group cursor-pointer text-left"
+              >
+                <span className="text-[11px] font-semibold tracking-wider">
+                  {section.title}
                 </span>
+                <ChevronDown
+                  className={cn(
+                    "w-3.5 h-3.5 transition-transform duration-200 opacity-60 group-hover:opacity-100",
+                    !isSectionOpen && "-rotate-90"
+                  )}
+                />
+              </button>
+
+              {isSectionOpen && (
+                <div className="space-y-0.5">
+                  {section.items.map((item) => {
+                    const isActive =
+                      location.pathname === item.href ||
+                      (item.items && item.items.some((sub) => location.pathname === sub.href));
+
+                    if (item.items) {
+                      return (
+                        <div key={item.href} className="space-y-0.5">
+                          <button
+                            type="button"
+                            onClick={() => setPracticeOpen(!practiceOpen)}
+                            className={cn(
+                              "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-left",
+                              isActive && !practiceOpen
+                                ? "bg-sidebar-primary/10 text-sidebar-primary font-semibold"
+                                : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                            )}
+                          >
+                            {item.icon}
+                            <span className="flex-1">{item.label}</span>
+                            {practiceOpen ? (
+                              <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                            ) : (
+                              <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+                            )}
+                          </button>
+                          {practiceOpen && (
+                            <div className="pl-4 mt-0.5 space-y-0.5 border-l border-sidebar-border ml-4.5">
+                              {item.items.map((subItem) => {
+                                const isSubActive = location.pathname === subItem.href;
+                                return (
+                                  <button
+                                    key={subItem.href}
+                                    type="button"
+                                    onClick={() => {
+                                      navigate(subItem.href);
+                                      onClose?.();
+                                    }}
+                                    className={cn(
+                                      "w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors text-left",
+                                      isSubActive
+                                        ? "bg-sidebar-primary/10 text-sidebar-primary font-semibold border-l-2 border-sidebar-primary"
+                                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                                    )}
+                                  >
+                                    <span className="flex-1 truncate">{subItem.label}</span>
+                                    {isSubActive && <ChevronRight className="w-3 h-3 opacity-60" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={item.href}
+                        type="button"
+                        onClick={() => handleNavClick(item)}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-left",
+                          isActive
+                            ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
+                            : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                          item.comingSoon && "opacity-60"
+                        )}
+                      >
+                        {item.icon}
+                        <span className="flex-1 truncate">{item.label}</span>
+                        {item.label === "앱 설치 안내" && (realRole === "admin" || realRole === "admin3") && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const origin = window.location.origin;
+                              const guideText = `[MCCI-SMPCC 코칭패스 가입 및 설치 안내]\n\n안녕하세요! MCCI-SMPCC 과정의 실습 관리를 위한 웹 앱(App) 가입 및 설치 링크를 공유해 드립니다.\n\n1. 가입 신청 및 로그인 주소:\n   ${origin}/\n\n2. 스마트폰 홈 화면 앱 설치 안내 (PWA):\n   ${origin}/install-guide\n\n※ 아이폰(Safari) 또는 안드로이드(Chrome) 브라우저를 통해 접속하시면 폰 홈 화면에 바로가기 앱 아이콘을 추가하여 더욱 편리하게 사용하실 수 있습니다.`;
+                              navigator.clipboard.writeText(guideText)
+                                .then(() => {
+                                  toast.success("가입 및 설치 안내 문구가 복사되었습니다!", {
+                                    description: "SNS나 카카오톡 등에 붙여넣어 공유하세요."
+                                  });
+                                })
+                                .catch((err) => {
+                                  console.error("Copy failed:", err);
+                                  toast.error("안내 복사에 실패했습니다.");
+                                });
+                            }}
+                            className="p-1 rounded bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white dark:hover:text-sidebar transition-all flex items-center justify-center cursor-pointer border border-amber-500/20"
+                            title="가입 및 설치 안내 복사"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {item.comingSoon && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-sidebar-border/50 text-sidebar-foreground/50">
+                            준비중
+                          </span>
+                        )}
+                        {isActive && !item.comingSoon && (
+                          <ChevronRight className="w-3 h-3 opacity-60" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-              {isActive && !item.comingSoon && (
-                <ChevronRight className="w-3 h-3 opacity-60" />
-              )}
-            </button>
+            </div>
           );
         })}
       </nav>
@@ -613,36 +761,36 @@ function getBottomNavItems(role: string, isPreviewMode?: boolean): BottomNavItem
   if ((role === "admin" || role === "senior_coach") && isPreviewMode) {
     return [
       { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
+      { label: "출석(QR)", href: "/attendance", icon: <CalendarDays className="w-5 h-5" /> },
+      { label: "코칭실습", href: "/coaching-log", icon: <ClipboardList className="w-5 h-5" /> },
       { label: "감사·체크인", href: "/daily-checkin", icon: <Heart className="w-5 h-5" /> },
-      { label: "코칭", href: "/coaching-log", icon: <ClipboardList className="w-5 h-5" /> },
-      { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-5 h-5" /> },
-      { label: "더보기", href: "#menu", icon: <Menu className="w-5 h-5" /> },
+      { label: "전체메뉴", href: "#menu", icon: <Menu className="w-5 h-5" /> },
     ];
   }
   if (role === "admin") {
     return [
       { label: "대시보드", href: "/admin", icon: <LayoutDashboard className="w-5 h-5" /> },
       { label: "기수관리", href: "/admin/cohorts", icon: <GraduationCap className="w-5 h-5" /> },
-      { label: "출석", href: "/admin/attendance", icon: <Users className="w-5 h-5" /> },
-      { label: "캘린더", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
-      { label: "설정", href: "/settings", icon: <Settings className="w-5 h-5" /> },
+      { label: "출석관리", href: "/admin/attendance", icon: <Users className="w-5 h-5" /> },
+      { label: "코칭검토", href: "/admin/coaching", icon: <ClipboardList className="w-5 h-5" /> },
+      { label: "전체메뉴", href: "#menu", icon: <Menu className="w-5 h-5" /> },
     ];
   }
   if (role === "senior_coach") {
     return [
       { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-      { label: "코칭기록", href: "/admin/coaching", icon: <ClipboardList className="w-5 h-5" /> },
+      { label: "담당코치", href: "/coach/trainees", icon: <UserCheck className="w-5 h-5" /> },
+      { label: "코칭검토", href: "/admin/coaching", icon: <ClipboardList className="w-5 h-5" /> },
       { label: "캘린더", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
-      { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-5 h-5" /> },
-      { label: "설정", href: "/settings", icon: <Settings className="w-5 h-5" /> },
+      { label: "전체메뉴", href: "#menu", icon: <Menu className="w-5 h-5" /> },
     ];
   }
   return [
     { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
+    { label: "출석(QR)", href: "/attendance", icon: <CalendarDays className="w-5 h-5" /> },
+    { label: "코칭실습", href: "/coaching-log", icon: <ClipboardList className="w-5 h-5" /> },
     { label: "감사·체크인", href: "/daily-checkin", icon: <Heart className="w-5 h-5" /> },
-    { label: "코칭", href: "/coaching-log", icon: <ClipboardList className="w-5 h-5" /> },
-    { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-5 h-5" /> },
-    { label: "더보기", href: "#menu", icon: <Menu className="w-5 h-5" /> },
+    { label: "전체메뉴", href: "#menu", icon: <Menu className="w-5 h-5" /> },
   ];
 }
 
@@ -715,7 +863,7 @@ function PreviewModeBanner() {
               previewRole === "trainee" ? "bg-amber-500 text-white" : "text-amber-600 dark:text-amber-400 hover:bg-amber-500/15"
             )}
           >
-            교육생 뷰
+            코치 뷰
           </button>
           <button
             onClick={() => handleRoleChange("senior_coach")}
