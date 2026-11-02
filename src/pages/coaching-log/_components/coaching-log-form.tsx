@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { ConvexError } from "convex/values";
 import { api } from "@/convex/_generated/api.js";
@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
-import { Paperclip, X, Save, Send, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { Paperclip, X, Save, Send, ChevronLeft, ChevronRight, Check, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils.ts";
 
 type CoachingLog = Doc<"coachingLogs"> & { evidenceUrl?: string | null };
@@ -360,6 +360,40 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
   const [hours, setHours] = useState<string>(
     editLog ? String(editLog.durationMinutes / 60) : "1",
   );
+
+  const myLogs = useQuery(api.coaching.getMyLogs);
+
+  const handleStartTimeChange = (start: string) => {
+    setCoachingStartTime(start);
+    if (start && coachingEndTime) {
+      const [sh, sm] = start.split(":").map(Number);
+      const [eh, em] = coachingEndTime.split(":").map(Number);
+      const diff = (eh * 60 + em) - (sh * 60 + sm);
+      if (diff > 0) {
+        setHours(String(Math.round((diff / 60) * 10) / 10));
+      }
+    }
+  };
+
+  const handleEndTimeChange = (end: string) => {
+    setCoachingEndTime(end);
+    if (coachingStartTime && end) {
+      const [sh, sm] = coachingStartTime.split(":").map(Number);
+      const [eh, em] = end.split(":").map(Number);
+      const diff = (eh * 60 + em) - (sh * 60 + sm);
+      if (diff > 0) {
+        setHours(String(Math.round((diff / 60) * 10) / 10));
+      }
+    }
+  };
+
+  const overlappingLog = (myLogs ?? []).find((l) => {
+    if (isEdit && l._id === editLog?._id) return false;
+    if (l.coachingDate !== coachingDate) return false;
+    if (!l.coachingStartTime || !l.coachingEndTime) return false;
+    if (!coachingStartTime || !coachingEndTime) return false;
+    return l.coachingStartTime < coachingEndTime && coachingStartTime < l.coachingEndTime;
+  });
 
   // ── Ⅱ. 코칭 주제
   const [topic, setTopic] = useState(editLog?.topic ?? "");
@@ -883,17 +917,34 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
             </div>
 
             {/* 시작/종료 시각 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="coachingStartTime">코칭 시작 시각</Label>
-                <Input id="coachingStartTime" type="time" value={coachingStartTime} step={600}
-                  onChange={(e) => setCoachingStartTime(e.target.value)} />
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="coachingStartTime">코칭 시작 시각</Label>
+                  <Input id="coachingStartTime" type="time" value={coachingStartTime} step={600}
+                    onChange={(e) => handleStartTimeChange(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="coachingEndTime">코칭 종료 시각</Label>
+                  <Input id="coachingEndTime" type="time" value={coachingEndTime} step={600}
+                    onChange={(e) => handleEndTimeChange(e.target.value)} />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="coachingEndTime">코칭 종료 시각</Label>
-                <Input id="coachingEndTime" type="time" value={coachingEndTime} step={600}
-                  onChange={(e) => setCoachingEndTime(e.target.value)} />
-              </div>
+
+              {coachingStartTime && coachingEndTime && coachingStartTime >= coachingEndTime && (
+                <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5" /> 종료 시각은 시작 시각 이후여야 합니다.
+                </p>
+              )}
+
+              {overlappingLog && (
+                <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <span>
+                    <strong>시간 중복 주의:</strong> 같은 날짜에 이미 등록된 코칭({overlappingLog.topic || overlappingLog.coacheeInfo}, {overlappingLog.coachingStartTime}~{overlappingLog.coachingEndTime})과 시간이 겹칩니다. 확인 후 진행하세요.
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* 코칭 장소 + 회차 */}
@@ -939,6 +990,11 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
                 <Label htmlFor="hours">코칭 시간 (시간) <span className="text-destructive">*</span></Label>
                 <Input id="hours" type="number" step="0.5" min="0.5" max="24"
                   placeholder="예: 1.5" value={hours} onChange={(e) => setHours(e.target.value)} />
+                {parseFloat(hours) > 4 && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                    ⚠️ 1회 코칭 시간이 4시간을 초과합니다. 올바른 시간인지 확인해 주세요.
+                  </p>
+                )}
               </div>
             </div>
 

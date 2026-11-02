@@ -1211,3 +1211,80 @@ export const sendProfileIncompleteNotification = mutation({
     return { sent };
   },
 });
+
+/** 관리자: 기수별 교육생/코치 엑셀/CSV 일괄 등록 (Bulk Import) */
+export const bulkCreateUsers = mutation({
+  args: {
+    cohortId: v.optional(v.id("cohorts")),
+    users: v.array(
+      v.object({
+        name: v.string(),
+        email: v.string(),
+        phone: v.optional(v.string()),
+        role: v.optional(v.union(v.literal("trainee"), v.literal("senior_coach"), v.literal("admin"))),
+      })
+    ),
+    initialPassword: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const defaultPassword = args.initialPassword || "M12345";
+    const passwordHash = await hashPassword(defaultPassword);
+    const results = [];
+
+    const allUsers = await ctx.db.query("users").collect();
+
+    for (const item of args.users) {
+      const email = item.email.trim().toLowerCase();
+      const name = item.name.trim();
+      if (!email || !name) continue;
+
+      const existing = allUsers.find((u) => u.email?.toLowerCase() === email);
+
+      if (existing) {
+        if (args.cohortId) {
+          const member = await ctx.db
+            .query("cohortMembers")
+            .withIndex("by_user", (q) => q.eq("userId", existing._id))
+            .first();
+          if (!member) {
+            await ctx.db.insert("cohortMembers", {
+              userId: existing._id,
+              cohortId: args.cohortId,
+              joinedAt: new Date().toISOString(),
+              status: "active",
+            });
+          }
+        }
+        results.push({ email, name, status: "already_exists" as const, id: existing._id });
+        continue;
+      }
+
+      const tokenIdentifier = `custom:${email}`;
+      const newUserId = await ctx.db.insert("users", {
+        tokenIdentifier,
+        name,
+        email,
+        phone: item.phone?.trim() || undefined,
+        role: item.role || "trainee",
+        approvalStatus: "approved",
+        onboardingCompleted: true,
+        passwordHash,
+        joinedAt: new Date().toISOString(),
+      });
+
+      if (args.cohortId) {
+        await ctx.db.insert("cohortMembers", {
+          userId: newUserId,
+          cohortId: args.cohortId,
+          joinedAt: new Date().toISOString(),
+          status: "active",
+        });
+      }
+
+      results.push({ email, name, status: "created" as const, id: newUserId });
+    }
+
+    return results;
+  },
+});

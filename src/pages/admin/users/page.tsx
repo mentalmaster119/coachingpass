@@ -18,6 +18,7 @@ import {
   Trash2,
   Key,
   Pencil,
+  FileSpreadsheet,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
 import type { Doc, Id } from "@/convex/_generated/dataModel.d.ts";
@@ -47,6 +48,7 @@ import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/use-current-user.ts";
 import { cn } from "@/lib/utils.ts";
 import IncompleteProfilesTab from "./_components/incomplete-profiles-tab.tsx";
+import { BulkUserImportDialog } from "./_components/bulk-user-import-dialog.tsx";
 
 type User = Doc<"users"> & { cohortId?: Id<"cohorts"> | null; cohortName?: string | null; cohortNumber?: number | null };
 
@@ -641,6 +643,7 @@ export default function AdminUsersPage() {
   const allUsers = useQuery(api.admin.getAllUsers);
   const pendingUsers = useQuery(api.admin.getPendingUsers);
   const [rejectTarget, setRejectTarget] = useState<User | null>(null);
+  const [showBulkImport, setShowBulkImport] = useState(false);
   const navigate = useNavigate();
 
   const isLoading = allUsers === undefined || pendingUsers === undefined;
@@ -656,14 +659,20 @@ export default function AdminUsersPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-            <UserCog className="w-5 h-5 text-primary-foreground" />
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+              <UserCog className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">사용자 관리</h1>
+              <p className="text-sm text-muted-foreground">가입 신청 승인/거절 및 역할 관리</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">사용자 관리</h1>
-            <p className="text-sm text-muted-foreground">가입 신청 승인/거절 및 역할 관리</p>
-          </div>
+          <Button onClick={() => setShowBulkImport(true)} className="gap-2 cursor-pointer shadow-sm">
+            <FileSpreadsheet className="w-4 h-4" />
+            명단 엑셀 일괄 등록
+          </Button>
         </div>
       </motion.div>
 
@@ -751,6 +760,11 @@ export default function AdminUsersPage() {
         user={rejectTarget}
         open={rejectTarget !== null}
         onOpenChange={(v) => { if (!v) setRejectTarget(null); }}
+      />
+
+      <BulkUserImportDialog
+        open={showBulkImport}
+        onOpenChange={setShowBulkImport}
       />
     </div>
   );
