@@ -1,6 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./mockAuth";
-import { requireAdmin } from "./helpers";
+import { requireAdmin, getAuthenticatedUser } from "./helpers";
 import { calculateUserCohortAttendance } from "./attendance";
 import { calculateUserEducation } from "./educationCalculator";
 import type { Id, Doc } from "./_generated/dataModel.d.ts";
@@ -11,12 +11,12 @@ import type { Id, Doc } from "./_generated/dataModel.d.ts";
 export const getMyCertification = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return null;
-    const me = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
-      .unique();
+    let me: Doc<"users"> | null = null;
+    try {
+      me = await getAuthenticatedUser(ctx);
+    } catch {
+      return null;
+    }
     if (!me) return null;
 
     const certs = await ctx.db
@@ -25,7 +25,18 @@ export const getMyCertification = query({
       .collect();
 
     const active = certs.find((c) => c.status === "active");
-    return { cert: active ?? null, history: certs };
+
+    let cohortName: string | undefined;
+    const member = await ctx.db
+      .query("cohortMembers")
+      .withIndex("by_user", (q) => q.eq("userId", me._id))
+      .first();
+    if (member) {
+      const cohort = await ctx.db.get(member.cohortId);
+      if (cohort) cohortName = cohort.name;
+    }
+
+    return { cert: active ?? null, history: certs, userName: me.name, cohortName };
   },
 });
 

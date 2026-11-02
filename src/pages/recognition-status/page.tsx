@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
+import CertificateModal from "@/components/common/certificate-modal.tsx";
 import {
   CheckCircle2,
   Circle,
@@ -105,6 +107,8 @@ export default function RecognitionStatusPage() {
   const logs = useQuery(api.coaching.getMyLogs);
   const bcpSummary = useQuery(api.bcp.getMySummary);
   const mentorSummary = useQuery(api.mentorCoaching.getMySummary);
+  const myCert = useQuery(api.smpcc.getMyCertification);
+  const [certModalOpen, setCertModalOpen] = useState(false);
 
   const isLoading =
     logs === undefined ||
@@ -226,6 +230,38 @@ export default function RecognitionStatusPage() {
           )}
         </div>
       </motion.div>
+
+      {/* Active Certificate Banner */}
+      {myCert?.cert && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-primary/10 to-amber-500/10 border-2 border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Award className="w-7 h-7" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-base text-foreground">공인 SMPCC 멘탈코칭전문가 자격 취득</h3>
+                <Badge className="bg-amber-500 text-white text-xs">Active</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                취득일: {myCert.cert.issuedAt} · 만료일: {myCert.cert.expiresAt || "3년 유효"}
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={() => setCertModalOpen(true)}
+            className="bg-amber-500 hover:bg-amber-600 text-white font-semibold gap-1.5 shrink-0 h-10 px-4 text-xs shadow-xs cursor-pointer"
+          >
+            <Award className="w-4 h-4" />
+            공인 자격증 및 QR 검증서 보기
+          </Button>
+        </motion.div>
+      )}
 
       {/* Quick stat cards */}
       <motion.div
@@ -526,6 +562,21 @@ export default function RecognitionStatusPage() {
           </Card>
         </motion.div>
       </div>
+
+      {myCert?.cert && (
+        <CertificateModal
+          open={certModalOpen}
+          onOpenChange={setCertModalOpen}
+          data={{
+            certId: myCert.cert._id,
+            userName: myCert.userName || "코치",
+            cohortName: myCert.cohortName,
+            issuedAt: myCert.cert.issuedAt,
+            expiresAt: myCert.cert.expiresAt,
+            isValid: myCert.cert.status === "active",
+          }}
+        />
+      )}
     </div>
   );
 }

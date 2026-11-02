@@ -53,6 +53,7 @@ import { usePushNotifications } from "@/hooks/use-push-notifications.ts";
 import PWAInstallBanner from "@/components/pwa/pwa-install-banner.tsx";
 import { ErrorBoundary } from "@/components/ui/error-boundary.tsx";
 import { NetworkStatusBanner } from "@/components/common/network-status-banner.tsx";
+import GlobalCommandDialog from "@/components/common/global-command-dialog.tsx";
 
 // Context for admin preview mode (admin viewing as trainee/coach)
 type ViewModeContextType = {
@@ -340,7 +341,13 @@ function RoleLabel({ role }: { role: string }) {
   return <span>{map[role] ?? role}</span>;
 }
 
-function SidebarContent({ onClose }: { onClose?: () => void }) {
+function SidebarContent({
+  onClose,
+  onOpenCommand,
+}: {
+  onClose?: () => void;
+  onOpenCommand?: () => void;
+}) {
   const location = useLocation();
   const navigate = useNavigate();
   const { signout } = useAuth();
@@ -483,15 +490,20 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         </div>
       )}
 
-      {/* Search button */}
+      {/* Search button / Command Palette */}
       <div className="px-3 pt-3">
         <button
           type="button"
-          onClick={() => { navigate("/search"); onClose?.(); }}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-md border border-sidebar-border bg-sidebar-accent/30 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-colors text-sm cursor-pointer"
+          onClick={() => { onOpenCommand?.(); onClose?.(); }}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-md border border-sidebar-border bg-sidebar-accent/30 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-colors text-sm cursor-pointer"
         >
-          <Search className="w-3.5 h-3.5 flex-shrink-0" />
-          <span>통합 검색…</span>
+          <div className="flex items-center gap-2">
+            <Search className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="truncate">빠른 이동…</span>
+          </div>
+          <kbd className="pointer-events-none hidden sm:inline-flex h-4.5 select-none items-center gap-0.5 rounded border border-sidebar-border bg-sidebar-accent/50 px-1 font-mono text-[10px] font-medium text-sidebar-foreground/70">
+            <span className="text-[11px]">⌘</span>K
+          </kbd>
         </button>
       </div>
 
@@ -901,8 +913,20 @@ function AppLayoutInner() {
   const navigate = useNavigate();
   const { user, isLoading } = useCurrentUser();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
   const { isPreviewMode } = useViewMode();
   const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setCommandOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   useEffect(() => {
     if (isLoading) return;
@@ -984,7 +1008,7 @@ function AppLayoutInner() {
     <div className="flex h-screen overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-60 flex-shrink-0 flex-col">
-        <SidebarContent />
+        <SidebarContent onOpenCommand={() => setCommandOpen(true)} />
       </aside>
 
       {/* Mobile Header + content */}
@@ -999,8 +1023,8 @@ function AppLayoutInner() {
               variant="ghost"
               size="icon"
               className="text-sidebar-foreground hover:bg-sidebar-accent"
-              onClick={() => navigate("/search")}
-              title="통합 검색"
+              onClick={() => setCommandOpen(true)}
+              title="빠른 이동 및 검색 (⌘K)"
             >
               <Search className="w-5 h-5" />
             </Button>
@@ -1021,7 +1045,7 @@ function AppLayoutInner() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-60 border-0">
-                <SidebarContent onClose={() => setMobileOpen(false)} />
+                <SidebarContent onClose={() => setMobileOpen(false)} onOpenCommand={() => setCommandOpen(true)} />
               </SheetContent>
             </Sheet>
           </div>
@@ -1047,6 +1071,7 @@ function AppLayoutInner() {
         <BottomNav role={user.role} onMenuOpen={() => setMobileOpen(true)} />
       )}
       <PWAInstallBanner />
+      <GlobalCommandDialog open={commandOpen} onOpenChange={setCommandOpen} />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./mockAuth";
 import { getAuthenticatedUser, requireRole } from "./helpers";
 import { insertNotification } from "./notifications";
+import { calculateCoachingProgress } from "./completion";
 
 // ── Shared requirement thresholds ─────────────────────────────────────────────
 
@@ -399,6 +400,42 @@ export const getMyRequirementStatus = query({
         .filter((l) => l.approvalStatus === "approved")
         .reduce((s, l) => s + l.durationMinutes, 0) / 60;
 
+    const progress = await calculateCoachingProgress(ctx, user._id);
+
+    const bookReports = await ctx.db
+      .query("bookReports")
+      .withIndex("by_user_and_status", (q) =>
+        q.eq("userId", user._id).eq("approvalStatus", "approved")
+      )
+      .collect();
+
+    const essays = await ctx.db
+      .query("coachingEssays")
+      .withIndex("by_user_and_status", (q) =>
+        q.eq("userId", user._id).eq("approvalStatus", "approved")
+      )
+      .collect();
+
+    const bookReportCount = bookReports.length;
+    const essayCount = essays.length;
+
+    const criteria = [
+      { key: "education", label: "정규 교육 이수", current: Math.round(educationHours * 10) / 10, required: req.education, unit: "시간", met: educationHours >= req.education, weight: 20 },
+      { key: "coachingHours", label: "코칭 실습 총 시간", current: Math.round(coachingHours * 10) / 10, required: req.coaching, unit: "시간", met: coachingHours >= req.coaching, weight: 20 },
+      { key: "sportsCoaching", label: "스포츠선수 코칭", current: progress.sportsCount, required: 8, unit: "회", met: progress.sportsCount >= 8, weight: 15 },
+      { key: "generalCoaching", label: "일반인 코칭", current: progress.generalCount, required: 7, unit: "회", met: progress.generalCount >= 7, weight: 15 },
+      { key: "buddyCoaching", label: "버디코칭 (BCP)", current: progress.buddyCount, required: 2, unit: "회", met: progress.buddyCount >= 2, weight: 10 },
+      { key: "mentorCoaching", label: "멘토코칭 (MCP)", current: progress.mentorCount, required: 2, unit: "회", met: progress.mentorCount >= 2, weight: 10 },
+      { key: "supervision", label: "수퍼비전 (SVP)", current: progress.svCount, required: 1, unit: "회", met: progress.svCount >= 1, weight: 5 },
+      { key: "bookReports", label: "도서 독후감 제출", current: bookReportCount, required: 2, unit: "편", met: bookReportCount >= 2, weight: 3 },
+      { key: "coachingEssay", label: "멘탈코칭 에세이", current: essayCount, required: 1, unit: "편", met: essayCount >= 1, weight: 2 },
+    ];
+
+    const metCount = criteria.filter((c) => c.met).length;
+    const readinessPercentage = Math.round(
+      criteria.reduce((acc, c) => acc + (Math.min(c.current / c.required, 1) * c.weight), 0)
+    );
+
     return {
       goal: "SMPCC" as const,
       educationHours: Math.round(educationHours * 10) / 10,
@@ -407,7 +444,11 @@ export const getMyRequirementStatus = query({
       coachingRequired: req.coaching,
       educationMet: educationHours >= req.education,
       coachingMet: coachingHours >= req.coaching,
-      allMet: educationHours >= req.education && coachingHours >= req.coaching,
+      allMet: metCount === criteria.length,
+      criteria,
+      metCount,
+      totalCriteriaCount: criteria.length,
+      readinessPercentage,
     };
   },
 });

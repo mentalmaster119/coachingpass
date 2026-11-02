@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "motion/react";
 import {
@@ -303,84 +304,139 @@ export default function CertificationPage() {
         </Card>
       </motion.div>
 
-      {/* ── 2. Requirement Status Card ── */}
+      {/* ── 2. Requirement Status Simulator Card ── */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1 }}
       >
-        <Card className="shadow-xs">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Award className="w-4.5 h-4.5 text-primary" />
-                {isLoading ? "..." : `${requirements.goal} 자격증 이수 요건 현황`}
-              </span>
-              {myCohort && (
-                <Badge variant="outline" className="text-xs font-normal">
-                  소속: {myCohort.name}
-                </Badge>
+        <Card className="shadow-xs border-border/80 overflow-hidden">
+          <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-base sm:text-lg font-bold flex items-center gap-2">
+                  <Award className="w-5 h-5 text-primary" />
+                  <span>SMPCC 자격 인증 요건 종합 시뮬레이터</span>
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  수료 및 인증시험 합격 후 최종 공인 SMPCC 자격증 수여를 위한 세부 필수 기준 충족도입니다.
+                </p>
+              </div>
+
+              {!isLoading && (
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs font-semibold px-2.5 py-1 border-primary/30 text-primary bg-primary/5">
+                    달성도 {requirements.readinessPercentage ?? 0}%
+                  </Badge>
+                  {myCohort && (
+                    <Badge variant="secondary" className="text-xs font-normal">
+                      소속: {myCohort.name}
+                    </Badge>
+                  )}
+                </div>
               )}
-            </CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="pt-0 space-y-4">
+          <CardContent className="p-4 sm:p-6 space-y-6">
             {isLoading ? (
               <div className="space-y-3">
                 <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-24 w-full" />
               </div>
             ) : (
               <>
-                {/* Education */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="w-4 h-4 text-chart-3" />
-                      <span className="font-medium text-xs sm:text-sm">정규 교육 이수</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm text-muted-foreground">
-                        {requirements.educationHours} / {requirements.educationRequired}시간
-                      </span>
-                      {requirements.educationMet ? (
-                        <CheckCircle className="w-4 h-4 text-chart-4" />
-                      ) : (
-                        <span className="text-xs text-amber-600 font-medium">(진행중)</span>
-                      )}
-                    </div>
+                {/* Overall Progress Gauge */}
+                <div className="p-4 rounded-xl bg-muted/40 border border-border/60 space-y-2">
+                  <div className="flex items-center justify-between text-xs sm:text-sm">
+                    <span className="font-semibold text-foreground flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      전체 자격 인증 준비율
+                    </span>
+                    <span className="text-muted-foreground font-medium">
+                      <strong className="text-foreground">{requirements.metCount ?? 0}</strong> / {requirements.totalCriteriaCount ?? 9} 항목 완결
+                    </span>
                   </div>
-                  <Progress
-                    value={Math.min((requirements.educationHours / requirements.educationRequired) * 100, 100)}
-                    className="h-2"
-                  />
+                  <Progress value={requirements.readinessPercentage ?? 0} className="h-2.5" />
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+                    <span>기초 교육(20%) + 실습 시간(20%) + 유형별 코칭(45%) + 과제(15%)</span>
+                    <span className="font-bold text-primary">{requirements.readinessPercentage ?? 0}%</span>
+                  </div>
                 </div>
 
-                {/* Coaching */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <ClipboardList className="w-4 h-4 text-chart-1" />
-                      <span className="font-medium text-xs sm:text-sm">코칭 실습 인정</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm text-muted-foreground">
-                        {requirements.coachingHours} / {requirements.coachingRequired}시간
-                      </span>
-                      {requirements.coachingMet ? (
-                        <CheckCircle className="w-4 h-4 text-chart-4" />
-                      ) : (
-                        <span className="text-xs text-amber-600 font-medium">(진행중)</span>
-                      )}
-                    </div>
-                  </div>
-                  <Progress
-                    value={Math.min((requirements.coachingHours / requirements.coachingRequired) * 100, 100)}
-                    className="h-2"
-                  />
+                {/* 2-Column Grid of Criteria */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {requirements.criteria?.map((item) => {
+                    const pct = Math.min(Math.round((item.current / item.required) * 100), 100);
+                    return (
+                      <div
+                        key={item.key}
+                        className={`p-3.5 rounded-xl border transition-colors ${
+                          item.met
+                            ? "bg-chart-4/[0.04] border-chart-4/30"
+                            : "bg-card border-border/70"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            {item.met ? (
+                              <CheckCircle className="w-4 h-4 text-chart-4 shrink-0" />
+                            ) : (
+                              <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+                            )}
+                            <span className="text-xs sm:text-sm font-semibold text-foreground truncate">
+                              {item.label}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-xs font-bold text-foreground">
+                              {item.current} <span className="text-[11px] font-normal text-muted-foreground">/ {item.required}{item.unit}</span>
+                            </span>
+                            <Badge
+                              className={`text-[10px] px-1.5 py-0 ${
+                                item.met
+                                  ? "bg-chart-4/15 text-chart-4"
+                                  : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                              }`}
+                            >
+                              {item.met ? "완료" : `${Math.max(0, item.required - item.current)}${item.unit} 부족`}
+                            </Badge>
+                          </div>
+                        </div>
+                        <Progress value={pct} className="h-1.5" />
+                      </div>
+                    );
+                  })}
                 </div>
 
-                {/* Overall status notice */}
-                <div className={`rounded-xl p-3 text-xs sm:text-sm font-medium flex items-center gap-2.5 ${
+                {/* Quick Shortcuts */}
+                <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-border/60">
+                  <p className="text-xs text-muted-foreground">
+                    부족한 실습과 과제는 각 전용 메뉴에서 바로 작성 및 등록할 수 있습니다:
+                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button asChild variant="outline" size="sm" className="h-8 text-xs gap-1 cursor-pointer">
+                      <Link to="/coaching-log">
+                        <ClipboardList className="w-3.5 h-3.5" />
+                        코칭일지 등록
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm" className="h-8 text-xs gap-1 cursor-pointer">
+                      <Link to="/submissions">
+                        <BookOpen className="w-3.5 h-3.5" />
+                        독후감/에세이 제출
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm" className="h-8 text-xs gap-1 cursor-pointer">
+                      <Link to="/bcp">
+                        <Users className="w-3.5 h-3.5" />
+                        버디코칭 매칭
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Overall Status Notice */}
+                <div className={`rounded-xl p-3.5 text-xs sm:text-sm font-medium flex items-center gap-2.5 ${
                   requirements.allMet
                     ? "bg-chart-4/10 text-chart-4 border border-chart-4/20"
                     : "bg-muted/70 text-foreground border border-border"
@@ -388,12 +444,12 @@ export default function CertificationPage() {
                   {requirements.allMet ? (
                     <>
                       <CheckCircle className="w-4 h-4 text-chart-4 shrink-0" />
-                      <span>필수 요건을 모두 충족했습니다! 편안하게 인증시험에 응시하세요.</span>
+                      <span>축하합니다! SMPCC 필수 요건을 100% 충족하셨습니다. 인증시험에 편안하게 응시하시기 바랍니다.</span>
                     </>
                   ) : (
                     <>
                       <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                      <span>일부 요건(실습/과제)이 진행 중이더라도 인증시험 신청이 가능합니다. 부족한 시간은 시험 전후로 채우실 수 있습니다.</span>
+                      <span>일부 요건이 진행 중이더라도 인증시험 사전 접수가 전액/전형 유예 상태로 즉시 가능합니다.</span>
                     </>
                   )}
                 </div>

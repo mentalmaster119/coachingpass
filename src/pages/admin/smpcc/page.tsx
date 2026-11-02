@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
+import CertificateModal from "@/components/common/certificate-modal.tsx";
 
 // ── 인증 마크 배지 ─────────────────────────────────────────────────────────────
 export function SmpccBadge({ expiresAt }: { expiresAt: string }) {
@@ -131,6 +132,7 @@ type CompletedTrainee = NonNullable<ReturnType<typeof useQuery<typeof api.smpcc.
 function UserCertCard({ trainee }: { trainee: CompletedTrainee }) {
   const [issueOpen, setIssueOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
+  const [viewCertOpen, setViewCertOpen] = useState(false);
   const today = new Date().toISOString().slice(0, 10);
   const isExpired = trainee.hasActiveCert && trainee.certExpiresAt ? trainee.certExpiresAt < today : false;
 
@@ -163,14 +165,19 @@ function UserCertCard({ trainee }: { trainee: CompletedTrainee }) {
               </p>
             )}
           </div>
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="flex gap-2 flex-shrink-0 flex-wrap">
+            {trainee.hasActiveCert && trainee.certId && (
+              <Button size="sm" variant="outline" onClick={() => setViewCertOpen(true)} className="h-8 gap-1 text-xs">
+                <Award className="w-3.5 h-3.5 text-amber-500" /> 자격증 보기
+              </Button>
+            )}
             {trainee.hasActiveCert ? (
-              <Button size="sm" variant="secondary" onClick={() => setRenewOpen(true)}>
-                <RefreshCw className="w-3.5 h-3.5 mr-1" /> 갱신
+              <Button size="sm" variant="secondary" onClick={() => setRenewOpen(true)} className="h-8 gap-1 text-xs">
+                <RefreshCw className="w-3.5 h-3.5" /> 갱신
               </Button>
             ) : (
-              <Button size="sm" onClick={() => setIssueOpen(true)}>
-                <Award className="w-3.5 h-3.5 mr-1" /> 발급
+              <Button size="sm" onClick={() => setIssueOpen(true)} className="h-8 gap-1 text-xs">
+                <Award className="w-3.5 h-3.5" /> 발급
               </Button>
             )}
           </div>
@@ -184,14 +191,28 @@ function UserCertCard({ trainee }: { trainee: CompletedTrainee }) {
         onOpenChange={setIssueOpen}
       />
       {trainee.hasActiveCert && trainee.certId && (
-        <IssueCertDialog
-          userId={trainee.userId}
-          userName={trainee.name}
-          open={renewOpen}
-          onOpenChange={setRenewOpen}
-          isRenewal
-          certId={trainee.certId}
-        />
+        <>
+          <IssueCertDialog
+            userId={trainee.userId}
+            userName={trainee.name}
+            open={renewOpen}
+            onOpenChange={setRenewOpen}
+            isRenewal
+            certId={trainee.certId}
+          />
+          <CertificateModal
+            open={viewCertOpen}
+            onOpenChange={setViewCertOpen}
+            data={{
+              certId: trainee.certId,
+              userName: trainee.name,
+              cohortName: trainee.cohortNumber ? `${trainee.cohortNumber}기` : undefined,
+              issuedAt: trainee.certIssuedAt ?? "",
+              expiresAt: trainee.certExpiresAt,
+              isValid: !isExpired,
+            }}
+          />
+        </>
       )}
     </Card>
   );
