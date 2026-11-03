@@ -560,6 +560,37 @@ export const approve = mutation({
       reviewComment: args.reviewComment,
     });
 
+    // Automatically create or activate official SMPCC certification record
+    const existingCert = await ctx.db
+      .query("smpccCertifications")
+      .withIndex("by_user", (q) => q.eq("userId", app.userId))
+      .first();
+
+    const now = new Date();
+    const issuedAt = now.toISOString().slice(0, 10);
+    const exp = new Date(now);
+    exp.setFullYear(exp.getFullYear() + 3);
+    const expiresAt = exp.toISOString().slice(0, 10);
+
+    if (!existingCert) {
+      await ctx.db.insert("smpccCertifications", {
+        userId: app.userId,
+        issuedAt,
+        expiresAt,
+        status: "active",
+        issuedBy: reviewer._id,
+        notes: args.reviewComment || "인증시험 합격 및 자격 심사 승인",
+      });
+    } else if (existingCert.status !== "active") {
+      await ctx.db.patch(existingCert._id, {
+        status: "active",
+        issuedAt,
+        expiresAt,
+        issuedBy: reviewer._id,
+        notes: args.reviewComment || "자격 재인증 심사 승인",
+      });
+    }
+
     await insertNotification(ctx, {
       userId: app.userId,
       type: "certification_approved",

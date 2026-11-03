@@ -92,6 +92,7 @@ export default function App() {
             <Route path="/pending" element={<PendingPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/invite" element={<InviteLandingPage />} />
+            <Route path="/verify" element={<VerifyCertPage />} />
             <Route path="/verify/:certNumber" element={<VerifyCertPage />} />
 
             {/* Protected routes with sidebar layout */}

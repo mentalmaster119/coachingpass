@@ -45,11 +45,106 @@ export const verifyCertification = query({
   args: { certId: v.string() },
   handler: async (ctx, args) => {
     if (!args.certId || args.certId.trim().length === 0) return null;
+    const q = args.certId.trim();
+    const cleanCode = q
+      .replace(/^MCCI[-_ ]?SMPCC[-_ ]?/i, "")
+      .replace(/^SMPCC[-_ ]?/i, "")
+      .trim()
+      .toLowerCase();
+
     try {
-      const cert = (await ctx.db.get(args.certId as Id<"smpccCertifications">)) as Doc<"smpccCertifications"> | null;
-      if (!cert || !("status" in cert)) return null;
+      let cert: Doc<"smpccCertifications"> | null = null;
+
+      // 1. Direct ID lookup
+      try {
+        const direct = await ctx.db.get(q as Id<"smpccCertifications">);
+        if (direct && "status" in direct && "userId" in direct) {
+          cert = direct as Doc<"smpccCertifications">;
+        }
+      } catch {
+        // Not a direct ID, proceed to search
+      }
+
+      // 2. Search by ID suffix or formatted number
+      if (!cert) {
+        const allCerts = await ctx.db.query("smpccCertifications").collect();
+        cert = allCerts.find((c) => {
+          const idStr = c._id.toLowerCase();
+          const idSuffix = idStr.slice(-8);
+          return (
+            idStr === q.toLowerCase() ||
+            idSuffix === cleanCode ||
+            idStr.endsWith(cleanCode) ||
+            `mcci-smpcc-${idSuffix}` === q.toLowerCase()
+          );
+        }) ?? null;
+      }
+
+      // 3. Fallback: check approved certification applications
+      if (!cert) {
+        let app: Doc<"certificationApplications"> | null = null;
+        try {
+          const directApp = await ctx.db.get(q as Id<"certificationApplications">);
+          if (directApp && directApp.status === "approved") {
+            app = directApp;
+          }
+        } catch {}
+
+        if (!app) {
+          const allApps = await ctx.db.query("certificationApplications").collect();
+          app = allApps.find((a) => {
+            const idStr = a._id.toLowerCase();
+            const idSuffix = idStr.slice(-8);
+            return (
+              a.status === "approved" &&
+              (idStr === q.toLowerCase() ||
+                idSuffix === cleanCode ||
+                idStr.endsWith(cleanCode) ||
+                `mcci-smpcc-${idSuffix}` === q.toLowerCase())
+            );
+          }) ?? null;
+        }
+
+        if (app) {
+          const user = await ctx.db.get(app.userId);
+          if (!user) return null;
+
+          const member = await ctx.db
+            .query("cohortMembers")
+            .withIndex("by_user", (q) => q.eq("userId", user._id))
+            .first();
+          let cohortName: string | null = null;
+          if (member) {
+            const cohort = await ctx.db.get(member.cohortId);
+            if (cohort) cohortName = cohort.name;
+          }
+
+          const issuedAt = app.reviewedAt ? app.reviewedAt.slice(0, 10) : new Date().toISOString().slice(0, 10);
+          const expDate = new Date(issuedAt);
+          expDate.setFullYear(expDate.getFullYear() + 3);
+          const expiresAt = expDate.toISOString().slice(0, 10);
+
+          return {
+            certId: app._id,
+            formattedCertNo: `MCCI-SMPCC-${app._id.slice(-8).toUpperCase()}`,
+            userName: user.name ?? "코치",
+            cohortName,
+            status: "active" as const,
+            issuedAt,
+            expiresAt,
+            isValid: true,
+            verifiedAt: new Date().toISOString(),
+            issuerName: "사단법인 한국멘탈코칭센터",
+            programName: "스포츠 멘탈코칭 전문가과정 (SMPCC)",
+            notes: app.reviewComment || "공식 자격 심사 승인",
+          };
+        }
+      }
+
+      if (!cert) return null;
+
       const user = (await ctx.db.get(cert.userId)) as Doc<"users"> | null;
-      if (!user || !("role" in user)) return null;
+      if (!user) return null;
 
       const member = await ctx.db
         .query("cohortMembers")
@@ -65,12 +160,17 @@ export const verifyCertification = query({
 
       return {
         certId: cert._id,
+        formattedCertNo: `MCCI-SMPCC-${cert._id.slice(-8).toUpperCase()}`,
         userName: user.name ?? "코치",
         cohortName,
         status: cert.status,
         issuedAt: cert.issuedAt,
         expiresAt: cert.expiresAt,
         isValid,
+        verifiedAt: new Date().toISOString(),
+        issuerName: "사단법인 한국멘탈코칭센터",
+        programName: "스포츠 멘탈코칭 전문가과정 (SMPCC)",
+        notes: cert.notes,
       };
     } catch {
       return null;
