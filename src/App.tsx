@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { DefaultProviders } from "./components/providers/default.tsx";
 import { useServiceWorker } from "@/hooks/use-service-worker.ts";
+import { NetworkStatusBanner } from "@/components/common/network-status-banner.tsx";
 import AppLayout from "./components/layout/app-layout.tsx";
 
 // Lazy-loaded public & auth routes
@@ -84,6 +85,7 @@ export default function App() {
   return (
     <DefaultProviders>
       <BrowserRouter>
+        <NetworkStatusBanner />
         <Suspense fallback={<PageLoadingFallback />}>
           <Routes>
             {/* Non-layout routes */}
