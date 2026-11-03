@@ -193,6 +193,7 @@ function getNavSections(role: string, isPreviewMode?: boolean): NavSection[] {
           { label: "교육장 예약 관리", href: "/classroom-booking", icon: <CalendarDays className="w-4 h-4" /> },
           { label: "커뮤니티", href: "/community", icon: <MessagesSquare className="w-4 h-4" /> },
           { label: "데이터 내보내기", href: "/admin/export", icon: <FileSpreadsheet className="w-4 h-4" /> },
+          { label: "시스템 에러 로그", href: "/admin/errors", icon: <ShieldAlert className="w-4 h-4" /> },
           { label: "내 프로필", href: "/profile", icon: <UserCircle className="w-4 h-4" /> },
           { label: "설정", href: "/settings", icon: <Settings className="w-4 h-4" /> },
           { label: "앱 설치 안내", href: "/install-guide", icon: <Smartphone className="w-4 h-4" /> },

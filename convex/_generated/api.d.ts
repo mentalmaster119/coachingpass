@@ -18,6 +18,7 @@ import type * as bcp from "../bcp.js";
 import type * as calendar from "../calendar.js";
 import type * as certification from "../certification.js";
 import type * as classroomBookings from "../classroomBookings.js";
+import type * as clientErrors from "../clientErrors.js";
 import type * as coachFeedback from "../coachFeedback.js";
 import type * as coaching from "../coaching.js";
 import type * as coachingAnalysis from "../coachingAnalysis.js";
@@ -72,6 +73,7 @@ declare const fullApi: ApiFromModules<{
   calendar: typeof calendar;
   certification: typeof certification;
   classroomBookings: typeof classroomBookings;
+  clientErrors: typeof clientErrors;
   coachFeedback: typeof coachFeedback;
   coaching: typeof coaching;
   coachingAnalysis: typeof coachingAnalysis;

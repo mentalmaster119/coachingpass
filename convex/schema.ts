@@ -815,4 +815,22 @@ export default defineSchema({
   })
     .index("by_coach", ["coachId"])
     .index("by_trainee_name", ["traineeName"]),
+
+  // 클라이언트 런타임 에러 & 장애 관측성 (Client Error Tracking & Observability)
+  clientErrors: defineTable({
+    message: v.string(),                        // 에러 메시지
+    stack: v.optional(v.string()),              // 스택 트레이스
+    componentStack: v.optional(v.string()),     // React 컴포넌트 스택
+    url: v.string(),                            // 에러 발생 페이지 URL
+    userAgent: v.string(),                      // 브라우저, 기기 OS 정보
+    userId: v.optional(v.id("users")),          // 사용자 ID (로그인 상태인 경우)
+    userEmail: v.optional(v.string()),          // 사용자 이메일
+    userName: v.optional(v.string()),           // 사용자 이름
+    timestamp: v.string(),                      // 발생 일시 (ISO 8601)
+    status: v.union(v.literal("open"), v.literal("resolved"), v.literal("ignored")),
+    severity: v.union(v.literal("error"), v.literal("fatal"), v.literal("warning")),
+  })
+    .index("by_status", ["status"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_user", ["userId"]),
 });

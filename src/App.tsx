@@ -68,6 +68,7 @@ const ClassroomBookingPage = lazy(() => import("./pages/classroom-booking/page.t
 const SupervisionPage = lazy(() => import("./pages/supervision/page.tsx"));
 const SubmissionsPage = lazy(() => import("./pages/submissions/page.tsx"));
 const AdminCoachingAnalysisPage = lazy(() => import("./pages/admin/coaching-analysis/page.tsx"));
+const AdminErrorsPage = lazy(() => import("./pages/admin/errors/page.tsx"));
 
 function PageLoadingFallback() {
   return (
@@ -155,6 +156,7 @@ export default function App() {
               <Route path="/submissions" element={<SubmissionsPage />} />
               <Route path="/admin/coaching-analysis" element={<AdminCoachingAnalysisPage />} />
               <Route path="/admin/coaching-analysis/:userId" element={<AdminCoachingAnalysisPage />} />
+              <Route path="/admin/errors" element={<AdminErrorsPage />} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
