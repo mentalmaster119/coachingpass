@@ -17,8 +17,10 @@ import {
   UserMinus,
   GraduationCap,
   Mail,
+  FileSpreadsheet,
 } from "lucide-react";
 import AdminInviteModal from "@/components/admin/admin-invite-modal.tsx";
+import { BulkUserImportDialog } from "../users/_components/bulk-user-import-dialog.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
@@ -557,6 +559,7 @@ function CohortMemberPanel({ cohortId }: { cohortId: Id<"cohorts"> }) {
   const updateStatus = useMutation(api.cohorts.updateMemberStatus);
 
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showBulkDialog, setShowBulkDialog] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [adding, setAdding] = useState(false);
 
@@ -644,10 +647,16 @@ function CohortMemberPanel({ cohortId }: { cohortId: Id<"cohorts"> }) {
           코치 명단
           {members && <Badge variant="secondary">{members.length}명</Badge>}
         </div>
-        <Button size="sm" variant="outline" onClick={() => setShowAddDialog(true)} className="gap-1.5 cursor-pointer">
-          <UserPlus className="w-3.5 h-3.5" />
-          코치 추가
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowBulkDialog(true)} className="gap-1.5 cursor-pointer">
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            엑셀/CSV 일괄 배정
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setShowAddDialog(true)} className="gap-1.5 cursor-pointer">
+            <UserPlus className="w-3.5 h-3.5" />
+            코치 추가
+          </Button>
+        </div>
       </div>
 
       {members === undefined ? (
@@ -750,6 +759,12 @@ function CohortMemberPanel({ cohortId }: { cohortId: Id<"cohorts"> }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkUserImportDialog
+        open={showBulkDialog}
+        onOpenChange={setShowBulkDialog}
+        initialCohortId={cohortId}
+      />
     </div>
   );
 }
