@@ -30,9 +30,9 @@ export const create = mutation({
 
     // Verify the trainee exists and is assigned to this coach (or user is admin)
     const trainee = await ctx.db.get(args.traineeId);
-    if (!trainee) throw new ConvexError({ message: "수강생를 찾을 수 없습니다", code: "NOT_FOUND" });
+    if (!trainee) throw new ConvexError({ message: "코치를 찾을 수 없습니다", code: "NOT_FOUND" });
     if (trainee.role !== "trainee") {
-      throw new ConvexError({ message: "수강생만 피드백을 받을 수 있습니다", code: "BAD_REQUEST" });
+      throw new ConvexError({ message: "코치만 피드백을 받을 수 있습니다", code: "BAD_REQUEST" });
     }
     const coachFields = [
       trainee.assignedCoachId,
@@ -44,7 +44,7 @@ export const create = mutation({
     const isAssignedToThisCoach = coachFields.some((id) => id?.toString() === coach._id.toString());
     if (coach.role === "senior_coach" && !isAssignedToThisCoach) {
       throw new ConvexError({
-        message: "담당 수강생에게만 피드백을 작성할 수 있습니다",
+        message: "배정된 코치에게만 피드백을 작성할 수 있습니다",
         code: "FORBIDDEN",
       });
     }
@@ -161,7 +161,7 @@ export const listMyFeedbacks = query({
         const trainee = await ctx.db.get(fb.traineeId);
         return {
           ...fb,
-          traineeName: trainee?.name ?? "수강생",
+          traineeName: trainee?.name ?? "코치",
           coachName: coach?.name ?? "코치",
         };
       }),
@@ -186,7 +186,7 @@ export const listFeedbackForTrainee = query({
         const trainee = await ctx.db.get(fb.traineeId);
         return {
           ...fb,
-          traineeName: trainee?.name ?? "수강생",
+          traineeName: trainee?.name ?? "코치",
           coachName: coach?.name ?? "코치",
         };
       }),
@@ -211,7 +211,7 @@ export const listMyWrittenFeedbacks = query({
         const trainee = await ctx.db.get(fb.traineeId);
         return {
           ...fb,
-          traineeName: trainee?.name ?? "수강생",
+          traineeName: trainee?.name ?? "코치",
           coachName: coach?.name ?? "코치",
         };
       }),
@@ -231,7 +231,7 @@ export const listAll = query({
         const trainee = await ctx.db.get(fb.traineeId);
         return {
           ...fb,
-          traineeName: trainee?.name ?? "수강생",
+          traineeName: trainee?.name ?? "코치",
           coachName: coach?.name ?? "코치",
         };
       }),

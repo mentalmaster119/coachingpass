@@ -791,9 +791,9 @@ export const assignCoach = mutation({
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
     const trainee = await ctx.db.get(args.traineeId);
-    if (!trainee) throw new ConvexError({ message: "교육생을 찾을 수 없습니다.", code: "NOT_FOUND" });
+    if (!trainee) throw new ConvexError({ message: "코치를 찾을 수 없습니다.", code: "NOT_FOUND" });
     if (trainee.role !== "trainee") {
-      throw new ConvexError({ message: "교육생만 수퍼바이저를 배정할 수 있습니다.", code: "BAD_REQUEST" });
+      throw new ConvexError({ message: "코치에게만 수퍼바이저를 배정할 수 있습니다.", code: "BAD_REQUEST" });
     }
 
     if (args.coachId) {
@@ -1212,7 +1212,7 @@ export const sendProfileIncompleteNotification = mutation({
   },
 });
 
-/** 관리자: 기수별 교육생/코치 엑셀/CSV 일괄 등록 (Bulk Import) */
+/** 관리자: 기수별 코치 엑셀/CSV 일괄 등록 (Bulk Import) */
 export const bulkCreateUsers = mutation({
   args: {
     cohortId: v.optional(v.id("cohorts")),

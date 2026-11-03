@@ -294,7 +294,7 @@ export default function AdminMentorCoachingPage() {
         <div>
           <h1 className="text-xl font-bold text-foreground">멘토코칭 기록 검토</h1>
           <p className="text-sm text-muted-foreground">
-            교육생이 제출한 멘토코칭 기록을 검토하고 승인/반려하세요.
+            코치가 제출한 멘토코칭 기록을 검토하고 승인/반려하세요.
           </p>
         </div>
         {!isLoading && logs.length > 0 && (

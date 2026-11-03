@@ -498,7 +498,7 @@ function LogCard({
                   navigate(`/admin/coaching-analysis?userId=${log.userId}`);
                 }}
                 className="text-xs font-semibold text-foreground hover:text-purple-600 hover:underline cursor-pointer flex items-center gap-1"
-                title="해당 교육생 코칭 실습 심층 분석 보기"
+                title="해당 코치 실습 심층 분석 보기"
               >
                 <span>{log.userName}</span>
                 <Sparkles className="w-3 h-3 text-purple-500 inline" />
@@ -637,7 +637,7 @@ export default function AdminCoachingPage() {
           <div>
             <h1 className="text-xl font-bold text-foreground">코칭 기록 검토</h1>
             <p className="text-sm text-muted-foreground">
-              교육생이 제출한 코칭 실습 기록을 검토하고 승인/반려하세요
+              코치가 제출한 코칭 실습 기록을 검토하고 승인/반려하세요
             </p>
           </div>
         </div>
@@ -649,7 +649,7 @@ export default function AdminCoachingPage() {
             className="border-purple-200 text-purple-700 hover:bg-purple-50 text-xs h-9"
           >
             <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-            교육생별 심층 분석
+            코치별 심층 분석
           </Button>
           {!isLoading && (
             <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">

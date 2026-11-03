@@ -73,7 +73,7 @@ export const getTraineeCoachingDeepAnalysis = query({
 
     const trainee = await ctx.db.get(args.userId);
     if (!trainee) {
-      throw new ConvexError({ message: "교육생을 찾을 수 없습니다.", code: "NOT_FOUND" });
+      throw new ConvexError({ message: "코치를 찾을 수 없습니다.", code: "NOT_FOUND" });
     }
 
     // Cohort & Coaches
@@ -355,7 +355,7 @@ export const getTraineeCoachingDeepAnalysis = query({
         id: fb._id,
         source: "coachFeedback",
         date: fb.feedbackDate,
-        author: coach?.name ?? "담당 코치",
+        author: coach?.name ?? "코치",
         strengths: fb.strengths,
         improvements: fb.improvements,
         rating: fb.rating,

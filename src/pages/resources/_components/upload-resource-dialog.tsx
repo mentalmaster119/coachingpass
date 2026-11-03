@@ -244,7 +244,7 @@ export default function UploadResourceDialog({ open, onClose }: Props) {
             <div>
               <p className="text-sm font-medium">즉시 공개</p>
               <p className="text-xs text-muted-foreground">
-                공개로 설정 시 수강생에게 바로 노출됩니다
+                공개로 설정 시 코치에게 바로 노출됩니다
               </p>
             </div>
             <Switch

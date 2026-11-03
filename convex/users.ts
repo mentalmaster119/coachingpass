@@ -120,7 +120,7 @@ export const updateCurrentUser = mutation({
         .withIndex("by_role", (q) => q.eq("role", "admin"))
         .collect();
 
-      const userName = identity.name || identity.email || "새로운 교육생";
+      const userName = identity.name || identity.email || "새로운 코치";
 
       for (const admin of admins) {
         await ctx.db.insert("notifications", {
@@ -453,13 +453,13 @@ export const setActiveMockUser = mutation({
         if (!virtualTrainee) {
           const traineeId = await ctx.db.insert("users", {
             tokenIdentifier: "mentalcoach119-naver-token",
-            name: "교육생 테스터",
+            name: "코치 테스터",
             email: "mentalcoach119@naver.com",
             role: "trainee",
             approvalStatus: "approved",
             onboardingCompleted: true,
             phone: "010-0000-0000",
-            bio: "교육생 모드 미리보기용 테스터 계정입니다.",
+            bio: "코치 모드 미리보기용 테스터 계정입니다.",
             isMockActive: true,
           });
 
@@ -596,7 +596,7 @@ export const forceClearMockRoles = mutation({
   },
 });
 
-// 멘토코치 리스트 조회 (교육생 열람용)
+// 멘토코치 리스트 조회 (코치 열람용)
 export const listMentorCoaches = query({
   args: {},
   handler: async (ctx): Promise<Array<{
@@ -792,7 +792,7 @@ export const requestMentoring = mutation({
       userId: args.mentorId,
       type: "feedback_received",
       title: "멘토코칭 매칭 신청",
-      message: `${user.name ?? "교육생"}님으로부터 멘토코칭 매칭 신청이 도착했습니다.\n\n신청 메시지: "${args.message}"\n연락처: ${user.phone ?? "미등록"}\n이메일: ${user.email ?? ""}`,
+      message: `${user.name ?? "코치"}님으로부터 멘토코칭 매칭 신청이 도착했습니다.\n\n신청 메시지: "${args.message}"\n연락처: ${user.phone ?? "미등록"}\n이메일: ${user.email ?? ""}`,
       isRead: false,
     });
 
@@ -848,7 +848,7 @@ export const cancelMentoring = mutation({
       userId: args.mentorId,
       type: "feedback_received",
       title: "멘토코칭 매칭 취소",
-      message: `${user.name ?? "교육생"}님이 멘토코칭 매칭 신청을 취소했습니다.`,
+      message: `${user.name ?? "코치"}님이 멘토코칭 매칭 신청을 취소했습니다.`,
       isRead: false,
     });
   },

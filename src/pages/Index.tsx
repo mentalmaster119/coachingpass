@@ -328,7 +328,7 @@ function LandingPage({ onOpenLogin }: { onOpenLogin: () => void }) {
             지금 바로 시작하세요
           </h2>
           <p className="text-muted-foreground">
-            수강생 등록 후 관리자 승인을 받으면 모든 기능을 이용할 수 있습니다.
+            코치 등록 후 관리자 승인을 받으면 모든 기능을 이용할 수 있습니다.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button

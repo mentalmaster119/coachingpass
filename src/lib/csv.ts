@@ -14,7 +14,7 @@ export const HEADER_LABELS: Record<string, string> = {
   joinedAt: "가입일",
   onboardingDone: "온보딩완료",
   // education
-  traineeName: "교육생명",
+  traineeName: "코치명",
   educationName: "교육명",
   institution: "기관명",
   educationDate: "교육일",

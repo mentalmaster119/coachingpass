@@ -48,7 +48,7 @@ function CoachFeedbackInner() {
 
   const handleCopyJournal = (j: any) => {
     const text = `[멘탈코칭 수퍼바이징 일지 (V3.0)]
-- 수퍼바이지(교육생): ${j.traineeName}
+- 수퍼바이지(코치): ${j.traineeName}
 - 일시: ${j.coachingDate}
 - 코칭 주제: ${j.topic}
 - 고객 사전/사후 척도: ${j.currentScore || "-"}점 → ${j.targetScore || "-"}점
@@ -99,7 +99,7 @@ ${j.nextActionPlan}`;
             </div>
             <div>
               <h1 className="text-xl font-bold">피드백 관리</h1>
-              <p className="text-sm text-muted-foreground">담당 교육생에게 피드백을 작성합니다</p>
+              <p className="text-sm text-muted-foreground">배정 코치에게 피드백을 작성합니다</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -126,7 +126,7 @@ ${j.nextActionPlan}`;
         className="grid grid-cols-3 gap-4"
       >
         {[
-          { label: "담당 교육생", value: trainees?.length ?? "-", icon: <Users className="w-4 h-4 text-muted-foreground" /> },
+          { label: "배정 코치", value: trainees?.length ?? "-", icon: <Users className="w-4 h-4 text-muted-foreground" /> },
           { label: "작성한 피드백", value: totalGiven, icon: <MessageSquareDot className="w-4 h-4 text-muted-foreground" /> },
           { label: "평균 평점", value: avgRating ? `${avgRating}점` : "-", icon: <Star className="w-4 h-4 text-amber-400" /> },
         ].map((stat) => (
@@ -162,7 +162,7 @@ ${j.nextActionPlan}`;
                 <EmptyMedia variant="icon"><MessageSquareDot /></EmptyMedia>
                 <EmptyTitle>작성한 피드백이 없습니다</EmptyTitle>
                 <EmptyDescription>
-                  담당 교육생에게 첫 피드백을 작성해보세요.
+                  배정 코치에게 첫 피드백을 작성해 보세요.
                 </EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
@@ -219,7 +219,7 @@ ${j.nextActionPlan}`;
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold text-base text-foreground">{j.traineeName}</span>
-                          <span className="text-xs text-muted-foreground">교육생 관찰</span>
+                          <span className="text-xs text-muted-foreground">코치 관찰</span>
                           {j.averageScore && (
                             <Badge className="bg-purple-100 text-purple-700 border-purple-200">
                               평균 {j.averageScore.toFixed(2)}점 / 4.0점

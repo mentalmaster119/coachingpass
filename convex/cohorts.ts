@@ -258,7 +258,7 @@ export const addMember = mutation({
         q.eq("cohortId", args.cohortId).eq("userId", args.userId)
       )
       .unique();
-    if (existing) throw new ConvexError({ message: "이미 이 기수에 등록된 교육생입니다", code: "CONFLICT" });
+    if (existing) throw new ConvexError({ message: "이미 이 기수에 등록된 코치입니다", code: "CONFLICT" });
     await ctx.db.insert("cohortMembers", {
       cohortId: args.cohortId,
       userId: args.userId,

@@ -250,7 +250,7 @@ export const submitDraft = mutation({
     const { logId, ...fields } = args;
     await ctx.db.patch(logId, { ...fields, approvalStatus: "pending" });
     // Notify assigned coach
-    await notifyCoachOfSubmission(ctx, user.name ?? "교육생", user._id, args.topic);
+    await notifyCoachOfSubmission(ctx, user.name ?? "코치", user._id, args.topic);
   },
 });
 
@@ -264,7 +264,7 @@ export const create = mutation({
       approvalStatus: "pending",
     });
     // Notify assigned coach
-    await notifyCoachOfSubmission(ctx, user.name ?? "교육생", user._id, args.topic);
+    await notifyCoachOfSubmission(ctx, user.name ?? "코치", user._id, args.topic);
     return id;
   },
 });
@@ -295,7 +295,7 @@ export const update = mutation({
     await ctx.db.patch(logId, { ...fields, approvalStatus: newStatus });
     // Notify coach when submitting / re-submitting (not draft saves)
     if (log.approvalStatus !== "pending") {
-      await notifyCoachOfSubmission(ctx, user.name ?? "교육생", user._id, args.topic);
+      await notifyCoachOfSubmission(ctx, user.name ?? "코치", user._id, args.topic);
     }
   },
 });

@@ -77,7 +77,7 @@ export default function AdminExamScheduleModal({
       setIsOpen(currentExam.isOpen ?? true);
       setDescription(
         currentExam.description ||
-          "16기, 17기 교육생 및 수료생을 위한 2026년 하반기 공식 인증시험입니다. 과제 제출 또는 실습 시간 일부 미달 항목이 있더라도 응시 신청이 가능하며, 최종 자격증 발급 시 심사위원회에서 이수 기준을 최종 검토합니다.",
+          "16기, 17기 코치 및 수료생을 위한 2026년 하반기 공식 인증시험입니다. 과제 제출 또는 실습 시간 일부 미달 항목이 있더라도 응시 신청이 가능하며, 최종 자격증 발급 시 심사위원회에서 이수 기준을 최종 검토합니다.",
       );
     }
   }, [open, currentExam]);
@@ -95,7 +95,7 @@ export default function AdminExamScheduleModal({
     setSubjects("1차 필기 (코칭 이론 및 윤리 규정) + 2차 실기 (코칭 시연 및 구술 면접)");
     setIsOpen(true);
     setDescription(
-      "16기, 17기 교육생 및 수료생을 위한 2026년 하반기 공식 인증시험입니다. 과제 제출 또는 실습 시간 일부 미달 항목이 있더라도 응시 신청이 가능하며, 최종 자격증 발급 시 심사위원회에서 이수 기준을 최종 검토합니다.",
+      "16기, 17기 코치 및 수료생을 위한 2026년 하반기 공식 인증시험입니다. 과제 제출 또는 실습 시간 일부 미달 항목이 있더라도 응시 신청이 가능하며, 최종 자격증 발급 시 심사위원회에서 이수 기준을 최종 검토합니다.",
     );
     toast.info("2026년 하반기 추천 기본값이 로드되었습니다.");
   };
@@ -125,7 +125,7 @@ export default function AdminExamScheduleModal({
         syncToCalendar,
       });
 
-      toast.success("인증시험 공지 및 일정이 저장되었습니다! 교육생 화면에 즉시 반영됩니다.");
+      toast.success("인증시험 공지 및 일정이 저장되었습니다! 코치 화면에 즉시 반영됩니다.");
       onOpenChange(false);
     } catch (err: any) {
       toast.error(err?.message || "저장 중 오류가 발생했습니다.");
@@ -159,7 +159,7 @@ export default function AdminExamScheduleModal({
               인증시험 공지 카드 및 일정 설정
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              교육생 화면의 <strong>'인증시험 안내 카드'</strong>에 표시될 시험명, 일정, 장소, 안내 문구를 직접 등록 및 편집합니다.
+              코치 화면의 <strong>'인증시험 안내 카드'</strong>에 표시될 시험명, 일정, 장소, 안내 문구를 직접 등록 및 편집합니다.
             </DialogDescription>
           </DialogHeader>
 
@@ -325,7 +325,7 @@ export default function AdminExamScheduleModal({
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="교육생 화면의 안내 카드 본문에 노출될 세부 공지 내용을 입력하세요."
+                placeholder="코치 화면의 안내 카드 본문에 노출될 세부 공지 내용을 입력하세요."
                 className="text-xs resize-none bg-background leading-relaxed"
               />
             </div>

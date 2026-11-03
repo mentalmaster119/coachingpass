@@ -283,7 +283,7 @@ export default function TraineeDashboard({ user }: { user: User }) {
         className="flex flex-col sm:flex-row sm:items-start justify-between gap-3"
       >
         <div>
-          <h1 className="text-2xl font-bold">안녕하세요, {user.name || "수강생"}멘탈코치님!</h1>
+          <h1 className="text-2xl font-bold">안녕하세요, {user.name ? `${user.name} 코치님!` : "코치님!"}</h1>
           <p className="text-muted-foreground text-sm mt-1">{randomMessage}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

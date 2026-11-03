@@ -2119,7 +2119,7 @@ function GroupAssignmentDialog({
             {/* Unassigned pool */}
             {unassigned.length > 0 && (
               <div className="rounded-xl border border-dashed p-3 space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">미배정 수강생</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">미배정 코치</p>
                 <div className="flex flex-wrap gap-2">
                   {unassigned.map((m) => (
                     <div key={m._id} className="flex items-center gap-1 bg-muted rounded-lg px-2 py-1">
@@ -2219,7 +2219,7 @@ function GroupAssignmentDialog({
                   <div className="p-2 min-h-[70px] space-y-1">
                     {g.memberIds.length === 0 ? (
                       <p className="text-xs text-muted-foreground text-center py-3">
-                        미배정 수강생을 클릭하여 추가하세요
+                        미배정 코치를 클릭하여 추가하세요
                       </p>
                     ) : (
                       g.memberIds.map((id) => {
@@ -2253,7 +2253,7 @@ function GroupAssignmentDialog({
                         <SelectTrigger className="h-7 text-xs border-dashed mt-1 cursor-pointer">
                           <div className="flex items-center gap-1 text-muted-foreground">
                             <UserPlus className="w-3 h-3" />
-                            수강생 추가
+                            코치 추가
                           </div>
                         </SelectTrigger>
                         <SelectContent>

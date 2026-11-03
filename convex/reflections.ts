@@ -69,14 +69,14 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
     if (user.role !== "trainee") {
-      throw new ConvexError({ message: "수강생만 일지를 작성할 수 있습니다.", code: "FORBIDDEN" });
+      throw new ConvexError({ message: "코치만 일지를 작성할 수 있습니다.", code: "FORBIDDEN" });
     }
     const id = await ctx.db.insert("reflectionJournals", {
       ...args,
       userId: user._id,
     });
     // Notify assigned coach
-    await notifyCoachOfReflection(ctx, user.name ?? "교육생", user._id, args.title);
+    await notifyCoachOfReflection(ctx, user.name ?? "코치", user._id, args.title);
     return id;
   },
 });

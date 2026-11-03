@@ -91,8 +91,8 @@ function TraineesExportCard({ cohortId }: { cohortId: Id<"cohorts"> | "" }) {
     try {
       const csv = toCSV(data);
       const date = new Date().toISOString().slice(0, 10);
-      downloadCSV(csv, `교육생_목록_${date}.csv`);
-      toast.success(`${data.length}명의 교육생 데이터를 내보냈습니다`);
+      downloadCSV(csv, `코치_목록_${date}.csv`);
+      toast.success(`${data.length}명의 코치 데이터를 내보냈습니다`);
     } catch {
       toast.error("내보내기 실패");
     } finally {
@@ -103,8 +103,8 @@ function TraineesExportCard({ cohortId }: { cohortId: Id<"cohorts"> | "" }) {
   return (
     <ExportCard
       icon={<Users className="w-5 h-5" />}
-      title="교육생 목록"
-      description="선택한 기수의 교육생 기본 정보, 인증 목표, 승인 상태를 내보냅니다"
+      title="코치 목록"
+      description="선택한 기수의 코치 기본 정보, 인증 목표, 승인 상태를 내보냅니다"
       count={data?.length}
       columns={["이름", "이메일", "인증목표", "승인상태", "가입일", "온보딩완료"]}
       onExport={handleExport}
@@ -140,7 +140,7 @@ function EducationExportCard({ cohortId }: { cohortId: Id<"cohorts"> | "" }) {
       title="교육 이수 기록"
       description="선택한 기수의 교육 이수 기록, 기관명, 이수 시간, 승인 상태를 내보냅니다"
       count={data?.length}
-      columns={["교육생명", "교육명", "기관명", "교육일", "이수시간", "승인상태"]}
+      columns={["코치명", "교육명", "기관명", "교육일", "이수시간", "승인상태"]}
       filter={
         <Select value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
           <SelectTrigger className="w-28 h-8 text-xs">
@@ -187,7 +187,7 @@ function CoachingExportCard({ cohortId }: { cohortId: Id<"cohorts"> | "" }) {
       title="코칭 실습 기록"
       description="선택한 기수의 코칭 세션 기록, 코치이 정보, 주제, 승인 상태를 내보냅니다"
       count={data?.length}
-      columns={["교육생명", "코칭일", "코치이", "유형", "시간(분)", "주제", "승인상태"]}
+      columns={["코치명", "코칭일", "코치이", "유형", "시간(분)", "주제", "승인상태"]}
       filter={
         <Select value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
           <SelectTrigger className="w-28 h-8 text-xs">
@@ -234,7 +234,7 @@ function MentorCoachingExportCard({ cohortId }: { cohortId: Id<"cohorts"> | "" }
       title="수퍼비전 기록"
       description="선택한 기수의 멘토코칭·코더코 세션 기록, 코치명, 주제, 승인 상태를 내보냅니다"
       count={data?.length}
-      columns={["교육생명", "세션일", "유형", "코치명", "시간(분)", "주제", "승인상태"]}
+      columns={["코치명", "세션일", "유형", "지도코치명", "시간(분)", "주제", "승인상태"]}
       filter={
         <Select value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
           <SelectTrigger className="w-28 h-8 text-xs">
@@ -280,7 +280,7 @@ function CertificationExportCard({ cohortId }: { cohortId: Id<"cohorts"> | "" })
       title="인증 신청 현황"
       description="선택한 기수의 인증 신청 목록, 신청일, 심사 상태, 검토 의견을 내보냅니다"
       count={data?.length}
-      columns={["교육생명", "인증목표", "신청일", "상태", "교육시간", "코칭시간", "검토일"]}
+      columns={["코치명", "인증목표", "신청일", "상태", "교육시간", "코칭시간", "검토일"]}
       onExport={handleExport}
       loading={loading || data === undefined}
       disabled={!cohortId}
@@ -298,7 +298,7 @@ function TraineeProgressExportCard({ cohortId }: { cohortId: Id<"cohorts"> | "" 
     try {
       const csv = toCSV(data);
       const date = new Date().toISOString().slice(0, 10);
-      downloadCSV(csv, `교육생_진행현황_${date}.csv`);
+      downloadCSV(csv, `코치_진행현황_${date}.csv`);
       toast.success(`${data.length}명의 진행 현황을 내보냈습니다`);
     } catch {
       toast.error("내보내기 실패");
@@ -310,7 +310,7 @@ function TraineeProgressExportCard({ cohortId }: { cohortId: Id<"cohorts"> | "" 
   return (
     <ExportCard
       icon={<TrendingUp className="w-5 h-5" />}
-      title="교육생별 진행 현황"
+      title="코치별 진행 현황"
       description="선택한 기수의 승인된 교육시간, 코칭시간(개인/그룹), 수퍼비전 횟수를 요약합니다"
       count={data?.length}
       columns={["이름", "이메일", "승인교육시간", "승인코칭시간", "개인코칭시간", "그룹코칭시간", "수퍼비전횟수"]}
@@ -354,7 +354,7 @@ function CoachingFilteredExportCard({ cohortId }: { cohortId: Id<"cohorts"> | ""
       title="코칭 기록 (기간 필터)"
       description="선택한 기수의 코칭 기록을 기간과 승인 상태로 필터링합니다. MCCI 도메인·사용 기법 포함"
       count={data?.length}
-      columns={["교육생명", "코칭일", "유형", "시간", "MCCI도메인", "사용기법", "승인상태"]}
+      columns={["코치명", "코칭일", "유형", "시간", "MCCI도메인", "사용기법", "승인상태"]}
       filter={
         <div className="flex flex-wrap gap-2 items-center">
           <Select value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
@@ -418,7 +418,7 @@ function AttendanceExportCard({ cohortId }: { cohortId: Id<"cohorts"> | "" }) {
     <ExportCard
       icon={<CalendarDays className="w-5 h-5" />}
       title="기수별 출석 현황"
-      description="선택한 기수의 교육생별 세미나 출석 현황을 내보냅니다 (출석/지각/결석/공결)"
+      description="선택한 기수의 코치별 세미나 출석 현황을 내보냅니다 (출석/지각/결석/공결)"
       count={data?.length}
       columns={["이름", "이메일", "1차", "2차", "3차", "..."]}
       onExport={handleExport}

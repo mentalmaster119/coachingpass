@@ -7,7 +7,7 @@ import type { Id, Doc } from "./_generated/dataModel.d.ts";
 
 // ── SMPCC 자격 취득 기록 ────────────────────────────────────────────────────
 
-/** 수강생 본인의 SMPCC 자격 현황 조회 */
+/** 코치 본인의 SMPCC 자격 현황 조회 */
 export const getMyCertification = query({
   args: {},
   handler: async (ctx) => {
@@ -93,7 +93,7 @@ export const getAllCertifications = query({
   },
 });
 
-/** 관리자: 수료 기준 통과 수강생 목록 (기수 포함, SMPCC 자격 현황용) */
+/** 관리자: 수료 기준 통과 코치 목록 (기수 포함, SMPCC 자격 현황용) */
 export const getCompletedTraineesWithCohort = query({
   args: {},
   handler: async (ctx) => {
@@ -169,7 +169,7 @@ export const getCompletedTraineesWithCohort = query({
       })
     );
 
-    // 수료 기준 통과한 수강생만 반환
+    // 수료 기준 통과한 코치만 반환
     return results.filter((r) => r.isCompleted);
   },
 });
@@ -476,8 +476,8 @@ export const rejectForumAttendance = mutation({
 
 // ── 누적 인증 시간 ────────────────────────────────────────────────────────────
 
-/** 수강생 본인의 인정 교육시간 누적 조회 */
-/** 수강생 본인의 인정 교육시간 누적 조회 */
+/** 코치 본인의 인정 교육시간 누적 조회 */
+/** 코치 본인의 인정 교육시간 누적 조회 */
 export const getMyCreditHours = query({
   args: {},
   handler: async (ctx) => {

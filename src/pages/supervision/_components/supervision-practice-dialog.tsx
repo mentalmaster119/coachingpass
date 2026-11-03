@@ -184,7 +184,7 @@ export default function SupervisionPracticeDialog({
   const handleCopyText = () => {
     const lines = [
       "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-      "📝 멘탈코칭 실습 기록지 (멘탈코치 역할 교육생 작성)",
+      "📝 멘탈코칭 실습 기록지 (멘탈코치 역할 코치 작성)",
       "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
       "",
       "A. 실습 기본정보",
@@ -298,7 +298,7 @@ export default function SupervisionPracticeDialog({
                   멘탈코칭 실습 기록지
                 </DialogTitle>
                 <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
-                  멘탈코치 역할 교육생 작성
+                  멘탈코치 역할 코치 작성
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-1">

@@ -222,7 +222,7 @@ export default function AdminQrAttendanceDialog({
               {seminar.title}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              교육생이 스마트폰 카메라 또는 앱 내 [📷 QR 출석]으로 비추면 실시간 자동 출석됩니다.
+              코치가 스마트폰 카메라 또는 앱 내 [📷 QR 출석]으로 비추면 실시간 자동 출석됩니다.
             </DialogDescription>
           </DialogHeader>
 

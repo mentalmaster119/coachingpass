@@ -83,7 +83,7 @@ export default function CoachingLogCommentsDrawer({
   const roleMap: Record<string, string> = {
     admin: "관리자",
     senior_coach: "멘토코치",
-    trainee: "교육생",
+    trainee: "코치",
   };
 
   return (

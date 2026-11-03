@@ -233,7 +233,7 @@ function CompletionTable({ cohortId }: { cohortId: Id<"cohorts"> }) {
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon"><Users /></EmptyMedia>
-          <EmptyTitle>등록된 교육생이 없습니다</EmptyTitle>
+          <EmptyTitle>등록된 코치가 없습니다</EmptyTitle>
         </EmptyHeader>
       </Empty>
     );
@@ -247,7 +247,7 @@ function CompletionTable({ cohortId }: { cohortId: Id<"cohorts"> }) {
       {/* Summary chips */}
       <div className="flex flex-wrap gap-3">
         {[
-          { label: "전체 교육생", value: `${results.length}명`, color: "text-foreground" },
+          { label: "전체 코치", value: `${results.length}명`, color: "text-foreground" },
           { label: "수료 요건 충족", value: `${completedCount}명`, color: "text-green-600" },
           { label: "요건 미충족", value: `${results.length - completedCount}명`, color: "text-destructive" },
           { label: "인증 응시 자격", value: `${certEligibleCount}명`, color: "text-blue-600" },

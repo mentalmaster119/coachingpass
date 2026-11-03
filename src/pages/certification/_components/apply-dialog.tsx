@@ -198,7 +198,7 @@ export default function CertificationApplyDialog({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">응시자 성명</Label>
-                <Input value={userName || "교육생"} readOnly className="h-8 text-xs bg-muted/30" />
+                <Input value={userName || "코치"} readOnly className="h-8 text-xs bg-muted/30" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">이메일 계정</Label>

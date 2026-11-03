@@ -153,7 +153,7 @@ export default function CoachingLogPage() {
                 현재 관리자(수퍼바이저) 모드로 접속 중입니다.
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                이 페이지는 교육생 본인의 실습 등록 공간입니다. 교육생들의 코칭 기록을 검토하고 분석하시려면 관리자 전용 메뉴로 이동하세요.
+                이 페이지는 코치 본인의 실습 등록 공간입니다. 코치들의 코칭 기록을 검토하고 분석하시려면 관리자 전용 메뉴로 이동하세요.
               </p>
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function CoachingLogPage() {
             <Link to="/admin/coaching-analysis">
               <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white text-xs gap-1 font-bold">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>교육생 코칭 실습 분석</span>
+                <span>코치 코칭 실습 분석</span>
               </Button>
             </Link>
             <Link to="/admin/coaching">

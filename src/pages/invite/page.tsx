@@ -441,7 +441,7 @@ export default function InviteLandingPage() {
             <p className="text-xs text-muted-foreground">
               {isGeneral
                 ? "소속 기수와 기본 정보를 입력하시면 동문 코치로 바로 등록 접수됩니다."
-                : `소속 기수를 확인하고 기본 정보를 입력하시면 ${cohortName} 교육생으로 등록됩니다.`}
+                : `소속 기수를 확인하고 기본 정보를 입력하시면 ${cohortName} 코치로 등록됩니다.`}
             </p>
           </div>
 

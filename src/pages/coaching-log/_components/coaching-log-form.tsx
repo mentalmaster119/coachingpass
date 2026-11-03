@@ -1327,7 +1327,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
               <Label htmlFor="svPeerFeedback">동료 피드백</Label>
               <Textarea
                 id="svPeerFeedback"
-                placeholder="피코칭을 진행한 동료 교육생 또는 참관 동료들로부터 얻은 피드백 내용을 입력해 주세요."
+                placeholder="피코칭을 진행한 동료 코치 또는 참관 동료들로부터 얻은 피드백 내용을 입력해 주세요."
                 rows={4}
                 value={svPeerFeedback}
                 onChange={(e) => setSvPeerFeedback(e.target.value)}

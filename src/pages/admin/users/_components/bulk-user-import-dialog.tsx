@@ -119,7 +119,7 @@ export function BulkUserImportDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="w-5 h-5 text-primary" />
-            교육생 / 코치 명단 엑셀 일괄 등록
+            코치 명단 엑셀 일괄 등록
           </DialogTitle>
           <DialogDescription>
             엑셀 표의 셀 영역(이름, 이메일, 전화번호, 역할)을 복사하여 아래에 붙여넣으면 한 번에 계정이 생성되고 기수에 배정됩니다.

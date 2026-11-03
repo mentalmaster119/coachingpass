@@ -60,7 +60,7 @@ export default function IncompleteProfilesTab({
         userIds: userIds as Id<"users">[],
       });
       if (result.sent === 0) {
-        toast.info("24시간 이내 이미 알림이 발송된 교육생입니다.");
+        toast.info("24시간 이내 이미 알림이 발송된 코치입니다.");
       } else {
         toast.success(`${result.sent}명에게 프로필 완성 알림을 보냈습니다.`);
       }
@@ -89,7 +89,7 @@ export default function IncompleteProfilesTab({
           <EmptyMedia variant="icon">
             <CheckCheck />
           </EmptyMedia>
-          <EmptyTitle>모든 교육생이 프로필을 완성했습니다</EmptyTitle>
+          <EmptyTitle>모든 코치가 프로필을 완성했습니다</EmptyTitle>
           <EmptyDescription>전화번호와 프로필 사진이 모두 등록되어 있습니다.</EmptyDescription>
         </EmptyHeader>
       </Empty>

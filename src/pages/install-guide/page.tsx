@@ -254,7 +254,7 @@ export default function InstallGuidePage() {
         >
           <p className="text-sm font-semibold">활용 예시</p>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            코칭 체크리스트나 선수 자기점검 페이지를 하나의 주소로 만들어두면, 수강생과 선수가 해당 주소를 홈 화면에 저장하여
+            코칭 체크리스트나 선수 자기점검 페이지를 하나의 주소로 만들어두면, 코치와 선수가 해당 주소를 홈 화면에 저장하여
             일반 앱처럼 한 번에 실행할 수 있습니다. 별도 앱스토어 등록 없이 현장에서 바로 배포하기 좋은 방법입니다.
           </p>
         </motion.div>

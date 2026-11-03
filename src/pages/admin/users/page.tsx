@@ -897,7 +897,7 @@ function CohortUsersTab({ onViewDetail }: { onViewDetail: (userId: Id<"users">) 
           <EmptyHeader>
             <EmptyMedia variant="icon"><GraduationCap /></EmptyMedia>
             <EmptyTitle>기수를 선택해 주세요</EmptyTitle>
-            <EmptyDescription>기수를 선택하면 소속 교육생 목록과 통계를 확인할 수 있습니다.</EmptyDescription>
+            <EmptyDescription>기수를 선택하면 소속 코치 명단과 통계를 확인할 수 있습니다.</EmptyDescription>
           </EmptyHeader>
         </Empty>
       )}
@@ -917,7 +917,7 @@ function CohortUsersTab({ onViewDetail }: { onViewDetail: (userId: Id<"users">) 
           {stats && (
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {[
-                { label: "전체 교육생", value: `${stats.total}명`, highlight: false },
+                { label: "전체 코치", value: `${stats.total}명`, highlight: false },
                 { label: "수강중", value: `${stats.active}명`, color: "text-green-600 dark:text-green-400" },
                 { label: "수료", value: `${stats.completed}명`, color: "text-blue-600 dark:text-blue-400" },
                 { label: "중도탈락", value: `${stats.withdrawn}명`, color: "text-destructive" },
@@ -958,10 +958,10 @@ function CohortUsersTab({ onViewDetail }: { onViewDetail: (userId: Id<"users">) 
             </Button>
           </div>
 
-          {/* 교육생 목록 */}
+          {/* 코치 명단 */}
           {filtered.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground text-sm">
-              {search ? "검색 결과가 없습니다." : `${selectedCohort?.name ?? "이 기수"}에 등록된 교육생이 없습니다.`}
+              {search ? "검색 결과가 없습니다." : `${selectedCohort?.name ?? "이 기수"}에 등록된 코치가 없습니다.`}
             </div>
           ) : (
             <div className="space-y-2">

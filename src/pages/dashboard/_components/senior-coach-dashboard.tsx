@@ -44,7 +44,7 @@ export default function SeniorCoachDashboard({ user }: { user: User }) {
         <div>
           <h1 className="text-2xl font-bold">안녕하세요, {user.name || "멘토코치"}님!</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            담당 코치님들의 성장을 함께 이끌어 주세요.
+            코치님들의 성장을 함께 이끌어 주세요.
           </p>
         </div>
         <Button onClick={() => { navigate("/coach/feedback"); }}>
@@ -62,7 +62,7 @@ export default function SeniorCoachDashboard({ user }: { user: User }) {
       >
         {[
           {
-            label: "담당 수강생",
+            label: "배정 코치",
             value: isLoading ? "..." : dashData.traineeCount,
             icon: <Users className="w-4 h-4" />,
             color: "text-primary",
@@ -148,7 +148,7 @@ export default function SeniorCoachDashboard({ user }: { user: User }) {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold flex items-center gap-2">
             <UserCheck className="w-4 h-4 text-muted-foreground" />
-            담당 수강생 진행 현황
+            배정 코치 진행 현황
           </h2>
           <Button variant="ghost" size="sm" onClick={() => navigate("/coach/trainees")}>
             전체 보기 <TrendingUp className="w-3.5 h-3.5 ml-1" />
@@ -163,8 +163,8 @@ export default function SeniorCoachDashboard({ user }: { user: User }) {
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon"><Users /></EmptyMedia>
-              <EmptyTitle>담당 수강생이 없습니다</EmptyTitle>
-              <EmptyDescription>관리자가 수강생을 배정하면 이곳에 표시됩니다.</EmptyDescription>
+              <EmptyTitle>배정된 코치가 없습니다</EmptyTitle>
+              <EmptyDescription>관리자가 코치를 배정하면 이곳에 표시됩니다.</EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : (
@@ -255,7 +255,7 @@ export default function SeniorCoachDashboard({ user }: { user: User }) {
             { label: "피드백 관리", href: "/coach/feedback", icon: <MessageSquareDot className="w-4 h-4" />, color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20" },
             { label: "교육 검토", href: "/admin/education", icon: <BookOpen className="w-4 h-4" />, color: "text-green-600 bg-green-50 dark:bg-green-900/20" },
             { label: "코칭 검토", href: "/admin/coaching", icon: <ClipboardList className="w-4 h-4" />, color: "text-orange-600 bg-orange-50 dark:bg-orange-900/20" },
-            { label: "담당 수강생", href: "/coach/trainees", icon: <UserCheck className="w-4 h-4" />, color: "text-purple-600 bg-purple-50 dark:bg-purple-900/20" },
+            { label: "배정 코치 명단", href: "/coach/trainees", icon: <UserCheck className="w-4 h-4" />, color: "text-purple-600 bg-purple-50 dark:bg-purple-900/20" },
           ].map((item) => (
             <button
               key={item.href}

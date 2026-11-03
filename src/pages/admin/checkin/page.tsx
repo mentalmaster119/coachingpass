@@ -48,7 +48,7 @@ export default function AdminCheckInPage() {
           <Heart className="w-6 h-6 text-rose-500" />
           자기 체크인 현황
         </h1>
-        <p className="text-muted-foreground text-sm mt-1">교육생들의 일일 몸·마음·열정 상태를 모니터링합니다</p>
+        <p className="text-muted-foreground text-sm mt-1">코치들의 일일 몸·마음·열정 상태를 모니터링합니다</p>
       </div>
 
       {/* 알람 패널 */}
@@ -59,7 +59,7 @@ export default function AdminCheckInPage() {
           <Card className="border-green-300 bg-green-50 dark:bg-green-900/20">
             <CardContent className="pt-4 pb-4 flex items-center gap-3 text-green-700 dark:text-green-400">
               <Heart className="w-5 h-5" />
-              <span className="text-sm font-medium">오늘 주의가 필요한 교육생이 없습니다</span>
+              <span className="text-sm font-medium">오늘 주의가 필요한 코치가 없습니다</span>
             </CardContent>
           </Card>
         ) : (

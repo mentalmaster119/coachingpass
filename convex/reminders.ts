@@ -124,8 +124,8 @@ export const sendAdminProgressAlerts = internalAction({
     if (adminVisitorIds.length > 0) {
       await ctx.runAction(internal.pushNotifications.sendNotification, {
         visitorIds: adminVisitorIds,
-        title: "비활동 교육생 알림 👀",
-        body: `최근 2주간 활동이 없는 교육생이 ${inactiveTrainees.length}명 있습니다.`,
+        title: "비활동 코치 알림 👀",
+        body: `최근 2주간 활동이 없는 코치가 ${inactiveTrainees.length}명 있습니다.`,
       });
     }
 

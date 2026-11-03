@@ -44,7 +44,7 @@ export default function CoachTraineesPage() {
               <UserCheck className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">담당 코치</h1>
+              <h1 className="text-xl font-bold text-foreground">배정 코치 명단</h1>
               <p className="text-sm text-muted-foreground">
                 배정된 코치의 진행 상황을 확인합니다.
               </p>
@@ -76,7 +76,7 @@ export default function CoachTraineesPage() {
               <div className="flex items-center gap-2.5">
                 <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
                 <p className="text-sm text-amber-700 dark:text-amber-400">
-                  담당 코치 중 <strong>{pendingTotal}건</strong>의 검토 대기 기록이 있습니다.
+                  배정 코치의 기록 중 <strong>{pendingTotal}건</strong>의 검토 대기 기록이 있습니다.
                 </p>
                 <div className="ml-auto flex gap-2">
                   <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => navigate("/admin/education")}>
@@ -112,7 +112,7 @@ export default function CoachTraineesPage() {
               <EmptyMedia variant="icon"><UserCheck /></EmptyMedia>
               <EmptyTitle>배정된 코치가 없습니다</EmptyTitle>
               <EmptyDescription>
-                관리자가 담당 코치를 배정하면 여기에 표시됩니다.
+                관리자가 코치를 배정하면 여기에 표시됩니다.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

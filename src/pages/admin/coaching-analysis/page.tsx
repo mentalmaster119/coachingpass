@@ -195,11 +195,11 @@ export default function AdminCoachingAnalysisPage() {
     const traineeName = analysis.trainee.name;
     const cohortName = analysis.trainee.cohortName || "전문가과정";
 
-    let text = `[MCCI 멘탈코칭 전문가과정 - 교육생 코칭실습 5대 항목 심층 피드백 의뢰]\n`;
-    text += `- 교육생: ${traineeName} (${cohortName})\n`;
+    let text = `[MCCI 멘탈코칭 전문가과정 - 코치 코칭실습 5대 항목 심층 피드백 의뢰]\n`;
+    text += `- 코치: ${traineeName} (${cohortName})\n`;
     text += `- 분석 대상 실습 건수: 총 ${analysis.reflections.length}건\n\n`;
     text += `당신은 한국코치협회(KCA), 국제코치연맹(ICF), 스포츠멘탈코칭(MCCI) 최고 수퍼바이저 코치입니다.\n`;
-    text += `아래 교육생이 제출한 코칭 실습 5대 항목(1.코칭 목표, 2.코칭 내용, 3.고객 통찰 및 깨달음, 4.코치로서의 성찰 및 배움, 5.다음 코칭 적용 계획)을 면밀히 분석하여 다음 6가지 항목을 포함한 '개인별 맞춤 성장 피드백 리포트'를 작성해주세요:\n\n`;
+    text += `아래 코치가 제출한 코칭 실습 5대 항목(1.코칭 목표, 2.코칭 내용, 3.고객 통찰 및 깨달음, 4.코치로서의 성찰 및 배움, 5.다음 코칭 적용 계획)을 면밀히 분석하여 다음 6가지 항목을 포함한 '개인별 맞춤 성장 피드백 리포트'를 작성해주세요:\n\n`;
     text += `[분석 및 리포트 작성 가이드]\n`;
     text += `1. 코칭 목표 설정 능력 및 고객 이슈 접근성 (목표의 명확성과 고객 중심성)\n`;
     text += `2. 코칭 내용 및 대화 구조 (어떤 질문과 멘탈코칭 기법으로 대화를 촉진했는가)\n`;
@@ -208,7 +208,7 @@ export default function AdminCoachingAnalysisPage() {
     text += `5. 다음 코칭 적용 계획의 구체성 및 실행력 (실천 가능한 Action Plan인가)\n`;
     text += `6. 종합 강점(잘하고 있는 핵심 역량 3가지)과 향후 프로 코치로 성장하기 위한 핵심 제언(Next Steps)\n\n`;
     text += `===================================================\n`;
-    text += `[교육생 코칭 실습 5대 항목 기록 데이터]\n`;
+    text += `[코치 코칭 실습 5대 항목 기록 데이터]\n`;
     text += `===================================================\n\n`;
 
     analysis.reflections.forEach((r: any, idx: number) => {
@@ -242,8 +242,8 @@ export default function AdminCoachingAnalysisPage() {
   // 4. 리포트 전문 복사 핸들러
   const handleCopyReportText = () => {
     if (!analysis) return;
-    const reportText = `[MCCI 멘탈코칭 전문가과정 - 교육생 종합 피드백 리포트]
-■ 교육생: ${analysis.trainee.name} (${analysis.trainee.cohortName || ""})
+    const reportText = `[MCCI 멘탈코칭 전문가과정 - 코치 종합 피드백 리포트]
+■ 코치: ${analysis.trainee.name} (${analysis.trainee.cohortName || ""})
 ■ 분석 대상: 코칭 실습 총 ${analysis.reflections.length}건
 ■ 분석 일시: ${new Date().toLocaleDateString("ko-KR")}
 
@@ -291,9 +291,9 @@ export default function AdminCoachingAnalysisPage() {
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-foreground">교육생 코칭 실습 심층 분석</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">코치 코칭 실습 심층 분석</h1>
             <p className="text-xs md:text-sm text-muted-foreground">
-              교육생이 제출한 코칭리포트·버디코칭·멘토코칭·수퍼비전 기록을 종합 분석하여 실제 역량과 실상을 파악합니다.
+              코치가 제출한 코칭리포트·버디코칭·멘토코칭·수퍼비전 기록을 종합 분석하여 실제 역량과 실상을 파악합니다.
             </p>
           </div>
         </div>
@@ -305,7 +305,7 @@ export default function AdminCoachingAnalysisPage() {
               size="sm"
               onClick={() => navigate(`/coaching-quality?userId=${currentUserId}`)}
               className="text-xs h-9 bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-sm"
-              title="해당 교육생의 5대 항목 품질 점수 및 3개 그룹 분류, 5·10·15·20회 마일스톤 피드백 리포트를 확인합니다."
+              title="해당 코치의 5대 항목 품질 점수 및 3개 그룹 분류, 5·10·15·20회 마일스톤 피드백 리포트를 확인합니다."
             >
               <Award className="w-3.5 h-3.5 mr-1.5" />
               🎖️ AI 품질 점수 & 3개 그룹 리포트
@@ -343,7 +343,7 @@ export default function AdminCoachingAnalysisPage() {
             <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
               <div className="flex items-center gap-2 flex-shrink-0 text-sm font-semibold text-foreground">
                 <UserCheck className="w-4 h-4 text-purple-600" />
-                <span>분석 대상 교육생:</span>
+                <span>분석 대상 코치:</span>
               </div>
 
               {/* Cohort filter */}
@@ -368,7 +368,7 @@ export default function AdminCoachingAnalysisPage() {
                   onValueChange={handleSelectTrainee}
                 >
                   <SelectTrigger className="h-9 text-sm font-medium">
-                    <SelectValue placeholder="교육생을 선택해 주세요" />
+                    <SelectValue placeholder="코치를 선택해 주세요" />
                   </SelectTrigger>
                   <SelectContent className="max-h-80">
                     {filteredTrainees.map((t: any) => (
@@ -405,9 +405,9 @@ export default function AdminCoachingAnalysisPage() {
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon"><Users /></EmptyMedia>
-            <EmptyTitle>분석할 교육생을 선택해 주세요</EmptyTitle>
+            <EmptyTitle>분석할 코치를 선택해 주세요</EmptyTitle>
             <EmptyDescription>
-              상단 선택 메뉴에서 특정 교육생을 선택하시면 제출된 모든 실습 리포트의 통합 분석 결과가 제공됩니다.
+              상단 선택 메뉴에서 특정 코치를 선택하시면 제출된 모든 실습 리포트의 통합 분석 결과가 제공됩니다.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -607,7 +607,7 @@ export default function AdminCoachingAnalysisPage() {
                       </span>
                     </CardTitle>
                     <CardDescription className="text-xs">
-                      교육생이 리포트에 기록한 코칭 기법과 툴의 활용 빈도입니다.
+                      코치가 리포트에 기록한 코칭 기법과 툴의 활용 빈도입니다.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -711,7 +711,7 @@ export default function AdminCoachingAnalysisPage() {
                     <div>
                       <CardTitle className="text-base flex items-center gap-2">
                         <Lightbulb className="w-5 h-5 text-amber-500" />
-                        <span>교육생 자기성찰 및 배움 분석 (5대 핵심 항목)</span>
+                        <span>코치 자기성찰 및 배움 분석 (5대 핵심 항목)</span>
                       </CardTitle>
                       <CardDescription className="text-xs mt-1">
                         코칭 목표, 코칭 내용, 고객 통찰 및 깨달음, 코치로서의 성찰 및 배움, 다음 코칭 적용 계획을 통합 분석합니다.
@@ -959,7 +959,7 @@ export default function AdminCoachingAnalysisPage() {
                     수퍼바이저 및 멘토코치 피드백 모음 ({analysis.feedbackList.length}건)
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    지도 코치진이 해당 교육생에게 부여한 강점 및 개선점 조언 내용입니다.
+                    지도 코치진이 해당 코치에게 부여한 강점 및 개선점 조언 내용입니다.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3 pt-2">

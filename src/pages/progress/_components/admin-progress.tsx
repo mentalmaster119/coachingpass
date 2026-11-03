@@ -64,9 +64,9 @@ export default function AdminProgressPage() {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-bold text-foreground">수강생 진행 현황</h1>
+          <h1 className="text-2xl font-bold text-foreground">코치 진행 현황</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            모든 수강생의 자격증 취득 진행 상황을 한눈에 확인하세요.
+            모든 코치의 자격증 취득 진행 상황을 한눈에 확인하세요.
           </p>
         </div>
         {pendingCounts && pendingCounts.total > 0 && (
@@ -93,7 +93,7 @@ export default function AdminProgressPage() {
             ))
           : [
               {
-                label: "전체 수강생",
+                label: "전체 코치",
                 value: trainees?.length ?? 0,
                 icon: <Users className="w-5 h-5" />,
                 color: "text-primary",
@@ -199,7 +199,7 @@ export default function AdminProgressPage() {
             {isLoading ? (
               <Skeleton className="h-40 w-full" />
             ) : trainees.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">수강생 데이터가 없습니다.</p>
+              <p className="text-sm text-muted-foreground text-center py-8">코치 데이터가 없습니다.</p>
             ) : (
               <ResponsiveContainer width="100%" height={160}>
                 <BarChart data={progressBuckets} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -223,7 +223,7 @@ export default function AdminProgressPage() {
                       borderRadius: "8px",
                       fontSize: "12px",
                     }}
-                    formatter={(value: number) => [`${value}명`, "수강생 수"]}
+                    formatter={(value: number) => [`${value}명`, "코치 수"]}
                   />
                   <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -240,7 +240,7 @@ export default function AdminProgressPage() {
         transition={{ duration: 0.4, delay: 0.25 }}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-foreground">수강생 별 진행 현황</h2>
+          <h2 className="text-base font-semibold text-foreground">코치별 진행 현황</h2>
           <Button variant="ghost" size="sm" onClick={() => navigate("/admin/users")}>
             사용자 관리 <ArrowRight className="w-3 h-3 ml-1" />
           </Button>
@@ -258,8 +258,8 @@ export default function AdminProgressPage() {
               <EmptyMedia variant="icon">
                 <Users />
               </EmptyMedia>
-              <EmptyTitle>수강생가 없습니다</EmptyTitle>
-              <EmptyDescription>승인된 수강생가 있으면 이곳에 표시됩니다.</EmptyDescription>
+              <EmptyTitle>등록된 코치가 없습니다</EmptyTitle>
+              <EmptyDescription>승인된 코치가 있으면 이곳에 표시됩니다.</EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : (

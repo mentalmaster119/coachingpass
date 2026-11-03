@@ -42,7 +42,7 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
     if (user.role !== "trainee") {
-      throw new ConvexError({ message: "교육생만 기록을 추가할 수 있습니다.", code: "FORBIDDEN" });
+      throw new ConvexError({ message: "코치만 기록을 추가할 수 있습니다.", code: "FORBIDDEN" });
     }
     return await ctx.db.insert("bcpLogs", {
       ...args,
@@ -344,7 +344,7 @@ export const saveDraft = mutation({
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
     if (user.role !== "trainee") {
-      throw new ConvexError({ message: "교육생만 임시저장할 수 있습니다.", code: "FORBIDDEN" });
+      throw new ConvexError({ message: "코치만 임시저장할 수 있습니다.", code: "FORBIDDEN" });
     }
     const { logId, ...fields } = args;
 

@@ -41,7 +41,7 @@ export default defineSchema({
     coachingLogReminderEnabled: v.optional(v.boolean()), // 코칭 로그 초안 리마인더
     isMockActive: v.optional(v.boolean()), // 로컬 개발용 활성 모크 유저 플래그
     activeMockRole: v.optional(v.union(v.literal("trainee"), v.literal("senior_coach"))), // 어드민별 화면 프리뷰 역할 설정
-    activeMockTraineeId: v.optional(v.id("users")), // 프리뷰 대상이 될 실제 교육생 ID (가장 많은 기록 보유자 등)
+    activeMockTraineeId: v.optional(v.id("users")), // 프리뷰 대상이 될 실제 코치 ID (가장 많은 기록 보유자 등)
     passwordHash: v.optional(v.string()), // 자체 로그인을 위한 비밀번호 해시
     isMentorCoach: v.optional(v.boolean()), // 어드민 지정 멘토코치 여부
     hasMentalCoachLicense: v.optional(v.boolean()), // 개인 프로필 자격취득 여부
@@ -543,7 +543,7 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_category", ["educationCategory"]),
 
-  // 기수-교육생 연결
+  // 기수-코치 연결
   cohortMembers: defineTable({
     cohortId: v.id("cohorts"),
     userId: v.id("users"),
@@ -715,7 +715,7 @@ export default defineSchema({
 
   // BCP (Buddy Coaching Practice) - 버디 코칭 실습
   bcpLogs: defineTable({
-    userId: v.id("users"),             // 교육생 (기록 작성자)
+    userId: v.id("users"),             // 코치 (기록 작성자)
     sessionDate: v.string(),           // ISO 8601 date
     sessionStartTime: v.optional(v.string()), // 시작 시간
     sessionEndTime: v.optional(v.string()),   // 종료 시간
@@ -787,8 +787,8 @@ export default defineSchema({
   // 멘탈코칭 수퍼바이징 일지 (수퍼바이저/멘토코치 현장 관찰형 평가)
   supervisionJournals: defineTable({
     coachId: v.id("users"),                 // 작성 수퍼바이저
-    traineeName: v.string(),                // 교육생(수퍼바이지) 이름
-    traineeId: v.optional(v.id("users")),   // 연계된 교육생 ID
+    traineeName: v.string(),                // 코치(수퍼바이지) 이름
+    traineeId: v.optional(v.id("users")),   // 연계된 코치 ID
     coachingDate: v.string(),               // 관찰 일자
     topic: v.string(),                      // 코칭 주제
     currentScore: v.optional(v.string()),   // 현재 상태 점수 (예: "3/10")

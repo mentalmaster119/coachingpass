@@ -213,7 +213,7 @@ export default function EventFormDialog({ open, onClose, defaultDate, existingEv
             <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
               <div>
                 <p className="text-sm font-medium">전체 공유 일정</p>
-                <p className="text-xs text-muted-foreground">모든 수강생에게 표시됩니다</p>
+                <p className="text-xs text-muted-foreground">모든 코치에게 표시됩니다</p>
               </div>
               <Switch checked={isShared} onCheckedChange={setIsShared} />
             </div>

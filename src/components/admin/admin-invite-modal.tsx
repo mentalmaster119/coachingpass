@@ -244,7 +244,7 @@ ${inviteUrl}
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
               <Mail className="w-3.5 h-3.5" />
-              신규 교육생 초대장 관리
+              신규 코치 초대장 관리
             </span>
           </div>
           <DialogTitle className="text-xl font-bold text-foreground">
@@ -253,7 +253,7 @@ ${inviteUrl}
           <DialogDescription className="text-xs text-muted-foreground">
             {isGeneral
               ? "16기 이전 수료 코치님 및 전체 동문 대상 초대 링크, 추천 공지 문구, 인쇄용 QR을 생성합니다."
-              : "새 기수 교육생들에게 전달할 모바일 초대 링크와 카카오톡 공지 문구, 인쇄용 QR을 생성합니다."}
+              : "새 기수 코치들에게 전달할 모바일 초대 링크와 카카오톡 공지 문구, 인쇄용 QR을 생성합니다."}
           </DialogDescription>
         </DialogHeader>
 
@@ -338,9 +338,9 @@ ${inviteUrl}
             </div>
             <p className="text-[11px] text-muted-foreground">
               {isGeneral ? (
-                <span>* <strong>16기 이전 수료 코치님 및 동문용 링크</strong>입니다. 교육생이 가입 시 본인의 소속 기수를 직접 선택합니다.</span>
+                <span>* <strong>16기 이전 수료 코치님 및 동문용 링크</strong>입니다. 코치가 가입 시 본인의 소속 기수를 직접 선택합니다.</span>
               ) : (
-                <span>* 위 링크로 가입한 교육생은 자동으로 <strong>{selectedCohort?.name ?? "선택 기수"}</strong>로 등록 배정됩니다. (가입 시 변경 가능)</span>
+                <span>* 위 링크로 가입한 코치는 자동으로 <strong>{selectedCohort?.name ?? "선택 기수"}</strong>로 등록 배정됩니다. (가입 시 변경 가능)</span>
               )}
             </p>
           </div>
@@ -384,7 +384,7 @@ ${inviteUrl}
                   현장 배포 및 PPT용 QR 코드
                 </p>
                 <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                  개강식/오리엔테이션 PPT 화면에 띄우거나 출력물에 인쇄하여 교육생들이 즉석에서 가입하도록 안내하세요.
+                  개강식/오리엔테이션 PPT 화면에 띄우거나 출력물에 인쇄하여 코치들이 즉석에서 가입하도록 안내하세요.
                 </p>
               </div>
               <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
@@ -414,7 +414,7 @@ ${inviteUrl}
           <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-2.5">
             <Smartphone className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div className="text-[11px] text-amber-900 dark:text-amber-300 leading-relaxed">
-              <span className="font-semibold">초대장 내 앱 설치 안내문 포함:</span> 교육생이 초대장 링크를 열면 상단에서 바로 스마트폰 홈 화면에 바로가기 앱을 추가(PWA)할 수 있는 가이드가 함께 제공됩니다.
+              <span className="font-semibold">초대장 내 앱 설치 안내문 포함:</span> 코치가 초대장 링크를 열면 상단에서 바로 스마트폰 홈 화면에 바로가기 앱을 추가(PWA)할 수 있는 가이드가 함께 제공됩니다.
             </div>
           </div>
         </div>

@@ -24,7 +24,7 @@ export const submit = mutation({
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
     if (user.role !== "trainee") {
-      throw new ConvexError({ message: "수강생만 자격증을 신청할 수 있습니다.", code: "FORBIDDEN" });
+      throw new ConvexError({ message: "코치만 자격증을 신청할 수 있습니다.", code: "FORBIDDEN" });
     }
 
     const goal = "SMPCC" as const;
@@ -154,7 +154,7 @@ export const getUpcomingExamSchedule = query({
       location: "MCCI 본원 대강당 (서울 강남) 및 비대면 화상 심사 병행",
       subjects: "1차 필기 (코칭 이론 및 윤리 규정) + 2차 실기 (코칭 시연 및 구술 면접)",
       isOpen: true,
-      description: "16기, 17기 교육생 및 수료생을 위한 2026년 하반기 공식 인증시험입니다. 과제 제출 또는 실습 시간 일부 미달 항목이 있더라도 응시 신청이 가능하며, 최종 자격증 발급 시 심사위원회에서 이수 기준을 최종 검토합니다.",
+      description: "16기, 17기 코치 및 수료생을 위한 2026년 하반기 공식 인증시험입니다. 과제 제출 또는 실습 시간 일부 미달 항목이 있더라도 응시 신청이 가능하며, 최종 자격증 발급 시 심사위원회에서 이수 기준을 최종 검토합니다.",
     };
 
     return defaultExam;

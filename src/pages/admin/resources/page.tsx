@@ -109,7 +109,7 @@ function AdminResourcesInner() {
         <div>
           <h1 className="text-2xl font-bold">자료실 관리</h1>
           <p className="text-muted-foreground mt-1">
-            교육생에게 제공할 자료를 업로드하고 관리합니다
+            코치에게 제공할 자료를 업로드하고 관리합니다
           </p>
         </div>
         <Button onClick={() => setShowUpload(true)}>

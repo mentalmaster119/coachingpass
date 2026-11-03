@@ -110,7 +110,7 @@ export default function FeedbackFormDialog({ open, onClose, traineeId, editing }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTraineeId) { toast.error("수강생를 선택해주세요"); return; }
+    if (!selectedTraineeId) { toast.error("피드백 대상 코치를 선택해 주세요"); return; }
     if (rating === 0) { toast.error("평점을 선택해주세요"); return; }
     if (!strengths.trim()) { toast.error("잘한 점을 입력해주세요"); return; }
     if (!improvements.trim()) { toast.error("개선할 점을 입력해주세요"); return; }
@@ -163,13 +163,13 @@ export default function FeedbackFormDialog({ open, onClose, traineeId, editing }
           {/* Trainee selector (only when creating and no pre-selected trainee) */}
           {!isEditing && !traineeId && (
             <div>
-              <Label>수강생 *</Label>
+              <Label>피드백 대상 코치 *</Label>
               <Select
                 value={selectedTraineeId}
                 onValueChange={(v) => setSelectedTraineeId(v as Id<"users">)}
               >
                 <SelectTrigger className="mt-1.5">
-                  <SelectValue placeholder="수강생 선택" />
+                  <SelectValue placeholder="코치 선택" />
                 </SelectTrigger>
                 <SelectContent>
                   {(trainees ?? []).map((t) => (
@@ -232,7 +232,7 @@ export default function FeedbackFormDialog({ open, onClose, traineeId, editing }
               id="fb-strengths"
               className="mt-1.5"
               rows={3}
-              placeholder="수강생가 잘 수행한 점을 구체적으로 작성해주세요"
+              placeholder="코치가 잘 수행한 점을 구체적으로 작성해 주세요"
               value={strengths}
               onChange={(e) => setStrengths(e.target.value)}
               required

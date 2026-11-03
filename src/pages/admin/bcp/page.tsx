@@ -86,7 +86,7 @@ export default function AdminBcpPage() {
       >
         <h1 className="text-2xl font-bold">BCP 버디코칭 기록 검토</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          교육생들의 버디코칭 실습 기록을 검토하고 승인하세요.
+          코치들의 버디코칭 실습 기록을 검토하고 승인하세요.
         </p>
       </motion.div>
 

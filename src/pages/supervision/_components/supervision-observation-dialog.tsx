@@ -114,7 +114,7 @@ export default function SupervisionObservationDialog({
       "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
       "📋 멘탈코칭 수퍼바이징 일지 (V3.0 - 현장 관찰형)",
       "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-      `• 교육생(수퍼바이지): ${traineeName || "미입력"}`,
+      `• 코치(수퍼바이지): ${traineeName || "미입력"}`,
       `• 코칭 주제: ${topic || "미입력"}`,
       `• 현재 상태 점수: ${currentScore || "미입력"} | 목표 상태 점수: ${targetScore || "미입력"}`,
       `• 활용한 멘탈코칭 툴: ${selectedTools.join(", ") || "선택 없음"}${toolOther ? ` (${toolOther})` : ""}`,
@@ -138,7 +138,7 @@ export default function SupervisionObservationDialog({
 
   const handleSave = async () => {
     if (!traineeName.trim()) {
-      toast.error("교육생(수퍼바이지) 이름을 입력해 주세요.");
+      toast.error("수퍼바이지(코치) 이름을 입력해 주세요.");
       return;
     }
     if (!topic.trim()) {
@@ -188,7 +188,7 @@ export default function SupervisionObservationDialog({
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                수퍼바이저(멘토코치)가 현장에서 수퍼바이지 교육생의 코칭 실습을 관찰하고 평가 및 피드백을 기록합니다.
+                수퍼바이저(멘토코치)가 현장에서 수퍼바이지 코치의 코칭 실습을 관찰하고 평가 및 피드백을 기록합니다.
               </p>
             </div>
             <Badge variant="outline" className="text-[11px] hidden sm:inline-flex">
@@ -203,7 +203,7 @@ export default function SupervisionObservationDialog({
           <div className="space-y-3 p-4 rounded-xl bg-muted/20 border border-border">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">
-                교육생 (수퍼바이지) <span className="text-destructive">*</span>
+                실습 코치 (수퍼바이지) <span className="text-destructive">*</span>
               </Label>
               <Input
                 value={traineeName}

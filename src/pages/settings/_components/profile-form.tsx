@@ -224,7 +224,7 @@ export default function ProfileForm({ user }: { user: User }) {
           <p className="text-xs text-muted-foreground">이메일은 로그인 제공자에서 관리됩니다.</p>
         </div>
 
-        {/* 기수 — 교육생이고 아직 기수 미등록인 경우에만 표시 */}
+        {/* 기수 — 코치이고 아직 기수 미등록인 경우에만 표시 */}
         {isTrainee && myMembership === null && (
           <div className="pt-2 border-t space-y-3">
             <Label className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">

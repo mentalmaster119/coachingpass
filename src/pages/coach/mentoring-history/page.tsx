@@ -109,7 +109,7 @@ export default function CoachMentoringHistoryPage() {
           <div>
             <h1 className="text-xl font-bold text-foreground">멘토링 누적 실적</h1>
             <p className="text-sm text-muted-foreground">
-              교육생들과 함께 진행한 멘토코칭 및 코더코 누적 실적과 상세 기록을 조회합니다.
+              코치들과 함께 진행한 멘토코칭 및 코더코 누적 실적과 상세 기록을 조회합니다.
             </p>
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function CoachMentoringHistoryPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             className="pl-9 bg-background/50 border-purple-100 focus-visible:ring-purple-500"
-            placeholder="교육생 이름, 이메일, 또는 코칭 주제로 검색하세요"
+            placeholder="코치 이름, 이메일, 또는 코칭 주제로 검색하세요"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />

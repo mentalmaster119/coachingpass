@@ -82,7 +82,7 @@ export default function AdminOverview({ user }: { user: User }) {
               <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0">진행중</Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              18기 재적 교육생 이수 현황, 세미나 출석률 및 코칭 실습 누적 데이터를 집중 관리합니다.
+              18기 재적 코치 이수 현황, 세미나 출석률 및 코칭 실습 누적 데이터를 집중 관리합니다.
             </p>
           </div>
         </div>
@@ -115,14 +115,14 @@ export default function AdminOverview({ user }: { user: User }) {
             urgent: pendingCount > 0,
           },
           {
-            label: "수강생",
+            label: "코치",
             value: stats?.traineeCount,
             icon: <CheckCircle2 className="w-4 h-4" />,
             color: "text-green-600",
             bg: "bg-green-50 dark:bg-green-900/20",
           },
           {
-            label: "배정 없는 수강생",
+            label: "미배정 코치",
             value: stats?.unassignedTrainees,
             icon: <UserCheck className="w-4 h-4" />,
             color: "text-orange-600",
@@ -297,7 +297,7 @@ export default function AdminOverview({ user }: { user: User }) {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Award className="w-4 h-4 text-muted-foreground" />
-              수강생 자격증 목표 분포
+              코치 자격증 목표 분포
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -305,7 +305,7 @@ export default function AdminOverview({ user }: { user: User }) {
               <Skeleton className="h-40 w-full" />
             ) : stats.traineeCount === 0 ? (
               <div className="h-40 flex items-center justify-center text-sm text-muted-foreground">
-                수강생 데이터 없음
+                코치 데이터 없음
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={180}>

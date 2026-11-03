@@ -178,7 +178,7 @@ export default function AdminAttendancePage() {
       <div>
         <h1 className="text-2xl font-bold">출석 관리</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          커리큘럼 체계(교육 분류 ➔ 과정 ➔ 기수)에 따라 세미나별 교육생 출석을 기록하고 현황을 확인합니다
+          커리큘럼 체계(교육 분류 ➔ 과정 ➔ 기수)에 따라 세미나별 코치 출석을 기록하고 현황을 확인합니다
         </p>
       </div>
 
@@ -753,7 +753,7 @@ function AttendanceSheet({ seminar, cohortId }: { seminar: Seminar; cohortId: Id
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon"><Users /></EmptyMedia>
-          <EmptyTitle>수강 중인 교육생이 없습니다</EmptyTitle>
+          <EmptyTitle>과정 수강 중인 코치가 없습니다</EmptyTitle>
         </EmptyHeader>
       </Empty>
     );
@@ -995,7 +995,7 @@ function AttendanceSummaryTab({
             <EmptyMedia variant="icon"><Users /></EmptyMedia>
             <EmptyTitle>출석 데이터 또는 세미나 일정이 없습니다</EmptyTitle>
             <EmptyDescription>
-              {titleText}에 등록된 세미나 일정이 없거나, 출석 대상 교육생이 아직 등록되지 않았습니다.
+              {titleText}에 등록된 세미나 일정이 없거나, 출석 대상 코치가 아직 등록되지 않았습니다.
             </EmptyDescription>
           </EmptyHeader>
           <div className="flex gap-2 justify-center mt-4">
@@ -1035,7 +1035,7 @@ function AttendanceSummaryTab({
               </h2>
             </div>
             <p className="text-xs text-muted-foreground">
-              총 {totalStudents}명의 교육생 출석 현황입니다. (수료 요건: 세미나 출석률 80% 이상)
+              총 {totalStudents}명의 코치 출석 현황입니다. (수료 요건: 세미나 출석률 80% 이상)
             </p>
           </div>
           {onGoToRecord && (
@@ -1055,7 +1055,7 @@ function AttendanceSummaryTab({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           {
-            label: "전체 교육생",
+            label: "전체 코치",
             value: `${totalStudents}명`,
             icon: <Users className="w-4 h-4" />,
             color: "text-primary",
@@ -1096,7 +1096,7 @@ function AttendanceSummaryTab({
         <CardHeader className="py-3.5 px-4 border-b flex flex-row items-center justify-between">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Users className="w-4 h-4 text-primary" />
-            교육생별 세부 출석 현황
+            코치별 세부 출석 현황
           </CardTitle>
           <span className="text-xs text-muted-foreground">
             세미나 회차별 출석 데이터 종합
@@ -1106,7 +1106,7 @@ function AttendanceSummaryTab({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/30 text-xs text-muted-foreground">
-                <th className="text-left px-4 py-2.5 font-medium">교육생</th>
+                <th className="text-left px-4 py-2.5 font-medium">코치</th>
                 <th className="text-center px-3 py-2.5 font-medium">총 세미나</th>
                 <th className="text-center px-3 py-2.5 font-medium">출석</th>
                 <th className="text-center px-3 py-2.5 font-medium">지각</th>

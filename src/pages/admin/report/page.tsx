@@ -216,7 +216,7 @@ export default function AdminReportPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard
                 icon={<Users className="w-4 h-4" />}
-                label="전체 교육생"
+                label="전체 코치"
                 value={`${totalMembers}명`}
                 sub={`활성 ${cohortStats?.activeCount ?? "-"}명`}
               />
@@ -276,7 +276,7 @@ export default function AdminReportPage() {
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <ClipboardList className="w-4 h-4" />
-                교육생별 수료·인증 현황
+                코치별 수료·인증 현황
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -288,7 +288,7 @@ export default function AdminReportPage() {
                 </div>
               ) : evaluation.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground text-sm">
-                  등록된 교육생이 없습니다.
+                  등록된 코치가 없습니다.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -417,7 +417,7 @@ export default function AdminReportPage() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2 text-amber-700 dark:text-amber-400">
                   <AlertTriangle className="w-4 h-4" />
-                  인증 요건 미충족 교육생 ({deficientMembers.length}명)
+                  인증 요건 미충족 코치 ({deficientMembers.length}명)
                 </CardTitle>
               </CardHeader>
               <CardContent>

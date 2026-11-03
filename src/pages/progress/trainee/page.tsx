@@ -140,7 +140,7 @@ export default function TraineeDetailPage() {
         <Button variant="ghost" size="sm" onClick={() => navigate("/progress")} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-1" /> 목록으로
         </Button>
-        <p className="text-muted-foreground">해당 교육생을 찾을 수 없습니다.</p>
+        <p className="text-muted-foreground">해당 코치를 찾을 수 없습니다.</p>
       </div>
     );
   }

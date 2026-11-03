@@ -232,7 +232,7 @@ export default function CertificationPage() {
                   {examSchedule?.title || "2026년 하반기 SMPCC 멘탈코칭 전문가 자격 인증시험"}
                 </h2>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pt-0.5">
-                  {examSchedule?.description || "16기 및 17기 교육생을 위한 정기 인증시험입니다. 과제 제출이나 실습 시간 미달 항목이 있더라도 응시 신청이 가능합니다."}
+                  {examSchedule?.description || "16기 및 17기 코치를 위한 정기 인증시험입니다. 과제 제출이나 실습 시간 미달 항목이 있더라도 응시 신청이 가능합니다."}
                 </p>
               </div>
 

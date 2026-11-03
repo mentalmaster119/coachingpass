@@ -16,7 +16,7 @@ const CATEGORY_CONFIG: Record<Category, { label: string; color: string }> = {
 const ROLE_LABEL: Record<string, string> = {
   admin: "관리자",
   senior_coach: "수퍼바이저",
-  trainee: "교육생",
+  trainee: "코치",
 };
 
 interface PostCardProps {

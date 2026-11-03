@@ -91,7 +91,7 @@ export const run = mutation({
       approvalStatus: "approved",
       onboardingCompleted: true,
       passwordHash: defaultPasswordHash,
-      bio: "SMPCC 18기 교육생 / 성장의 기록을 시각화합니다.",
+      bio: "SMPCC 18기 코치 / 성장의 기록을 시각화합니다.",
       phone: "010-9876-5432",
       specializations: ["축구", "멘탈 케어", "부상 복귀 마인드셋"],
       joinedAt: "2026-03-01T00:00:00Z",
@@ -113,7 +113,7 @@ export const run = mutation({
 
     const buddyId = await ctx.db.insert("users", {
       tokenIdentifier: "temporary-buddy-token",
-      name: "박민우 교육생",
+      name: "박민우 코치",
       email: "buddy@test.com",
       role: "trainee",
       approvalStatus: "approved",
@@ -225,7 +225,7 @@ export const run = mutation({
     await ctx.db.insert("attendances", { seminarId: s4, cohortId, userId: traineeId, date: "2026-06-18", status: "present", recordedBy: adminId });
     await ctx.db.insert("attendances", { seminarId: s4, cohortId, userId: traineeId, date: "2026-06-19", status: "present", recordedBy: adminId });
 
-    // 박민우 교육생 출석 기록 (다양한 샘플 데이터)
+    // 박민우 코치 출석 기록 (다양한 샘플 데이터)
     // s1: 양일 출석
     await ctx.db.insert("attendances", { seminarId: s1, cohortId, userId: buddyId, date: "2026-03-10", status: "present", recordedBy: adminId });
     await ctx.db.insert("attendances", { seminarId: s1, cohortId, userId: buddyId, date: "2026-03-11", status: "present", recordedBy: adminId });
@@ -562,7 +562,7 @@ export const run = mutation({
     // 15. Seed Announcements
     await ctx.db.insert("announcements", {
       title: "[중요] 18기 MCCI-SMPCC 자격 이수 요건 충족 마감 및 자격시험 안내",
-      content: "18기 교육생 여러분, 자격 취득을 위해 코칭 실습 40시간(개인 30시간 이상), 멘토코칭/코더코 10시간, 교육 이수 40시간 및 성찰 일지 충족 마감일은 2026년 8월 25일까지입니다. 기한을 반드시 엄수하여 본 시스템에 승인 신청을 완료해 주시기 바랍니다.",
+      content: "18기 코치 여러분, 자격 취득을 위해 코칭 실습 40시간(개인 30시간 이상), 멘토코칭/코더코 10시간, 교육 이수 40시간 및 성찰 일지 충족 마감일은 2026년 8월 25일까지입니다. 기한을 반드시 엄수하여 본 시스템에 승인 신청을 완료해 주시기 바랍니다.",
       authorId: adminId,
       category: "important",
       isPinned: true,
@@ -618,7 +618,7 @@ export const run = mutation({
     // 17. Seed Classroom Bookings
     await ctx.db.insert("classroomBookings", {
       userId: buddyId,
-      bookerName: "박민우 교육생",
+      bookerName: "박민우 코치",
       date: "2026-06-22",
       timeSlot: "10:00-12:00",
       coachingType: "buddy",
@@ -638,7 +638,7 @@ export const run = mutation({
 
     await ctx.db.insert("classroomBookings", {
       userId: buddyId,
-      bookerName: "박민우 교육생",
+      bookerName: "박민우 코치",
       date: "2026-06-23",
       timeSlot: "16:00-18:00",
       coachingType: "supervision",

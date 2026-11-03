@@ -126,7 +126,7 @@ function IssueCertDialog({
   );
 }
 
-// ── 수강생 SMPCC 현황 카드 ────────────────────────────────────────────────────
+// ── 코치 SMPCC 자격 현황 카드 ────────────────────────────────────────────────────
 type CompletedTrainee = NonNullable<ReturnType<typeof useQuery<typeof api.smpcc.getCompletedTraineesWithCohort>>>[number];
 
 function UserCertCard({ trainee }: { trainee: CompletedTrainee }) {
@@ -539,8 +539,8 @@ export default function AdminSmpccPage() {
             <Empty>
               <EmptyHeader>
                 <EmptyMedia variant="icon"><UserCheck /></EmptyMedia>
-                <EmptyTitle>수료 기준 통과 수강생이 없습니다</EmptyTitle>
-                <EmptyDescription>수료 기준(코칭 10건 이상, 출석 80% 이상)을 통과한 수강생이 없습니다.</EmptyDescription>
+                <EmptyTitle>수료 기준 통과 코치가 없습니다</EmptyTitle>
+                <EmptyDescription>수료 기준(코칭 10건 이상, 출석 80% 이상)을 통과한 코치가 없습니다.</EmptyDescription>
               </EmptyHeader>
             </Empty>
           ) : (
@@ -635,7 +635,7 @@ export default function AdminSmpccPage() {
         {/* 인정시간 설정 탭 */}
         <TabsContent value="credits">
           <div className="mb-4">
-            <p className="text-sm text-muted-foreground">각 과정별로 인정받는 교육시간을 설정합니다. 수강생의 누적 교육시간 계산에 반영됩니다.</p>
+            <p className="text-sm text-muted-foreground">각 과정별로 인정받는 교육시간을 설정합니다. 코치의 누적 교육시간 계산에 반영됩니다.</p>
           </div>
           <div className="space-y-2">
             {allCredits.map((dc) => {

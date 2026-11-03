@@ -213,13 +213,13 @@ export const insertAdminProgressAlerts = internalMutation({
 
     const nameList = args.inactiveNames.join(", ");
     const suffix = args.inactiveCount > 5 ? ` 외 ${args.inactiveCount - 5}명` : "";
-    const message = `최근 2주간 활동이 없는 교육생 ${args.inactiveCount}명: ${nameList}${suffix}`;
+    const message = `최근 2주간 활동이 없는 코치 ${args.inactiveCount}명: ${nameList}${suffix}`;
 
     for (const admin of admins) {
       await ctx.db.insert("notifications", {
         userId: admin._id,
         type: "trainee_progress_alert",
-        title: "비활동 교육생 알림",
+        title: "비활동 코치 알림",
         message,
         isRead: false,
       });

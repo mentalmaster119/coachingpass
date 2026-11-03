@@ -35,7 +35,7 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
     if (user.role !== "trainee") {
-      throw new ConvexError({ message: "교육생만 기록을 추가할 수 있습니다.", code: "FORBIDDEN" });
+      throw new ConvexError({ message: "코치만 기록을 추가할 수 있습니다.", code: "FORBIDDEN" });
     }
     return await ctx.db.insert("mentorCoachingLogs", {
       ...args,
@@ -268,7 +268,7 @@ export const saveDraft = mutation({
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
     if (user.role !== "trainee") {
-      throw new ConvexError({ message: "교육생만 임시저장할 수 있습니다.", code: "FORBIDDEN" });
+      throw new ConvexError({ message: "코치만 임시저장할 수 있습니다.", code: "FORBIDDEN" });
     }
     const { logId, ...fields } = args;
 
@@ -333,7 +333,7 @@ export const getCoachMentoringHistory = query({
   handler: async (ctx) => {
     const coach = await getAuthenticatedUser(ctx);
     if (coach.role !== "senior_coach" && coach.role !== "admin" && coach.role !== "admin3") {
-      throw new ConvexError({ message: "상위코치만 조회할 수 있습니다.", code: "FORBIDDEN" });
+      throw new ConvexError({ message: "수퍼바이저 또는 관리자만 조회할 수 있습니다.", code: "FORBIDDEN" });
     }
 
     const allLogs = await ctx.db

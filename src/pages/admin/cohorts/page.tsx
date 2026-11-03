@@ -235,7 +235,7 @@ export default function AdminCohortsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">기수 관리</h1>
-          <p className="text-muted-foreground text-sm mt-1">멘탈코칭전문가과정 기수를 생성하고 교육생을 배정합니다</p>
+          <p className="text-muted-foreground text-sm mt-1">멘탈코칭전문가과정 기수를 생성하고 코치를 배정합니다</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button
@@ -266,7 +266,7 @@ export default function AdminCohortsPage() {
           <EmptyHeader>
             <EmptyMedia variant="icon"><GraduationCap /></EmptyMedia>
             <EmptyTitle>등록된 기수가 없습니다</EmptyTitle>
-            <EmptyDescription>기수를 추가하여 교육생을 관리하세요</EmptyDescription>
+            <EmptyDescription>기수를 추가하여 코치를 관리하세요</EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
             <Button size="sm" onClick={openCreate}>기수 추가</Button>
@@ -485,7 +485,7 @@ export default function AdminCohortsPage() {
                 </SelectContent>
               </Select>
               <p className="text-[10px] text-muted-foreground">
-                교육생이 본인 기수 내에서 매칭 신청할 수 있는 최대 멘토코치 수입니다 (1~5명 설정 가능).
+                코치가 본인 기수 내에서 매칭 신청할 수 있는 최대 멘토코치 수입니다 (1~5명 설정 가능).
               </p>
             </div>
             <div className="space-y-2">
@@ -513,7 +513,7 @@ export default function AdminCohortsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>기수를 삭제하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription>
-              기수와 소속된 모든 교육생 배정 정보가 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
+              기수와 소속된 모든 코치 배정 정보가 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -583,7 +583,7 @@ function CohortMemberPanel({ cohortId }: { cohortId: Id<"cohorts"> }) {
     setAdding(true);
     try {
       await addMember({ cohortId, userId: selectedUserId as Id<"users"> });
-      toast.success("교육생이 추가되었습니다");
+      toast.success("코치가 추가되었습니다");
       setShowAddDialog(false);
       setSelectedUserId("");
     } catch (err) {
@@ -600,7 +600,7 @@ function CohortMemberPanel({ cohortId }: { cohortId: Id<"cohorts"> }) {
   const handleRemove = async (memberId: Id<"cohortMembers">) => {
     try {
       await removeMember({ memberId });
-      toast.success("교육생이 제거되었습니다");
+      toast.success("코치가 제거되었습니다");
     } catch {
       toast.error("제거에 실패했습니다");
     }
@@ -621,9 +621,9 @@ function CohortMemberPanel({ cohortId }: { cohortId: Id<"cohorts"> }) {
       {members && members.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="rounded-xl border bg-card p-3 space-y-1">
-            <p className="text-[11px] font-medium text-muted-foreground">평균 제출 개수 (수강생)</p>
-            <p className="text-lg font-bold">{averageLogs} 회</p>
-            <p className="text-[10px] text-muted-foreground">활성 수강생 평균 승인 건수</p>
+            <p className="text-[11px] font-medium text-muted-foreground">평균 제출 개수 (코치)</p>
+            <p className="lg font-bold">{averageLogs} 회</p>
+            <p className="text-[10px] text-muted-foreground">활성 코치 평균 승인 건수</p>
           </div>
           <div className="rounded-xl border bg-card p-3 space-y-1">
             <p className="text-[11px] font-medium text-muted-foreground">과정 수료 조건 충족률</p>
@@ -641,12 +641,12 @@ function CohortMemberPanel({ cohortId }: { cohortId: Id<"cohorts"> }) {
       <div className="flex items-center justify-between border-t border-border/40 pt-3">
         <div className="flex items-center gap-2 text-sm font-medium">
           <Users className="w-4 h-4" />
-          교육생 목록
+          코치 명단
           {members && <Badge variant="secondary">{members.length}명</Badge>}
         </div>
         <Button size="sm" variant="outline" onClick={() => setShowAddDialog(true)} className="gap-1.5 cursor-pointer">
           <UserPlus className="w-3.5 h-3.5" />
-          교육생 추가
+          코치 추가
         </Button>
       </div>
 
@@ -657,7 +657,7 @@ function CohortMemberPanel({ cohortId }: { cohortId: Id<"cohorts"> }) {
       ) : members.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground text-sm">
           <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
-          등록된 교육생이 없습니다
+          등록된 코치가 없습니다
         </div>
       ) : (
         <div className="space-y-2">
@@ -719,18 +719,18 @@ function CohortMemberPanel({ cohortId }: { cohortId: Id<"cohorts"> }) {
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>교육생 추가</DialogTitle>
+            <DialogTitle>코치 추가</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>교육생 선택</Label>
+              <Label>코치 선택</Label>
               <Select value={selectedUserId} onValueChange={setSelectedUserId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="교육생을 선택하세요" />
+                  <SelectValue placeholder="코치를 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
                   {eligibleUsers.length === 0 ? (
-                    <SelectItem value="none" disabled>추가할 교육생이 없습니다</SelectItem>
+                    <SelectItem value="none" disabled>추가할 코치가 없습니다</SelectItem>
                   ) : (
                     eligibleUsers.map((u) => (
                       <SelectItem key={u._id} value={u._id}>

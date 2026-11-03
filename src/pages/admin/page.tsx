@@ -425,7 +425,7 @@ export default function AdminDashboardPage() {
           <p className="text-xs md:text-sm text-muted-foreground mt-1">
             {currentCohort ? (
               <>
-                <span className="font-semibold text-foreground">{currentCohort.name}</span> 중심의 실시간 교육생 이수 현황 및 품질 지표입니다.
+                <span className="font-semibold text-foreground">{currentCohort.name}</span> 중심의 실시간 코치 이수 현황 및 품질 지표입니다.
               </>
             ) : (
               "전체 기수 종합 현황과 검토 대기 항목을 확인하세요."
@@ -556,7 +556,7 @@ export default function AdminDashboardPage() {
           {/* Quick Metrics Bar in Banner */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-primary/10">
             <div>
-              <p className="text-xs text-muted-foreground">재적 교육생</p>
+              <p className="text-xs text-muted-foreground">재적 코치</p>
               <p className="text-lg md:text-xl font-bold text-foreground mt-0.5">
                 {kpis?.approvedTrainees ?? 0}명
               </p>
@@ -593,7 +593,7 @@ export default function AdminDashboardPage() {
           <>
             <StatCard
               icon={<Users className="w-5 h-5" />}
-              label={currentCohort ? `${currentCohort.name} 재적 교육생` : "전체 재적 교육생"}
+              label={currentCohort ? `${currentCohort.name} 재적 코치` : "전체 재적 코치"}
               value={`${kpis?.approvedTrainees ?? 0}명`}
               sub={`전체 회원 ${kpis?.totalUsers ?? 0}명 (가입대기 ${kpis?.pendingUsers ?? 0}명)`}
               delay={0.05}
@@ -602,7 +602,7 @@ export default function AdminDashboardPage() {
               icon={<Clock className="w-5 h-5" />}
               label="코칭 실습 누적"
               value={`${kpis?.totalCoachingHours ?? 0}시간`}
-              sub={`교육생 1인당 평균 ${kpis?.averageCoachingHours ?? 0}시간`}
+              sub={`코치 1인당 평균 ${kpis?.averageCoachingHours ?? 0}시간`}
               accent="primary"
               delay={0.1}
             />
@@ -655,7 +655,7 @@ export default function AdminDashboardPage() {
           />
           <QuickActionCard
             icon={<Sparkles className="w-4 h-4" />}
-            title="교육생 코칭 실습 AI 품질 분석"
+            title="코치 코칭 실습 AI 품질 분석"
             description="KAC/KPC 8대 핵심역량 기준 AI 자동 채점 및 성장 추세선 분석"
             badgeText="AI 분석"
             href="/admin/coaching-analysis"
@@ -772,7 +772,7 @@ export default function AdminDashboardPage() {
                 <div className="flex flex-col items-center justify-center">
                   {pieData.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground text-xs">
-                      교육생 데이터 없음
+                      코치 데이터 없음
                     </div>
                   ) : (
                     <ResponsiveContainer width="100%" height={220}>
@@ -818,7 +818,7 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-2">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-primary" />
-                  {currentCohort ? `${currentCohort.name} 교육생 진행 현황` : "전체 교육생 진행 현황"}
+                  {currentCohort ? `${currentCohort.name} 코치 진행 현황` : "전체 코치 진행 현황"}
                 </CardTitle>
                 <Badge variant="secondary" className="text-xs px-2 py-0">
                   {filteredTrainees.length}명
@@ -866,11 +866,11 @@ export default function AdminDashboardPage() {
                   <EmptyMedia variant="icon">
                     <Users />
                   </EmptyMedia>
-                  <EmptyTitle>조건에 맞는 교육생이 없습니다</EmptyTitle>
+                  <EmptyTitle>조건에 맞는 코치가 없습니다</EmptyTitle>
                   <EmptyDescription>
                     {searchTerm
                       ? "검색어를 확인하거나 필터를 변경해 보세요."
-                      : `${currentCohort?.name ?? "선택된 기수"}에 배정된 승인 교육생이 없습니다.`}
+                      : `${currentCohort?.name ?? "선택된 기수"}에 배정된 승인 코치가 없습니다.`}
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>

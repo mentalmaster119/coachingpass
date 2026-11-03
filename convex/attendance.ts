@@ -604,7 +604,7 @@ export const qrCheckIn = mutation({
           seminarTitle: seminar.title,
           date: args.date,
           checkedInAt: existing.checkedInAt ?? now,
-          userName: user.name ?? "교육생",
+          userName: user.name ?? "코치",
         };
       }
       await ctx.db.patch(existing._id, {
@@ -645,7 +645,7 @@ export const qrCheckIn = mutation({
       seminarTitle: seminar.title,
       date: args.date,
       checkedInAt: now,
-      userName: user.name ?? "교육생",
+      userName: user.name ?? "코치",
     };
   },
 });

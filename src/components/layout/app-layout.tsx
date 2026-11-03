@@ -238,9 +238,9 @@ function getNavSections(role: string, isPreviewMode?: boolean): NavSection[] {
         ],
       },
       {
-        title: "담당 코치 & 멘토링",
+        title: "코치 지도 & 멘토링",
         items: [
-          { label: "담당 코치", href: "/coach/trainees", icon: <UserCheck className="w-4 h-4" /> },
+          { label: "배정 코치 명단", href: "/coach/trainees", icon: <UserCheck className="w-4 h-4" /> },
           { label: "멘토링 누적 실적", href: "/coach/mentoring-history", icon: <Award className="w-4 h-4" /> },
           { label: "피드백 관리", href: "/coach/feedback", icon: <MessageSquareDot className="w-4 h-4" /> },
         ],
@@ -792,7 +792,7 @@ function getBottomNavItems(role: string, isPreviewMode?: boolean): BottomNavItem
   if (role === "senior_coach") {
     return [
       { label: "대시보드", href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-      { label: "담당코치", href: "/coach/trainees", icon: <UserCheck className="w-5 h-5" /> },
+      { label: "배정코치", href: "/coach/trainees", icon: <UserCheck className="w-5 h-5" /> },
       { label: "코칭검토", href: "/admin/coaching", icon: <ClipboardList className="w-5 h-5" /> },
       { label: "캘린더", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
       { label: "전체메뉴", href: "#menu", icon: <Menu className="w-5 h-5" /> },

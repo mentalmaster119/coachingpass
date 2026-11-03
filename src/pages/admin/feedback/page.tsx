@@ -69,7 +69,7 @@ export default function AdminFeedbackPage() {
         >
           {[
             { label: "전체 피드백", value: totalFeedbacks },
-            { label: "피드백 받은 교육생", value: uniqueTrainees },
+            { label: "피드백 수신 코치", value: uniqueTrainees },
             { label: "피드백 작성 코치", value: uniqueCoaches },
             {
               label: "전체 평균 평점",
@@ -99,7 +99,7 @@ export default function AdminFeedbackPage() {
         >
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="교육생, 수퍼바이저명 검색..."
+            placeholder="코치, 수퍼바이저명 검색..."
             className="pl-9"
             value={search}
             onChange={(e) => setSearch(e.target.value)}

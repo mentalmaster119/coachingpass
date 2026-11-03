@@ -136,7 +136,7 @@ export default function CoachingQualityPage() {
             <Link to="/admin/coaching-analysis">
               <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="w-4 h-4" />
-                <span>교육생 실습 분석으로</span>
+                <span>코치 실습 분석으로</span>
               </Button>
             </Link>
           ) : (
@@ -186,7 +186,7 @@ export default function CoachingQualityPage() {
             <Badge className="bg-purple-600 text-white text-xs">관리자 모드</Badge>
             <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
               <Users className="w-4 h-4 text-purple-600" />
-              분석 대상 교육생 선택:
+              분석 대상 코치 선택:
             </span>
           </div>
           <Select
@@ -194,7 +194,7 @@ export default function CoachingQualityPage() {
             onValueChange={(val) => setSearchParams({ userId: val })}
           >
             <SelectTrigger className="h-8 text-xs bg-card min-w-[260px]">
-              <SelectValue placeholder="교육생을 선택하세요" />
+              <SelectValue placeholder="코치를 선택하세요" />
             </SelectTrigger>
             <SelectContent className="max-h-80">
               {trainees.map((t: any) => (
