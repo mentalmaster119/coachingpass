@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { query } from "./mockAuth";
 import { ConvexError } from "convex/values";
 import { calculateUserCohortAttendance } from "./attendance";
+import { calculateCoachingQuotas } from "./assessmentLogic";
 import type { QueryCtx } from "./_generated/server.d.ts";
 import type { Id } from "./_generated/dataModel.d.ts";
 
@@ -113,15 +114,10 @@ export const evaluateCompletion = query({
     await requireAuth(ctx);
 
     const progress = await calculateCoachingProgress(ctx, args.userId);
+    const quotas = calculateCoachingQuotas(progress);
 
-    // Completion: 15건
-    const coachingForCompletion =
-      progress.buddyCount >= 2 &&
-      progress.mentorCount >= 2 &&
-      progress.svCount >= 1 &&
-      progress.sportsCount >= 8 &&
-      progress.generalCount >= 2 &&
-      progress.totalCount >= 15;
+    // Completion: 15건 쿼터
+    const coachingForCompletion = quotas.completion.isMet;
 
     // ── 2. Attendance ────────────────────────────────────────────────────────
     const stats = await calculateUserCohortAttendance(ctx, args.cohortId, args.userId, true);
@@ -136,14 +132,8 @@ export const evaluateCompletion = query({
     // Overall completion
     const isCompleted = coachingForCompletion && attendanceForCompletion;
 
-    // ── 3. Certification criteria ────────────────────────────────────────────
-    const coachingForCert =
-      progress.buddyCount >= 2 &&
-      progress.mentorCount >= 2 &&
-      progress.svCount >= 1 &&
-      progress.sportsCount >= 8 &&
-      progress.generalCount >= 7 &&
-      progress.totalCount >= 20;
+    // ── 3. Certification criteria (20건 쿼터) ────────────────────────────────────
+    const coachingForCert = quotas.certification.isMet;
 
     // Book reports
     const bookReports = await ctx.db
@@ -220,14 +210,8 @@ export const evaluateCohort = query({
 
         // Coaching progress using helper
         const progress = await calculateCoachingProgress(ctx, m.userId);
-
-        const coachingOk =
-          progress.buddyCount >= 2 &&
-          progress.mentorCount >= 2 &&
-          progress.svCount >= 1 &&
-          progress.sportsCount >= 8 &&
-          progress.generalCount >= 2 &&
-          progress.totalCount >= 15;
+        const quotas = calculateCoachingQuotas(progress);
+        const coachingOk = quotas.completion.isMet;
 
         // Attendance using unified helper
         const stats = await calculateUserCohortAttendance(ctx, args.cohortId, m.userId, true);
@@ -249,13 +233,7 @@ export const evaluateCohort = query({
           )
           .collect();
 
-        const coachingForCert =
-          progress.buddyCount >= 2 &&
-          progress.mentorCount >= 2 &&
-          progress.svCount >= 1 &&
-          progress.sportsCount >= 8 &&
-          progress.generalCount >= 7 &&
-          progress.totalCount >= 20;
+        const coachingForCert = quotas.certification.isMet;
 
         const isCertEligible =
           isCompleted &&

@@ -11,6 +11,7 @@
 import type * as admin from "../admin.js";
 import type * as admin_resetData from "../admin/resetData.js";
 import type * as announcements from "../announcements.js";
+import type * as assessmentLogic from "../assessmentLogic.js";
 import type * as attendance from "../attendance.js";
 import type * as auth from "../auth.js";
 import type * as authUtils from "../authUtils.js";
@@ -66,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   "admin/resetData": typeof admin_resetData;
   announcements: typeof announcements;
+  assessmentLogic: typeof assessmentLogic;
   attendance: typeof attendance;
   auth: typeof auth;
   authUtils: typeof authUtils;
