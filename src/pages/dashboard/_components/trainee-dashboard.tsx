@@ -27,7 +27,7 @@ import SetNameBanner from "./set-name-banner.tsx";
 import ProfileIncompleteBanner from "./profile-incomplete-banner.tsx";
 import WelcomeGuideBanner from "./welcome-guide-banner.tsx";
 import QuickActionWidget from "./quick-action-widget.tsx";
-import ProgressSummaryCard from "@/pages/progress/_components/progress-summary-card.tsx";
+import RequirementProgressEngine from "@/components/dashboard/requirement-progress-engine.tsx";
 
 type User = Doc<"users">;
 
@@ -344,8 +344,8 @@ export default function TraineeDashboard({ user }: { user: User }) {
         <QuickActionWidget />
       </motion.div>
 
-      {/* ── Progress Summary Card ── */}
-      <ProgressSummaryCard user={user} />
+      {/* ── SMPCC 실시간 자격 요건 시뮬레이터 (Requirement Progress Engine) ── */}
+      <RequirementProgressEngine />
 
 
 

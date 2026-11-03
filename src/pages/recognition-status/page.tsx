@@ -3,6 +3,7 @@ import { useQuery } from "convex/react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import CertificateModal from "@/components/common/certificate-modal.tsx";
+import RequirementProgressEngine from "@/components/dashboard/requirement-progress-engine.tsx";
 import {
   CheckCircle2,
   Circle,
@@ -262,6 +263,9 @@ export default function RecognitionStatusPage() {
           </Button>
         </motion.div>
       )}
+
+      {/* 실시간 3단계 자격 요건 시뮬레이터 */}
+      <RequirementProgressEngine />
 
       {/* Quick stat cards */}
       <motion.div

@@ -3,6 +3,7 @@ import { mutation, query } from "./mockAuth";
 import { getAuthenticatedUser, requireRole } from "./helpers";
 import { insertNotification } from "./notifications";
 import { calculateCoachingProgress } from "./completion";
+import { calculateUserCohortAttendance } from "./attendance";
 
 // ── Shared requirement thresholds ─────────────────────────────────────────────
 
@@ -402,6 +403,27 @@ export const getMyRequirementStatus = query({
 
     const progress = await calculateCoachingProgress(ctx, user._id);
 
+    // Attendance from cohort
+    const membership = await ctx.db
+      .query("cohortMembers")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+
+    let attendanceRate = 0;
+    let attendedSlots = 0;
+    let totalSlots = 0;
+    let sessionAbsenceViolation = false;
+
+    if (membership) {
+      const stats = await calculateUserCohortAttendance(ctx, membership.cohortId, user._id, true);
+      attendanceRate = stats.attendanceRate;
+      attendedSlots = stats.attendedSlots;
+      totalSlots = stats.total;
+      sessionAbsenceViolation = stats.sessionAbsenceViolation;
+    }
+
+    const attendanceMet = attendanceRate >= 80 && !sessionAbsenceViolation;
+
     const bookReports = await ctx.db
       .query("bookReports")
       .withIndex("by_user_and_status", (q) =>
@@ -419,21 +441,164 @@ export const getMyRequirementStatus = query({
     const bookReportCount = bookReports.length;
     const essayCount = essays.length;
 
+    // Check official certification record
+    const userCert = await ctx.db
+      .query("smpccCertifications")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+    const hasActiveCert = Boolean(
+      userCert &&
+        userCert.status === "active" &&
+        (!userCert.expiresAt || new Date(userCert.expiresAt) >= new Date())
+    );
+
+    // Stage 1: 수료 요건 (Completion: 출석 80% + 결석위반 없음 + 총 실습 15회 및 세부 쿼터)
+    const isCompletionMet =
+      attendanceMet &&
+      progress.totalCount >= 15 &&
+      progress.sportsCount >= 8 &&
+      progress.generalCount >= 2 &&
+      progress.buddyCount >= 2 &&
+      progress.mentorCount >= 2 &&
+      progress.svCount >= 1;
+
+    // Stage 2: 인증 요건 (Certification: 수료 + 총 실습 20회 + 일반 7회 + 독후감 2편 + 에세이 1편)
+    const isCertEligible =
+      isCompletionMet &&
+      progress.totalCount >= 20 &&
+      progress.generalCount >= 7 &&
+      bookReportCount >= 2 &&
+      essayCount >= 1;
+
     const criteria = [
-      { key: "education", label: "정규 교육 이수", current: Math.round(educationHours * 10) / 10, required: req.education, unit: "시간", met: educationHours >= req.education, weight: 20 },
-      { key: "coachingHours", label: "코칭 실습 총 시간", current: Math.round(coachingHours * 10) / 10, required: req.coaching, unit: "시간", met: coachingHours >= req.coaching, weight: 20 },
-      { key: "sportsCoaching", label: "스포츠선수 코칭", current: progress.sportsCount, required: 8, unit: "회", met: progress.sportsCount >= 8, weight: 15 },
-      { key: "generalCoaching", label: "일반인 코칭", current: progress.generalCount, required: 7, unit: "회", met: progress.generalCount >= 7, weight: 15 },
-      { key: "buddyCoaching", label: "버디코칭 (BCP)", current: progress.buddyCount, required: 2, unit: "회", met: progress.buddyCount >= 2, weight: 10 },
-      { key: "mentorCoaching", label: "멘토코칭 (MCP)", current: progress.mentorCount, required: 2, unit: "회", met: progress.mentorCount >= 2, weight: 10 },
-      { key: "supervision", label: "수퍼비전 (SVP)", current: progress.svCount, required: 1, unit: "회", met: progress.svCount >= 1, weight: 5 },
-      { key: "bookReports", label: "도서 독후감 제출", current: bookReportCount, required: 2, unit: "편", met: bookReportCount >= 2, weight: 3 },
-      { key: "coachingEssay", label: "멘탈코칭 에세이", current: essayCount, required: 1, unit: "편", met: essayCount >= 1, weight: 2 },
+      {
+        key: "attendance",
+        category: "completion" as const,
+        label: "세미나 출석률 (80% 이상)",
+        current: attendanceRate,
+        required: 80,
+        unit: "%",
+        met: attendanceMet,
+        weight: 15,
+        subLabel: sessionAbsenceViolation ? "단일 세션 전일 결석 위반" : `${attendedSlots}/${totalSlots}회차 출석`,
+        href: "/attendance",
+      },
+      {
+        key: "education",
+        category: "completion" as const,
+        label: "정규 교육 이수 시간",
+        current: Math.round(educationHours * 10) / 10,
+        required: req.education,
+        unit: "시간",
+        met: educationHours >= req.education,
+        weight: 15,
+        subLabel: `인정 누적: ${Math.round(educationHours * 10) / 10}h`,
+        href: "/training-history",
+      },
+      {
+        key: "totalCoaching",
+        category: "completion" as const,
+        label: "코칭 실습 건수",
+        current: progress.totalCount,
+        required: 20,
+        unit: "회",
+        met: progress.totalCount >= 20,
+        weight: 15,
+        subLabel: `수료 15회 (${progress.totalCount >= 15 ? "달성" : "진행중"}) · 인증 20회`,
+        href: "/coaching-log",
+      },
+      {
+        key: "sportsCoaching",
+        category: "coaching" as const,
+        label: "스포츠선수 코칭",
+        current: progress.sportsCount,
+        required: 8,
+        unit: "회",
+        met: progress.sportsCount >= 8,
+        weight: 15,
+        subLabel: "선수 대상 1:1 실습 8회 필수",
+        href: "/coaching-log",
+      },
+      {
+        key: "generalCoaching",
+        category: "coaching" as const,
+        label: "일반인 코칭",
+        current: progress.generalCount,
+        required: 7,
+        unit: "회",
+        met: progress.generalCount >= 7,
+        weight: 10,
+        subLabel: `수료 기준 2회 / 인증 기준 7회`,
+        href: "/coaching-log",
+      },
+      {
+        key: "buddyCoaching",
+        category: "coaching" as const,
+        label: "버디코칭 (BCP)",
+        current: progress.buddyCount,
+        required: 2,
+        unit: "회",
+        met: progress.buddyCount >= 2,
+        weight: 10,
+        subLabel: "동료 코치 상호 실습 2회",
+        href: "/bcp",
+      },
+      {
+        key: "mentorCoaching",
+        category: "coaching" as const,
+        label: "멘토코칭 (MCP)",
+        current: progress.mentorCount,
+        required: 2,
+        unit: "회",
+        met: progress.mentorCount >= 2,
+        weight: 10,
+        subLabel: "멘토코치 1:1 지도 2회",
+        href: "/mentor-coaching",
+      },
+      {
+        key: "supervision",
+        category: "coaching" as const,
+        label: "수퍼비전 (SVP)",
+        current: progress.svCount,
+        required: 1,
+        unit: "회",
+        met: progress.svCount >= 1,
+        weight: 5,
+        subLabel: "수퍼바이저 코칭 참관 1회",
+        href: "/supervision",
+      },
+      {
+        key: "bookReports",
+        category: "assignment" as const,
+        label: "도서 독후감 제출",
+        current: bookReportCount,
+        required: 2,
+        unit: "편",
+        met: bookReportCount >= 2,
+        weight: 3,
+        subLabel: "지정도서 독후감 2편 승인",
+        href: "/submissions",
+      },
+      {
+        key: "coachingEssay",
+        category: "assignment" as const,
+        label: "멘탈코칭 에세이",
+        current: essayCount,
+        required: 1,
+        unit: "편",
+        met: essayCount >= 1,
+        weight: 2,
+        subLabel: "코칭 성찰 에세이 1편 승인",
+        href: "/submissions",
+      },
     ];
 
     const metCount = criteria.filter((c) => c.met).length;
     const readinessPercentage = Math.round(
-      criteria.reduce((acc, c) => acc + (Math.min(c.current / c.required, 1) * c.weight), 0)
+      criteria.reduce(
+        (acc, c) => acc + Math.min(c.current / c.required, 1) * c.weight,
+        0
+      )
     );
 
     return {
@@ -444,11 +609,47 @@ export const getMyRequirementStatus = query({
       coachingRequired: req.coaching,
       educationMet: educationHours >= req.education,
       coachingMet: coachingHours >= req.coaching,
+      attendanceRate,
+      attendanceMet,
+      isCompletionMet,
+      isCertEligible,
+      hasActiveCert,
+      certId: userCert?._id,
+      certIssuedAt: userCert?.issuedAt,
+      certExpiresAt: userCert?.expiresAt,
       allMet: metCount === criteria.length,
       criteria,
       metCount,
       totalCriteriaCount: criteria.length,
       readinessPercentage,
+      stages: [
+        {
+          stageNumber: 1,
+          name: "수료",
+          status: isCompletionMet ? "completed" : "in_progress",
+          label: "정규 교육 & 세미나 출석 80% 및 기본 실습 15회 충족",
+        },
+        {
+          stageNumber: 2,
+          name: "인증",
+          status: isCertEligible
+            ? "completed"
+            : isCompletionMet
+              ? "in_progress"
+              : "locked",
+          label: "심화 실습 20회, 독후감 2편, 에세이 1편 및 인증 기준 충족",
+        },
+        {
+          stageNumber: 3,
+          name: "SMPCC 레벨 부여",
+          status: hasActiveCert
+            ? "completed"
+            : isCertEligible
+              ? "in_progress"
+              : "locked",
+          label: "공인 인증시험 통과 및 MCCI-SMPCC 공식 자격증 발급",
+        },
+      ],
     };
   },
 });
