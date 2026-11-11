@@ -78,6 +78,9 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
   const submitDraft = useMutation(api.mentorCoaching.submitDraft);
 
   const isEdit = !!editLog;
+  const [currentDraftId, setCurrentDraftId] = useState<Id<"mentorCoachingLogs"> | undefined>(
+    editLog?.approvalStatus === "draft" ? editLog._id : undefined
+  );
 
   const [file, setFile] = useState<File | null>(null);
   const [existingEvidenceId, setExistingEvidenceId] = useState<Id<"_storage"> | undefined>(
@@ -93,6 +96,7 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
       setValues(getDefaultValues(editLog));
       setFile(null);
       setExistingEvidenceId(editLog?.evidenceStorageId);
+      setCurrentDraftId(editLog?.approvalStatus === "draft" ? editLog._id : undefined);
     }
   }, [open, editLog]);
 
@@ -104,6 +108,7 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
       setValues(getDefaultValues(editLog));
       setFile(null);
       setExistingEvidenceId(editLog?.evidenceStorageId);
+      setCurrentDraftId(undefined);
     }
     onOpenChange(v);
   };
@@ -163,13 +168,14 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
         evidenceStorageId,
       };
 
-      if (isEdit && editLog) {
-        await saveDraft({ logId: editLog._id, ...payload });
-      } else {
-        await saveDraft(payload);
+      const targetDraftId = currentDraftId || (isEdit && editLog ? editLog._id : undefined);
+      const savedId = await saveDraft(
+        targetDraftId ? { logId: targetDraftId, ...payload } : payload
+      );
+      if (savedId) {
+        setCurrentDraftId(savedId);
       }
-      toast.success("임시저장되었습니다.");
-      handleOpenChange(false);
+      toast.success("임시저장되었습니다. 이어서 작성하거나 창을 닫으실 수 있습니다.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "임시저장에 실패했습니다. 다시 시도해 주세요.");
     } finally {
@@ -219,7 +225,10 @@ export default function MentorCoachingForm({ open, onOpenChange, editLog }: Prop
       const evidenceStorageId = await uploadFileIfNeeded();
       const payload = { ...trimmed, evidenceStorageId };
 
-      if (isEdit && editLog) {
+      if (currentDraftId) {
+        await submitDraft({ logId: currentDraftId, ...payload });
+        toast.success("기록이 제출되었습니다. 검토 후 승인됩니다.");
+      } else if (isEdit && editLog) {
         if (editLog.approvalStatus === "draft") {
           await submitDraft({ logId: editLog._id, ...payload });
           toast.success("기록이 제출되었습니다. 검토 후 승인됩니다.");

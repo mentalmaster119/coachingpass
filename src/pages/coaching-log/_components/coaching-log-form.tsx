@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
-import { Paperclip, X, Save, Send, ChevronLeft, ChevronRight, Check, AlertTriangle } from "lucide-react";
+import { Paperclip, X, Save, Send, ChevronLeft, ChevronRight, Check, AlertTriangle, Trash2, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils.ts";
 
 type CoachingLog = Doc<"coachingLogs"> & { evidenceUrl?: string | null };
@@ -300,11 +300,14 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
   const isDraft = editLog?.approvalStatus === "draft";
 
   const [hasAutosave, setHasAutosave] = useState(false);
+  const [showDraftPicker, setShowDraftPicker] = useState(false);
+  const [deletingDraftId, setDeletingDraftId] = useState<Id<"coachingLogs"> | null>(null);
 
   const createLog = useMutation(api.coaching.create);
   const updateLog = useMutation(api.coaching.update);
   const saveDraft = useMutation(api.coaching.saveDraft);
   const submitDraft = useMutation(api.coaching.submitDraft);
+  const removeLog = useMutation(api.coaching.remove);
   const generateUploadUrl = useMutation(api.coaching.generateUploadUrl);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -389,11 +392,19 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
 
   const overlappingLog = (myLogs ?? []).find((l) => {
     if (isEdit && l._id === editLog?._id) return false;
+    if (currentDraftId && l._id === currentDraftId) return false;
     if (l.coachingDate !== coachingDate) return false;
     if (!l.coachingStartTime || !l.coachingEndTime) return false;
     if (!coachingStartTime || !coachingEndTime) return false;
     return l.coachingStartTime < coachingEndTime && coachingStartTime < l.coachingEndTime;
   });
+
+  const savedDraftLogs = (myLogs ?? []).filter(
+    (l) =>
+      l.approvalStatus === "draft" &&
+      l._id !== currentDraftId &&
+      (!isEdit || l._id !== editLog?._id),
+  );
 
   // ── Ⅱ. 코칭 주제
   const [topic, setTopic] = useState(editLog?.topic ?? "");
@@ -435,9 +446,136 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
     editLog?.evidenceStorageId,
   );
 
-  // ── Auto-save to localStorage (only when creating a new log)
+  const applyLogToForm = useCallback((target: CoachingLog) => {
+    setCoachingDate(target.coachingDate || new Date().toISOString().slice(0, 10));
+    setCoachingStartTime(target.coachingStartTime ?? "");
+    setCoachingEndTime(target.coachingEndTime ?? "");
+    setCoachingType((target.coachingType as any) ?? defaultCoachingType ?? "individual");
+    setSvSupervisorFeedback(target.svSupervisorFeedback ?? "");
+    setSvPeerFeedback(target.svPeerFeedback ?? "");
+    setSvReflectionLearning(target.svReflectionLearning ?? "");
+    setCoachingPlace(target.coachingPlace ?? "");
+    setCoachingPlaceOther(target.coachingPlaceOther ?? "");
+    setSessionNumber(target.sessionNumber ?? "");
+    setCoacheeInfo(target.coacheeInfo ?? "");
+    setCoacheeGender(target.coacheeGender ?? "");
+    setCoacheeAge(target.coacheeAge ? String(target.coacheeAge) : "");
+    setCoacheePersonality(target.coacheePersonality ?? "");
+    setCoacheeType(target.coacheeType ?? []);
+    setNcpClientCategory(target.ncpClientCategory ?? "");
+    setCoacheeField(target.coacheeField ?? "");
+    setHours(target.durationMinutes && target.durationMinutes > 0 ? String(target.durationMinutes / 60) : "1");
+    setTopic(target.topic ?? "");
+    setCoreIssues(target.coreIssues ?? []);
+    setPreState(target.preCoachingState ?? { ...DEFAULT_SCORES });
+    setPostState(target.postCoachingState ?? { ...DEFAULT_SCORES });
+    setTechniquesUsed(target.techniquesUsed ?? []);
+    setTechniqueOther(target.techniqueOther ?? "");
+    setClientInsight(target.clientInsight ?? "");
+    setCoachPattern(target.coachPattern ?? "");
+    setGoals(target.goals ?? "");
+    setActionPlan(target.actionPlan ?? "");
+    setNextSessionPractice(target.nextSessionPractice ?? "");
+    setSummary(target.summary ?? "");
+    setReflection(target.reflection ?? "");
+    setBestOfSession(target.bestOfSession ?? "");
+    setImprovementForNext(target.improvementForNext ?? "");
+    setChangeKeywordsText(target.changeKeywords?.join(", ") ?? "");
+    setMostEffectiveTechnique(target.mostEffectiveTechnique ?? "");
+    setClientQuote(target.clientQuote ?? "");
+    setCoachOverallFeedback(target.coachOverallFeedback ?? "");
+    setMcciDomain(target.mcciDomain ?? "");
+    setExistingEvidenceId(target.evidenceStorageId);
+    if (target.approvalStatus === "draft") {
+      setCurrentDraftId(target._id);
+    }
+  }, [defaultCoachingType]);
+
+  // Sync editLog when dialog opens
+  useEffect(() => {
+    if (open && editLog) {
+      applyLogToForm(editLog);
+      setCurrentStep(1);
+      setSubmitted(false);
+    } else if (open && !editLog && currentDraftId) {
+      resetForm(false);
+    }
+  }, [open, editLog, applyLogToForm]);
+
+  const handleLoadDraftLog = (draft: CoachingLog) => {
+    applyLogToForm(draft);
+    setCurrentDraftId(draft._id);
+    setShowDraftPicker(false);
+    setHasAutosave(false);
+    toast.success("임시저장 기록을 불러왔습니다. 이어서 작성해 주세요.");
+  };
+
+  const handleDeleteDraftLog = async (draftId: Id<"coachingLogs">) => {
+    setDeletingDraftId(draftId);
+    try {
+      await removeLog({ logId: draftId });
+      if (currentDraftId === draftId) {
+        resetForm(true);
+        if (isDraft) {
+          onOpenChange(false);
+        }
+      }
+      toast.success("임시저장 파일이 삭제되었습니다.");
+    } catch (err) {
+      if (err instanceof ConvexError) {
+        const { message } = err.data as { message: string };
+        toast.error(message);
+      } else {
+        toast.error("임시저장 삭제 중 오류가 발생했습니다.");
+      }
+    } finally {
+      setDeletingDraftId(null);
+    }
+  };
+
+  // Check for existing auto-saved draft when opening dialog (MUST run before auto-save effect)
   useEffect(() => {
     if (open && !isEdit) {
+      try {
+        const saved = localStorage.getItem("coachingpass_autosave_log");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (
+            parsed.topic ||
+            parsed.coacheeInfo ||
+            parsed.reflection ||
+            parsed.summary ||
+            parsed.goals ||
+            parsed.coachingStartTime ||
+            parsed.coachingEndTime
+          ) {
+            setHasAutosave(true);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    } else {
+      setHasAutosave(false);
+    }
+  }, [open, isEdit]);
+
+  // ── Auto-save to localStorage (only when creating a new log and user has entered content)
+  useEffect(() => {
+    if (open && !isEdit && !currentDraftId) {
+      const hasAnyUserInput = Boolean(
+        coacheeInfo.trim() ||
+        topic.trim() ||
+        goals.trim() ||
+        summary.trim() ||
+        reflection.trim() ||
+        clientInsight.trim() ||
+        actionPlan.trim() ||
+        coachingStartTime ||
+        coachingEndTime
+      );
+      if (!hasAnyUserInput) return;
+
       const dataToSave = {
         coachingDate,
         coachingStartTime,
@@ -475,11 +613,16 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
         coachOverallFeedback,
         mcciDomain,
       };
-      localStorage.setItem("coachingpass_autosave_log", JSON.stringify(dataToSave));
+      try {
+        localStorage.setItem("coachingpass_autosave_log", JSON.stringify(dataToSave));
+      } catch {
+        // ignore quota errors
+      }
     }
   }, [
     open,
     isEdit,
+    currentDraftId,
     coachingDate,
     coachingStartTime,
     coachingEndTime,
@@ -516,25 +659,6 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
     coachOverallFeedback,
     mcciDomain,
   ]);
-
-  // Check for existing auto-saved draft when opening dialog
-  useEffect(() => {
-    if (open && !isEdit) {
-      const saved = localStorage.getItem("coachingpass_autosave_log");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed.topic || parsed.coacheeInfo || parsed.reflection || parsed.summary) {
-            setHasAutosave(true);
-          }
-        } catch {
-          // ignore
-        }
-      }
-    } else {
-      setHasAutosave(false);
-    }
-  }, [open, isEdit]);
 
   const handleRestore = () => {
     const saved = localStorage.getItem("coachingpass_autosave_log");
@@ -597,11 +721,11 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
     setArr(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
   };
 
-  const resetForm = () => {
+  const resetForm = (clearAutosave = false) => {
     setCurrentStep(1);
     setCoachingDate(new Date().toISOString().slice(0, 10));
     setCoachingStartTime(""); setCoachingEndTime("");
-    setCoachingType("individual"); setCoachingPlace(""); setCoachingPlaceOther("");
+    setCoachingType(defaultCoachingType ?? "individual"); setCoachingPlace(""); setCoachingPlaceOther("");
     setSessionNumber(""); setCoacheeInfo(""); setCoacheeGender(""); setCoacheeAge("");
     setCoacheePersonality(""); setCoacheeType([]); setCoacheeField(""); setHours("1");
     setNcpClientCategory("");
@@ -617,11 +741,14 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
     setFile(null); setExistingEvidenceId(undefined);
     setCurrentDraftId(undefined);
     setSubmitted(false);
-    localStorage.removeItem("coachingpass_autosave_log");
+    setShowDraftPicker(false);
+    if (clearAutosave) {
+      localStorage.removeItem("coachingpass_autosave_log");
+    }
   };
 
   const handleClose = () => {
-    if (!isEdit) resetForm();
+    setShowDraftPicker(false);
     onOpenChange(false);
   };
 
@@ -768,16 +895,17 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
 
       if (isDraft && editLog) {
         await saveDraft({ logId: editLog._id, ...payload });
-        toast.success("임시저장되었습니다.");
+        toast.success("임시저장되었습니다. '임시저장' 목록 또는 작성 창 상단에서 언제든 불러올 수 있습니다.");
       } else if (currentDraftId) {
         await saveDraft({ logId: currentDraftId, ...payload });
-        toast.success("임시저장되었습니다.");
+        toast.success("임시저장되었습니다. '임시저장' 목록 또는 작성 창 상단에서 언제든 불러올 수 있습니다.");
       } else {
         const newId = await saveDraft(payload);
         setCurrentDraftId(newId as Id<"coachingLogs">);
-        toast.success("임시저장되었습니다. 언제든지 이어서 작성할 수 있습니다.");
+        toast.success("임시저장되었습니다. 언제든지 불러와서 이어 작성할 수 있습니다.");
       }
       localStorage.removeItem("coachingpass_autosave_log");
+      setHasAutosave(false);
     } catch (err) {
       if (err instanceof ConvexError) {
         const { message } = err.data as { message: string };
@@ -831,6 +959,9 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
         toast.success("코칭 기록이 등록되었습니다. 승인 후 시간이 반영됩니다.");
       }
 
+      if (!isEdit) {
+        resetForm(true);
+      }
       handleClose();
       localStorage.removeItem("coachingpass_autosave_log");
     } catch (err) {
@@ -938,11 +1069,51 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
               )}
 
               {overlappingLog && (
-                <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                  <span>
-                    <strong>시간 중복 주의:</strong> 같은 날짜에 이미 등록된 코칭({overlappingLog.topic || overlappingLog.coacheeInfo}, {overlappingLog.coachingStartTime}~{overlappingLog.coachingEndTime})과 시간이 겹칩니다. 확인 후 진행하세요.
-                  </span>
+                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-800 dark:text-amber-300 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-1 flex-1">
+                      {overlappingLog.approvalStatus === "draft" ? (
+                        <p>
+                          <strong>임시저장 기록 시간 중복:</strong> 같은 날짜·시간({overlappingLog.coachingStartTime}~{overlappingLog.coachingEndTime})에 작성 중이던{" "}
+                          <strong>임시저장 일지({overlappingLog.topic || overlappingLog.coacheeInfo || "제목 미입력"})</strong>가 있습니다. 아래 버튼으로 해당 임시저장 파일을 불러와서 이어 쓰거나 삭제할 수 있습니다.
+                        </p>
+                      ) : (
+                        <p>
+                          <strong>시간 중복 주의:</strong> 같은 날짜에 이미 등록된 코칭({overlappingLog.topic || overlappingLog.coacheeInfo || "제목 없음"}, {overlappingLog.coachingStartTime}~{overlappingLog.coachingEndTime})과 시간이 겹칩니다. 확인 후 진행하세요.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {(overlappingLog.approvalStatus === "draft" || overlappingLog.approvalStatus === "pending" || overlappingLog.approvalStatus === "rejected") && (
+                    <div className="flex items-center gap-2 pl-6 flex-wrap">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs bg-white dark:bg-slate-900 border-amber-400 text-amber-800 dark:text-amber-300 hover:bg-amber-100 cursor-pointer"
+                        onClick={() => handleLoadDraftLog(overlappingLog)}
+                      >
+                        <FolderOpen className="w-3.5 h-3.5 mr-1" />
+                        {overlappingLog.approvalStatus === "draft" ? "이 임시저장 파일 불러오기" : "기존 기록 불러오기"}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={deletingDraftId === overlappingLog._id}
+                        className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                        onClick={() => handleDeleteDraftLog(overlappingLog._id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" />
+                        {deletingDraftId === overlappingLog._id
+                          ? "삭제 중..."
+                          : overlappingLog.approvalStatus === "draft"
+                          ? "이 임시저장 파일 삭제"
+                          : "중복 기록 삭제"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1363,36 +1534,116 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader className="flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <DialogTitle>
-              {coachingType === "sv"
-                ? "수퍼비전 기록"
-                : isDraft
-                ? "임시저장 기록 이어 작성"
-                : isEdit
-                ? "코칭 기록 수정"
-                : "코칭 실습 기록 추가"}
-            </DialogTitle>
-            {(isDraft || currentDraftId) && (
-              <Badge variant="secondary" className="text-xs font-normal">
-                임시저장됨
-              </Badge>
+          <div className="flex items-center justify-between gap-2 flex-wrap pr-6">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <DialogTitle>
+                {coachingType === "sv"
+                  ? "수퍼비전 기록"
+                  : isDraft || currentDraftId
+                  ? "임시저장 기록 이어 작성"
+                  : isEdit
+                  ? "코칭 기록 수정"
+                  : "코칭 실습 기록 추가"}
+              </DialogTitle>
+              {(isDraft || currentDraftId) && (
+                <Badge variant="secondary" className="text-xs font-normal border-amber-400 text-amber-700 dark:text-amber-300 bg-amber-500/10">
+                  임시저장됨
+                </Badge>
+              )}
+            </div>
+            {savedDraftLogs.length > 0 && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setShowDraftPicker((v) => !v)}
+                className="h-7 text-xs border-amber-400 bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 cursor-pointer gap-1"
+              >
+                <FolderOpen className="w-3.5 h-3.5" />
+                <span>임시저장 불러오기 ({savedDraftLogs.length}건)</span>
+              </Button>
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            * 표시는 제출 시 필수 항목입니다. 임시저장은 언제든 가능합니다.
+            * 표시는 제출 시 필수 항목입니다. 임시저장은 언제든 가능하며 상단에서 다시 불러오거나 삭제할 수 있습니다.
           </p>
         </DialogHeader>
 
+        {/* DB에 저장된 임시저장 목록 불러오기 / 삭제 패널 */}
+        {(showDraftPicker || (!isEdit && !currentDraftId && savedDraftLogs.length > 0)) && savedDraftLogs.length > 0 && (
+          <div className="bg-amber-50/90 dark:bg-amber-950/25 border border-amber-300/80 dark:border-amber-800/60 rounded-lg p-3 space-y-2 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                <FolderOpen className="w-3.5 h-3.5 text-amber-600" />
+                <span>저장된 임시저장 일지 ({savedDraftLogs.length}건) — 불러와서 이어 쓰거나 삭제할 수 있습니다</span>
+              </p>
+              {showDraftPicker && (
+                <button
+                  type="button"
+                  onClick={() => setShowDraftPicker(false)}
+                  className="text-[11px] text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                >
+                  닫기
+                </button>
+              )}
+            </div>
+            <div className="max-h-32 overflow-y-auto space-y-1.5 pr-1">
+              {savedDraftLogs.map((draft) => (
+                <div
+                  key={draft._id}
+                  className="flex items-center justify-between gap-2 bg-background/90 border border-amber-200 dark:border-amber-900/50 rounded-md px-2.5 py-1.5 text-xs"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-foreground truncate">
+                      {draft.topic || "(코칭 주제 미입력)"}{" "}
+                      <span className="font-normal text-muted-foreground">
+                        · {draft.coacheeInfo ? `코치이: ${draft.coacheeInfo}` : "코치이 미입력"}
+                      </span>
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {draft.coachingDate}
+                      {draft.coachingStartTime && draft.coachingEndTime
+                        ? ` (${draft.coachingStartTime}~${draft.coachingEndTime})`
+                        : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2.5 text-xs border-amber-400 text-amber-800 dark:text-amber-300 hover:bg-amber-100 cursor-pointer"
+                      onClick={() => handleLoadDraftLog(draft)}
+                    >
+                      불러오기
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={deletingDraftId === draft._id}
+                      className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                      onClick={() => handleDeleteDraftLog(draft._id)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-0.5" />
+                      삭제
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {hasAutosave && (
-          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-lg p-3 flex items-center justify-between text-xs text-amber-800 dark:text-amber-300 gap-3 mx-6 my-2">
-            <span className="font-medium">이전에 작성하던 임시저장 내용이 있습니다. 복구하시겠습니까?</span>
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-lg p-3 flex items-center justify-between text-xs text-amber-800 dark:text-amber-300 gap-3 flex-shrink-0">
+            <span className="font-medium">이전에 작성하던 자동 임시저장 내용이 있습니다. 불러오시겠습니까?</span>
             <div className="flex items-center gap-1.5 flex-shrink-0">
-              <Button size="sm" variant="outline" className="h-7 text-xs border-amber-300 hover:bg-amber-100 text-amber-800 dark:border-amber-800 dark:hover:bg-amber-950 cursor-pointer" onClick={handleRestore}>
-                복구하기
+              <Button type="button" size="sm" variant="outline" className="h-7 text-xs border-amber-300 hover:bg-amber-100 text-amber-800 dark:border-amber-800 dark:hover:bg-amber-950 cursor-pointer" onClick={handleRestore}>
+                불러오기
               </Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 hover:bg-amber-100 cursor-pointer" onClick={handleDiscard}>
-                지우기
+              <Button type="button" size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer" onClick={handleDiscard}>
+                임시파일 삭제
               </Button>
             </div>
           </div>
@@ -1420,10 +1671,25 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
         </div>
 
         <DialogFooter className="flex-shrink-0 flex-col sm:flex-row gap-2 pt-3 border-t">
-          <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex gap-2 w-full sm:w-auto items-center">
             <Button variant="ghost" onClick={handleClose} disabled={isPending || isSavingDraft}>
               취소
             </Button>
+            {(isDraft || currentDraftId) && (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={isPending || isSavingDraft || !!deletingDraftId}
+                onClick={() => {
+                  const targetId = currentDraftId || editLog?._id;
+                  if (targetId) handleDeleteDraftLog(targetId);
+                }}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 text-xs px-2.5"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1" />
+                임시파일 삭제
+              </Button>
+            )}
             {currentStep > 1 && (
               <Button variant="ghost" onClick={handlePrev} disabled={isPending || isSavingDraft}>
                 <ChevronLeft className="w-4 h-4 mr-1" />

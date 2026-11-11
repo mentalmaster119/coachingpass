@@ -22,7 +22,17 @@ export async function getAuthenticatedUser(ctx: QueryCtx | MutationCtx) {
     throw new ConvexError({ message: "User is pending approval or access is restricted", code: "PENDING_APPROVAL" });
   }
 
-  return user;
+  // 멘토코치로 지정(isMentorCoach: true)된 경우 기본적으로 멘토코치(senior_coach) 역할을 부여
+  const baseRole: UserRole =
+    user.role === "trainee" && user.isMentorCoach ? "senior_coach" : user.role;
+
+  // 멘토코치(senior_coach)가 '코치 화면으로 보기'(activeMockRole === "trainee")로 전환한 경우 본인 계정 그대로 role만 trainee로 동작
+  const effectiveRole: UserRole =
+    !(ctx as any).skipMockAuth && baseRole === "senior_coach" && user.activeMockRole === "trainee"
+      ? "trainee"
+      : baseRole;
+
+  return { ...user, role: effectiveRole };
 }
 
 export async function requireRole(

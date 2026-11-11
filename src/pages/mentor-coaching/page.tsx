@@ -106,17 +106,27 @@ export default function MentorCoachingPage() {
               icon={<CheckCircle className="w-4.5 h-4.5" />}
               label="총 승인 횟수"
               value={`${summary.approvedCount}회`}
-              sub={`전체 ${summary.totalCount}건`}
+              sub={`제출 ${summary.totalCount}건`}
             />
             <StatCard
               icon={<Star className="w-4.5 h-4.5" />}
               label="개인 멘토코칭"
-              value={`${summary.mentorCoachingCount}회`}
+              value={`${summary.submittedMentorCoachingCount ?? summary.mentorCoachingCount}회`}
+              sub={
+                (summary.pendingMentorCoachingCount ?? 0) > 0
+                  ? `승인 ${summary.mentorCoachingCount}회 · 대기 ${summary.pendingMentorCoachingCount}건`
+                  : `승인 ${summary.mentorCoachingCount}회`
+              }
             />
             <StatCard
               icon={<MessageSquare className="w-4.5 h-4.5" />}
               label="그룹 코더코"
-              value={`${summary.coderCoCount}회`}
+              value={`${summary.submittedCoderCoCount ?? summary.coderCoCount}회`}
+              sub={
+                (summary.pendingCoderCoCount ?? 0) > 0
+                  ? `승인 ${summary.coderCoCount}회 · 대기 ${summary.pendingCoderCoCount}건`
+                  : `승인 ${summary.coderCoCount}회`
+              }
             />
             <StatCard
               icon={

@@ -1,6 +1,7 @@
 import { query } from "./mockAuth";
 import { requireRole, getAuthenticatedUser } from "./helpers";
 import type { Id } from "./_generated/dataModel.d.ts";
+import { isSameCoachName, normalizeCoachName } from "./mentorCoaching";
 
 // ── Admin: comprehensive dashboard stats ─────────────────────────────────────
 
@@ -45,7 +46,14 @@ export const getAdminDashboardStats = query({
     });
 
     // Unassigned trainees
-    const unassignedCount = trainees.filter((t) => !t.assignedCoachId).length;
+    const unassignedCount = trainees.filter(
+      (t) =>
+        !t.assignedCoachId &&
+        !t.assignedCoachId2 &&
+        !t.assignedCoachId3 &&
+        !t.assignedCoachId4 &&
+        !t.assignedCoachId5
+    ).length;
 
     return {
       totalUsers: allUsers.length,
@@ -80,13 +88,18 @@ export const getCoachDashboardData = query({
       (u) =>
         u.role === "trainee" &&
         u.approvalStatus === "approved" &&
-        u.assignedCoachId?.toString() === me._id.toString(),
+        !u.isMockActive &&
+        (u.assignedCoachId === me._id ||
+          u.assignedCoachId2 === me._id ||
+          u.assignedCoachId3 === me._id ||
+          u.assignedCoachId4 === me._id ||
+          u.assignedCoachId5 === me._id),
     );
 
     // For each trainee, fetch progress
     const traineeProgress = await Promise.all(
       myTrainees.map(async (trainee) => {
-        const [eduRecords, coachLogs, feedbacksGiven] = await Promise.all([
+        const [eduRecords, rawCoachLogs, rawMentorLogs, feedbacksGiven] = await Promise.all([
           ctx.db
             .query("educationRecords")
             .withIndex("by_user", (q) => q.eq("userId", trainee._id))
@@ -96,30 +109,59 @@ export const getCoachDashboardData = query({
             .withIndex("by_user", (q) => q.eq("userId", trainee._id))
             .collect(),
           ctx.db
+            .query("mentorCoachingLogs")
+            .withIndex("by_user", (q) => q.eq("userId", trainee._id))
+            .collect(),
+          ctx.db
             .query("coachFeedbacks")
             .withIndex("by_trainee", (q) => q.eq("traineeId", trainee._id))
             .collect(),
         ]);
 
+        const coachLogs = rawCoachLogs.filter((l) => l.approvalStatus !== "draft");
+        const mentorLogs = rawMentorLogs.filter((l) => l.approvalStatus !== "draft");
+
         const eduTarget = 60;
-        const coachTarget = 100;
+        const coachTarget = 20;
 
         const approvedEduHours = eduRecords
           .filter((r) => r.approvalStatus === "approved")
           .reduce((s, r) => s + r.hours, 0);
 
-        const approvedCoachHours =
-          coachLogs
-            .filter((l) => l.approvalStatus === "approved")
-            .reduce((s, l) => s + l.durationMinutes, 0) / 60;
+        // 코칭 실적은 작성 시간이 아닌 건당(1회 = 1건)으로 집계
+        const approvedCoachCount = coachLogs.filter(
+          (l) => l.approvalStatus === "approved" && l.coachingType !== "mentor"
+        ).length;
+
+        // 이 멘토코치와의 멘토링 세션 여부 (교육생당 최대 1건 인정)
+        const myMentorLogs = mentorLogs.filter((l) => {
+          const hasCoachName = normalizeCoachName(l.coachName).length > 0;
+          if (hasCoachName) return isSameCoachName(l.coachName, me.name);
+          return l.sessionType === "mentor_coaching";
+        });
+        const myGeneralMentorLogs = coachLogs.filter((l) => {
+          if (l.coachingType !== "mentor") return false;
+          const hasCoachName = normalizeCoachName(l.coacheeInfo).length > 0;
+          if (hasCoachName) return isSameCoachName(l.coacheeInfo, me.name);
+          return true;
+        });
+
+        const hasApprovedMyMentor =
+          myMentorLogs.some((l) => l.approvalStatus === "approved") ||
+          myGeneralMentorLogs.some((l) => l.approvalStatus === "approved");
+        const hasPendingMyMentor =
+          !hasApprovedMyMentor &&
+          (myMentorLogs.some((l) => l.approvalStatus === "pending") ||
+            myGeneralMentorLogs.some((l) => l.approvalStatus === "pending"));
 
         const eduPct = Math.min((approvedEduHours / eduTarget) * 100, 100);
-        const coachPct = Math.min((approvedCoachHours / coachTarget) * 100, 100);
+        const coachPct = Math.min((approvedCoachCount / coachTarget) * 100, 100);
         const overallPct = Math.round((eduPct + coachPct) / 2);
 
         const pendingCount =
           eduRecords.filter((r) => r.approvalStatus === "pending").length +
-          coachLogs.filter((l) => l.approvalStatus === "pending").length;
+          coachLogs.filter((l) => l.approvalStatus === "pending" && l.coachingType !== "mentor").length +
+          (hasPendingMyMentor ? 1 : 0);
 
         return {
           _id: trainee._id,
@@ -128,7 +170,9 @@ export const getCoachDashboardData = query({
           phone: trainee.phone ?? null,
           certificationGoal: "SMPCC",
           approvedEduHours: Math.round(approvedEduHours * 10) / 10,
-          approvedCoachHours: Math.round(approvedCoachHours * 10) / 10,
+          approvedCoachHours: approvedCoachCount,
+          approvedCoachCount,
+          myMentoringCount: hasApprovedMyMentor || hasPendingMyMentor ? 1 : 0,
           eduTarget,
           coachTarget,
           overallPct,

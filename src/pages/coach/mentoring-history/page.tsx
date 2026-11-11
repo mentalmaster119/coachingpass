@@ -129,22 +129,22 @@ export default function CoachMentoringHistoryPage() {
         ) : (
           <>
             <StatCard
-              icon={<Clock className="w-4 h-4" />}
-              label="총 멘토링 시간"
-              value={`${data.summary.totalHours.toFixed(1)}시간`}
-              sub="승인된 시간 기준"
+              icon={<Users className="w-4 h-4" />}
+              label="할당 대비 멘토링 실적"
+              value={`${data.summary.activeCount ?? data.summary.totalCount} / ${data.summary.allocatedCount ?? 4}건`}
+              sub="할당 4건 기준 · 건당 집계 (1회=1건)"
             />
             <StatCard
               icon={<CheckCircle2 className="w-4 h-4" />}
-              label="총 완료 횟수"
+              label="승인 완료 건수"
               value={`${data.summary.totalCount}건`}
-              sub="승인 완료 건수"
+              sub="승인 완료 실적 (시간 무관 건당)"
             />
             <StatCard
               icon={<AlertCircle className="w-4 h-4" />}
               label="검토 대기 건수"
               value={`${data.summary.pendingCount}건`}
-              sub="검토 대기 중인 기록"
+              sub="검토 대기 중인 기록 (건당)"
             />
           </>
         )}
@@ -224,10 +224,16 @@ export default function CoachMentoringHistoryPage() {
                               <CalendarDays className="w-3.5 h-3.5" />
                               {dateStr}
                             </span>
-                            <span className="flex items-center gap-1 font-semibold text-foreground">
-                              <Clock className="w-3.5 h-3.5 text-purple-600" />
-                              {log.durationMinutes}분 ({(log.durationMinutes / 60).toFixed(1)}시간)
+                            <span className="flex items-center gap-1 font-semibold text-purple-700">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-purple-600" />
+                              실적 1건 인정
                             </span>
+                            {log.durationMinutes > 0 && (
+                              <span className="flex items-center gap-1 text-muted-foreground">
+                                <Clock className="w-3.5 h-3.5" />
+                                세션 시간 {log.durationMinutes}분
+                              </span>
+                            )}
                           </div>
                         </div>
 

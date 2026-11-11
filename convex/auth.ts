@@ -354,6 +354,23 @@ export const signIn = mutation({
       });
     }
 
+    // 멘토코치로 지정(isMentorCoach: true)된 사용자가 일반 코치(trainee) 역할로 남아 있는 경우 자동으로 멘토코치(senior_coach)로 승격
+    // 또한 새로 로그인할 때 이전에 켜두었던 화면 전환(activeMockRole) 상태를 초기화하여 본래 역할 화면으로 진입하도록 보장
+    const resolvedRole =
+      user.role === "trainee" && user.isMentorCoach ? ("senior_coach" as const) : user.role;
+    if (
+      resolvedRole !== user.role ||
+      user.activeMockRole !== undefined ||
+      user.activeMockTraineeId !== undefined
+    ) {
+      await ctx.db.patch(user._id, {
+        role: resolvedRole,
+        activeMockRole: undefined,
+        activeMockTraineeId: undefined,
+      });
+      user = (await ctx.db.get(user._id)) ?? { ...user, role: resolvedRole };
+    }
+
     // Issue custom RS256 JWT token matching issuer domain
     const issuer = process.env.CONVEX_SITE_URL || DEFAULT_ISSUER;
     const token = await signToken(
@@ -372,7 +389,8 @@ export const signIn = mutation({
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: resolvedRole,
+        isMentorCoach: Boolean(user.isMentorCoach || resolvedRole === "senior_coach"),
       }
     };
   },

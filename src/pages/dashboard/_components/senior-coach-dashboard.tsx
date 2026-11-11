@@ -213,10 +213,10 @@ export default function SeniorCoachDashboard({ user }: { user: User }) {
                         <div>
                           <div className="flex justify-between text-xs mb-1">
                             <span className="text-muted-foreground">코칭</span>
-                            <span className="font-medium">{trainee.approvedCoachHours}/{trainee.coachTarget}h</span>
+                            <span className="font-medium">{trainee.approvedCoachCount ?? trainee.approvedCoachHours}/{trainee.coachTarget}건</span>
                           </div>
                           <Progress
-                            value={Math.min((trainee.approvedCoachHours / trainee.coachTarget) * 100, 100)}
+                            value={Math.min(((trainee.approvedCoachCount ?? trainee.approvedCoachHours) / trainee.coachTarget) * 100, 100)}
                             className="h-1.5"
                           />
                         </div>

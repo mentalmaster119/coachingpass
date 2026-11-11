@@ -172,6 +172,9 @@ export default function InviteLandingPage() {
         targetCohortName = found ? found.label : undefined;
       }
 
+      localStorage.removeItem("admin_preview_mode");
+      localStorage.removeItem("preview_role");
+
       const result = await signUpMutation({
         name: signUpName.trim(),
         email: signUpEmail.trim(),
@@ -203,15 +206,25 @@ export default function InviteLandingPage() {
 
     setIsLoggingIn(true);
     try {
+      localStorage.removeItem("admin_preview_mode");
+      localStorage.removeItem("preview_role");
+
       const result = await signInMutation({
         email: signInEmail.trim(),
         password: signInPassword.trim(),
       });
 
       if (result.success && result.token) {
-        toast.success(`${result.user.name}님, 환영합니다!`);
+        if (result.user?.role) {
+          localStorage.setItem("real_role", result.user.role);
+        }
+        const welcomeLabel =
+          result.user?.role === "senior_coach"
+            ? `${result.user.name} 멘토코치님, 환영합니다! 멘토코치 화면으로 이동합니다.`
+            : `${result.user.name}님, 환영합니다!`;
+        toast.success(welcomeLabel);
         await auth.signin(result.token);
-        navigate("/dashboard");
+        window.location.replace("/dashboard");
       }
     } catch (err: any) {
       const msg = err instanceof ConvexError ? (err.data as any)?.message : err?.message;

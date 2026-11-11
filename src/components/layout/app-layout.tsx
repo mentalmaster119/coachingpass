@@ -399,6 +399,9 @@ function SidebarContent({
   const handleSignOut = async () => {
     // Unsubscribe push before sign out to prevent notifications reaching next user
     await unsubscribePush();
+    localStorage.removeItem("admin_preview_mode");
+    localStorage.removeItem("preview_role");
+    localStorage.removeItem("real_role");
     await signout();
     window.location.replace("/");
   };
@@ -485,7 +488,9 @@ function SidebarContent({
         <div className="mx-3 mt-3 px-3 py-2 rounded-md bg-amber-500/15 border border-amber-400/30 flex items-center gap-2">
           <Eye className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
           <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-            {previewRole === "senior_coach" ? "멘토코치" : "코치"} 화면 미리보기 중
+            {realRole === "senior_coach"
+              ? "코치(교육생) 모드 이용 중"
+              : `${previewRole === "senior_coach" ? "멘토코치" : "코치"} 화면 미리보기 중`}
           </span>
         </div>
       )}
@@ -718,22 +723,35 @@ function SidebarContent({
 
         {/* Role switcher for Senior Coach */}
         {realRole === "senior_coach" && (
-          <button
-            onClick={() => handleRoleSwitch(isPreviewMode ? "senior_coach" : "trainee")}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
-          >
-            {isPreviewMode ? (
-              <>
-                <ShieldAlert className="w-4 h-4" />
-                멘토코치 화면으로 복귀
-              </>
-            ) : (
-              <>
-                <Eye className="w-4 h-4" />
-                코치 화면으로 보기
-              </>
-            )}
-          </button>
+          <div className="space-y-1">
+            <p className="text-[10px] font-semibold text-sidebar-foreground/45 px-3 uppercase tracking-wider">
+              화면 모드 전환 (멘토코치)
+            </p>
+            <div className="grid grid-cols-2 gap-1 p-1 bg-sidebar-accent/30 rounded-lg">
+              <button
+                onClick={() => handleRoleSwitch("senior_coach")}
+                className={cn(
+                  "px-2 py-1.5 text-[11px] font-semibold rounded-md transition-all cursor-pointer text-center",
+                  !isPreviewMode
+                    ? "bg-sidebar text-sidebar-foreground shadow-sm"
+                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                )}
+              >
+                멘토코치 화면
+              </button>
+              <button
+                onClick={() => handleRoleSwitch("trainee")}
+                className={cn(
+                  "px-2 py-1.5 text-[11px] font-semibold rounded-md transition-all cursor-pointer text-center",
+                  isPreviewMode
+                    ? "bg-sidebar text-sidebar-foreground shadow-sm"
+                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                )}
+              >
+                코치(교육생) 화면
+              </button>
+            </div>
+          </div>
         )}
 
         <button
@@ -855,8 +873,10 @@ function BottomNav({
 }
 
 function PreviewModeBanner() {
-  const navigate = useNavigate();
+  const { realUser } = useCurrentUser();
   const { previewRole, setPreviewMode } = useViewMode();
+  const realRole = realUser?.role || localStorage.getItem("real_role") || "admin";
+  const isMentorCoachModeSwitch = realRole === "senior_coach";
 
   const handleRoleChange = async (role: "trainee" | "senior_coach") => {
     await setPreviewMode(true, role);
@@ -867,31 +887,36 @@ function PreviewModeBanner() {
     <div className="sticky top-0 z-30 flex items-center justify-between px-4 py-2 bg-amber-500/10 border-b border-amber-400/30 gap-4 flex-wrap">
       <div className="flex items-center gap-3 text-xs font-medium text-amber-600 dark:text-amber-400">
         <Eye className="w-3.5 h-3.5 flex-shrink-0" />
-        <span>관리자 미리보기 모드 (Read-only)</span>
-        <div className="flex rounded-md bg-amber-500/10 p-0.5 border border-amber-400/20">
-          <button
-            onClick={() => handleRoleChange("trainee")}
-            className={cn(
-              "px-2.5 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer",
-              previewRole === "trainee" ? "bg-amber-500 text-white" : "text-amber-600 dark:text-amber-400 hover:bg-amber-500/15"
-            )}
-          >
-            코치 뷰
-          </button>
-          <button
-            onClick={() => handleRoleChange("senior_coach")}
-            className={cn(
-              "px-2.5 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer",
-              previewRole === "senior_coach" ? "bg-amber-500 text-white" : "text-amber-600 dark:text-amber-400 hover:bg-amber-500/15"
-            )}
-          >
-            멘토코치 뷰
-          </button>
-        </div>
+        {isMentorCoachModeSwitch ? (
+          <span>현재 코치(교육생) 화면 모드로 이용 중입니다 (멘토코치 본인 계정)</span>
+        ) : (
+          <>
+            <span>관리자 미리보기 모드 (Read-only)</span>
+            <div className="flex rounded-md bg-amber-500/10 p-0.5 border border-amber-400/20">
+              <button
+                onClick={() => handleRoleChange("trainee")}
+                className={cn(
+                  "px-2.5 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer",
+                  previewRole === "trainee" ? "bg-amber-500 text-white" : "text-amber-600 dark:text-amber-400 hover:bg-amber-500/15"
+                )}
+              >
+                코치 뷰
+              </button>
+              <button
+                onClick={() => handleRoleChange("senior_coach")}
+                className={cn(
+                  "px-2.5 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer",
+                  previewRole === "senior_coach" ? "bg-amber-500 text-white" : "text-amber-600 dark:text-amber-400 hover:bg-amber-500/15"
+                )}
+              >
+                멘토코치 뷰
+              </button>
+            </div>
+          </>
+        )}
       </div>
       <button
         onClick={async () => {
-          const realRole = localStorage.getItem("real_role") || "admin";
           await setPreviewMode(false);
           if (realRole === "admin") {
             window.location.href = "/admin";
@@ -903,7 +928,7 @@ function PreviewModeBanner() {
         }}
         className="text-xs text-amber-700 dark:text-amber-300 font-bold hover:underline cursor-pointer"
       >
-        관리자 화면으로 복귀 →
+        {isMentorCoachModeSwitch ? "멘토코치 화면으로 복귀 →" : "관리자 화면으로 복귀 →"}
       </button>
     </div>
   );

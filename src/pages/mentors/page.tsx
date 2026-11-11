@@ -57,6 +57,23 @@ export default function MentorsPage() {
 
   const isLoading = mentors === undefined;
 
+  const coachFields = [
+    "assignedCoachId",
+    "assignedCoachId2",
+    "assignedCoachId3",
+    "assignedCoachId4",
+    "assignedCoachId5",
+  ] as const;
+
+  const validMentorIds = new Set(mentors?.map((m) => m._id) ?? []);
+  const assignedCoachesCount = currentUser
+    ? new Set(
+        coachFields
+          .map((field) => currentUser[field])
+          .filter((id): id is Id<"users"> => !!id && validMentorIds.has(id))
+      ).size
+    : 0;
+
   const filteredMentors = mentors?.filter((m) => {
     const nameMatch = m.name.toLowerCase().includes(searchQuery.toLowerCase());
     const specMatch = m.specializations.some((s) =>
@@ -123,9 +140,14 @@ export default function MentorsPage() {
         className="flex items-center justify-between"
       >
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
             <Users className="w-6 h-6 text-purple-600" />
-            멘토코치 매칭 및 신청
+            <span>멘토코치 매칭 및 신청</span>
+            {currentUser?.role === "trainee" && !isLoading && (
+              <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 text-xs font-semibold px-2.5 py-0.5 ml-1">
+                나의 신청 현황: {assignedCoachesCount} / {maxMentorsLimit}명
+              </Badge>
+            )}
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             국제멘탈코칭센터가 공인한 전문 멘토코치님을 열람하고 멘토코칭 매칭을 신청합니다.
@@ -177,21 +199,9 @@ export default function MentorsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AnimatePresence mode="popLayout">
             {filteredMentors?.map((mentor) => {
-              const coachFields = [
-                "assignedCoachId",
-                "assignedCoachId2",
-                "assignedCoachId3",
-                "assignedCoachId4",
-                "assignedCoachId5"
-              ] as const;
-
               const isAppliedToThisMentor = currentUser
                 ? coachFields.some((field) => currentUser[field] === mentor._id)
                 : false;
-
-              const assignedCoachesCount = currentUser
-                ? coachFields.filter((field) => !!currentUser[field]).length
-                : 0;
 
               const isAppliedToOtherMentor =
                 assignedCoachesCount >= maxMentorsLimit && !isAppliedToThisMentor;

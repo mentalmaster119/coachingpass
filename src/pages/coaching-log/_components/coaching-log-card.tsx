@@ -72,12 +72,16 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
   const status = statusConfig[log.approvalStatus];
   const canEdit = log.approvalStatus !== "approved";
   const isDraft = log.approvalStatus === "draft";
-  const date = new Date(log.coachingDate);
+  const parsedDate = log.coachingDate ? new Date(log.coachingDate) : null;
+  const formattedDate =
+    parsedDate && !isNaN(parsedDate.getTime())
+      ? format(parsedDate, "yyyy.MM.dd (EEE)", { locale: ko })
+      : log.coachingDate || "날짜 미지정";
 
   const handleDelete = async () => {
     try {
       await removeLog({ logId: log._id });
-      toast.success("코칭 기록이 삭제되었습니다");
+      toast.success(isDraft ? "임시저장 파일이 삭제되었습니다" : "코칭 기록이 삭제되었습니다");
     } catch (err) {
       if (err instanceof ConvexError) {
         const { message } = err.data as { message: string };
@@ -90,7 +94,7 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
 
   return (
     <>
-      <Card className="shadow-sm hover:shadow-md transition-shadow">
+      <Card className={`shadow-sm hover:shadow-md transition-shadow ${isDraft ? "border-amber-300 dark:border-amber-800/70 bg-amber-50/20 dark:bg-amber-950/10" : ""}`}>
         <CardContent className="pt-4 pb-3">
           {/* Header row */}
           <div className="flex items-start justify-between gap-3 mb-3">
@@ -103,9 +107,17 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
                 )}
               </div>
               <div className="min-w-0">
-                <p className="font-medium text-sm text-foreground truncate">{log.topic}</p>
+                <p className="font-medium text-sm text-foreground truncate">
+                  {log.topic || (isDraft ? "(코칭 주제 미입력 — 임시저장 일지)" : "(제목 없음)")}
+                </p>
                 <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground flex-wrap">
-                  <span>{format(date, "yyyy.MM.dd (EEE)", { locale: ko })}</span>
+                  <span>{formattedDate}</span>
+                  {log.coachingStartTime && log.coachingEndTime && (
+                    <>
+                      <span>·</span>
+                      <span>{log.coachingStartTime}~{log.coachingEndTime}</span>
+                    </>
+                  )}
                   <span>·</span>
                   <span>{COACHING_TYPE_MAP[log.coachingType] ?? log.coachingType} 코칭</span>
                   <span>·</span>
@@ -116,21 +128,22 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
               <Badge
                 variant={status.variant}
-                className={`text-xs ${isDraft ? "border-amber-400 text-amber-600 dark:text-amber-400" : ""}`}
+                className={`text-xs ${isDraft ? "border-amber-400 text-amber-700 dark:text-amber-300 bg-amber-500/10" : ""}`}
               >
                 {status.label}
               </Badge>
               {isDraft && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="h-7 px-2 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700"
+                  className="h-7 px-2.5 text-xs border-amber-400 text-amber-800 dark:text-amber-300 hover:bg-amber-100 cursor-pointer"
                   onClick={() => setEditOpen(true)}
                 >
-                  이어 작성
+                  <Pencil className="w-3 h-3 mr-1" />
+                  불러오기 (이어 작성)
                 </Button>
               )}
               {canEdit && !isDraft && (
@@ -148,11 +161,12 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
               {canEdit && (
                 <Button
                   variant="ghost"
-                  size="icon"
-                  className="w-7 h-7 text-destructive hover:text-destructive"
+                  size={isDraft ? "sm" : "icon"}
+                  className={isDraft ? "h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer" : "w-7 h-7 text-destructive hover:text-destructive"}
                   onClick={() => setDeleteOpen(true)}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
+                  {isDraft && <span className="ml-1">삭제</span>}
                 </Button>
               )}
             </div>
@@ -163,7 +177,7 @@ export default function CoachingLogCard({ log }: { log: CoachingLog }) {
             <span className="font-medium text-foreground/70">
               {log.coachingType === "mentor" ? "멘토코치:" : log.coachingType === "sv" ? "수퍼바이저:" : "코치이:"}
             </span>{" "}
-            {log.coacheeInfo}
+            {log.coacheeInfo || "(미입력)"}
           </p>
 
           {/* Rejection reason */}

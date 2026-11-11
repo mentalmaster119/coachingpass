@@ -144,6 +144,11 @@ function SamsungInternetWarning() {
 function LandingPage({ onOpenLogin }: { onOpenLogin: () => void }) {
   const showSamsungWarning = isSamsungInternet();
 
+  useEffect(() => {
+    localStorage.removeItem("admin_preview_mode");
+    localStorage.removeItem("preview_role");
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       {showSamsungWarning && <SamsungInternetWarning />}

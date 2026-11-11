@@ -318,7 +318,7 @@ export default function AdminProgressPage() {
                                 <ClipboardList className="w-3 h-3" />코칭
                               </span>
                               <span className="text-[11px] text-foreground font-medium">
-                                {trainee.approvedCoachingHours}/{trainee.coachingTarget}시간
+                                {trainee.approvedCoachingHours}/{trainee.coachingTarget}건
                               </span>
                             </div>
                             <Progress

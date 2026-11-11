@@ -145,25 +145,16 @@ export default function TraineeDetailPage() {
     );
   }
 
-  const getTargets = (goal: string | undefined) => {
-    switch (goal) {
-      case "KAC": return { education: 20, coaching: 50 };
-      case "KPC": return { education: 60, coaching: 300 };
-      case "KSC": return { education: 150, coaching: 1000 };
-      case "ACC": return { education: 60, coaching: 100 };
-      case "PCC": return { education: 125, coaching: 500 };
-      case "MCC": return { education: 200, coaching: 2500 };
-      default: return { education: 20, coaching: 50 };
-    }
+  const targets = {
+    education: detail?.educationTarget ?? 60,
+    coaching: detail?.coachingTarget ?? 20,
   };
-
-  const targets = getTargets(detail?.user.certificationGoal);
 
   const educationPct = detail
     ? Math.min((detail.approvedEducationHours / targets.education) * 100, 100)
     : 0;
   const coachingPct = detail
-    ? Math.min((detail.approvedCoachingHours / targets.coaching) * 100, 100)
+    ? Math.min(((detail.approvedCoachingCount ?? detail.approvedCoachingHours) / targets.coaching) * 100, 100)
     : 0;
   const overallPct = Math.round((educationPct + coachingPct) / 2);
 
@@ -249,7 +240,7 @@ export default function TraineeDetailPage() {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">코칭 실습</p>
                   <RadialProgressRing
                     value={coachingPct}
-                    label={`${detail!.approvedCoachingHours} / ${targets.coaching}시간`}
+                    label={`${detail!.approvedCoachingCount ?? detail!.approvedCoachingHours} / ${targets.coaching}건`}
                     color="hsl(var(--chart-1))"
                     size={120}
                   />
@@ -268,7 +259,7 @@ export default function TraineeDetailPage() {
       >
         <Card className="shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">월별 활동 시간</CardTitle>
+            <CardTitle className="text-base font-semibold">월별 활동 현황</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -285,7 +276,7 @@ export default function TraineeDetailPage() {
                   <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
-                    formatter={(value: number, name: string) => [`${value}시간`, name]}
+                    formatter={(value: number, name: string) => [name === "코칭 실습" ? `${value}건` : `${value}시간`, name]}
                   />
                   <Bar dataKey="educationHours" name="교육 이수" fill="hsl(var(--chart-3))" radius={[3, 3, 0, 0]} />
                   <Bar dataKey="coachingHours" name="코칭 실습" fill="hsl(var(--chart-1))" radius={[3, 3, 0, 0]} />
@@ -359,7 +350,7 @@ export default function TraineeDetailPage() {
                             <p className="text-xs text-muted-foreground">
                               {COACHING_TYPE_MAP[log.coachingType] ?? log.coachingType} ·{" "}
                               {format(new Date(log.coachingDate), "yyyy.MM.dd (EEE)", { locale: ko })} ·{" "}
-                              {Math.round((log.durationMinutes / 60) * 10) / 10}시간
+                              실적 1건 ({log.durationMinutes}분)
                             </p>
                           </div>
                           <StatusBadge status={log.approvalStatus} />

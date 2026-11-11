@@ -155,14 +155,18 @@ export default function ReflectionForm({ open, onOpenChange, editEntry }: Reflec
   useEffect(() => {
     if (open && !isEdit) {
       if (title.trim() || content.trim()) {
-        const data = {
-          entryDate,
-          title,
-          content,
-          relatedType,
-          mood,
-        };
-        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
+        try {
+          const data = {
+            entryDate,
+            title,
+            content,
+            relatedType,
+            mood,
+          };
+          localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
+        } catch {
+          // Ignore storage quota or private mode errors
+        }
       }
     }
   }, [open, isEdit, entryDate, title, content, relatedType, mood]);
@@ -221,13 +225,18 @@ export default function ReflectionForm({ open, onOpenChange, editEntry }: Reflec
           relatedType: (relatedType as RelatedType) || undefined,
           mood: (mood as Mood) || undefined,
         });
-        localStorage.removeItem(AUTOSAVE_KEY);
+        try {
+          localStorage.removeItem(AUTOSAVE_KEY);
+        } catch {
+          // Ignore storage error
+        }
         setHasAutosave(false);
         toast.success("성찰 일지가 저장되었습니다.");
       }
       onOpenChange(false);
-    } catch {
-      toast.error("저장 중 오류가 발생했습니다.");
+    } catch (err: any) {
+      const msg = err?.data?.message || (err instanceof Error ? err.message : null);
+      toast.error(msg ? `저장 실패: ${msg}` : "저장 중 오류가 발생했습니다.");
     } finally {
       setSaving(false);
     }
@@ -235,7 +244,7 @@ export default function ReflectionForm({ open, onOpenChange, editEntry }: Reflec
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? "성찰 일지 수정" : "성찰 일지 작성"}</DialogTitle>
         </DialogHeader>
@@ -352,7 +361,7 @@ export default function ReflectionForm({ open, onOpenChange, editEntry }: Reflec
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={8}
-              className={`resize-none font-sans leading-relaxed ${errors.content ? "border-destructive" : ""}`}
+              className={`resize-y max-h-[40dvh] overflow-y-auto font-sans leading-relaxed ${errors.content ? "border-destructive" : ""}`}
             />
             {errors.content && (
               <p className="text-xs text-destructive">{errors.content}</p>

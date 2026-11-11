@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { motion } from "motion/react";
+import { toast } from "sonner";
 import {
   Plus,
   ClipboardList,
@@ -15,8 +16,12 @@ import {
   UserCheck,
   Sparkles,
   ChevronRight,
+  FolderOpen,
+  Trash2,
+  Pencil,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api.js";
+import type { Doc } from "@/convex/_generated/dataModel.d.ts";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
@@ -109,15 +114,30 @@ function NcpProgressCard({
 
 export default function CoachingLogPage() {
   const [addOpen, setAddOpen] = useState(false);
+  const [editingDraft, setEditingDraft] = useState<
+    (Doc<"coachingLogs"> & { evidenceUrl?: string | null }) | undefined
+  >(undefined);
   const [reportOpen, setReportOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const logs = useQuery(api.coaching.getMyLogs);
   const summary = useQuery(api.coaching.getMySummary);
+  const removeLog = useMutation(api.coaching.remove);
   const { user, realUser } = useCurrentUser();
   const activeRole =
     user?.role || realUser?.role || (localStorage.getItem("real_role") as string | null);
   const isAdmin =
     activeRole === "admin" || activeRole === "senior_coach" || activeRole === "admin3";
+
+  const draftLogs = logs?.filter((l) => l.approvalStatus === "draft") ?? [];
+
+  const handleDeleteDraft = async (draftId: Doc<"coachingLogs">["_id"]) => {
+    try {
+      await removeLog({ logId: draftId });
+      toast.success("임시저장 파일이 삭제되었습니다.");
+    } catch {
+      toast.error("임시저장 삭제 중 오류가 발생했습니다.");
+    }
+  };
 
   const filteredLogs =
     logs?.filter((log) => {
@@ -187,7 +207,7 @@ export default function CoachingLogPage() {
             코칭 세션을 기록하고 승인을 받아 실습 시간을 인정받으세요.
           </p>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-center">
+        <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
           <Button
             variant="ghost"
             size="sm"
@@ -197,12 +217,110 @@ export default function CoachingLogPage() {
             <FileDown className="w-4 h-4 mr-1.5" />
             PDF 저장
           </Button>
-          <Button onClick={() => setAddOpen(true)}>
+          {draftLogs.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setActiveTab("draft")}
+              className="border-amber-400 bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 hover:bg-amber-100 cursor-pointer"
+            >
+              <FolderOpen className="w-4 h-4 mr-1.5" />
+              임시저장 불러오기 ({draftLogs.length})
+            </Button>
+          )}
+          <Button
+            onClick={() => {
+              setEditingDraft(undefined);
+              setAddOpen(true);
+            }}
+          >
             <Plus className="w-4 h-4 mr-2" />
             기록 추가
           </Button>
         </div>
       </motion.div>
+
+      {/* Draft Logs Quick Access Banner */}
+      {draftLogs.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="rounded-xl border border-amber-300 dark:border-amber-800/70 bg-amber-50/80 dark:bg-amber-950/25 p-4 space-y-3 shadow-xs"
+        >
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center flex-shrink-0">
+                <FolderOpen className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200">
+                  작성 중인 임시저장 일지가 {draftLogs.length}건 있습니다
+                </p>
+                <p className="text-[11px] text-amber-700/80 dark:text-amber-300/80">
+                  아래에서 바로 불러와 이어서 작성하거나 불필요한 임시저장 파일을 삭제할 수 있습니다.
+                </p>
+              </div>
+            </div>
+            {activeTab !== "draft" && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setActiveTab("draft")}
+                className="h-7 text-xs text-amber-800 dark:text-amber-300 hover:bg-amber-100 cursor-pointer"
+              >
+                임시저장 탭 보기 →
+              </Button>
+            )}
+          </div>
+          <div className="space-y-2">
+            {draftLogs.map((draft) => (
+              <div
+                key={draft._id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-background/95 border border-amber-200 dark:border-amber-900/50 rounded-lg px-3 py-2 text-xs"
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground truncate">
+                    {draft.topic || "(코칭 주제 미입력 — 임시저장 일지)"}{" "}
+                    <span className="font-normal text-muted-foreground">
+                      · {draft.coacheeInfo ? `코치이: ${draft.coacheeInfo}` : "코치이 미입력"}
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    코칭 날짜: {draft.coachingDate || "미지정"}
+                    {draft.coachingStartTime && draft.coachingEndTime
+                      ? ` · 시간: ${draft.coachingStartTime}~${draft.coachingEndTime}`
+                      : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2.5 text-xs border-amber-400 text-amber-800 dark:text-amber-300 hover:bg-amber-100 cursor-pointer"
+                    onClick={() => {
+                      setEditingDraft(draft);
+                      setAddOpen(true);
+                    }}
+                  >
+                    <Pencil className="w-3 h-3 mr-1" />
+                    불러오기 (이어 작성)
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                    onClick={() => handleDeleteDraft(draft._id)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" />
+                    삭제
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Coaching Quality Banner */}
       <motion.div
@@ -386,7 +504,14 @@ export default function CoachingLogPage() {
         </Tabs>
       </motion.div>
 
-      <CoachingLogForm open={addOpen} onOpenChange={setAddOpen} />
+      <CoachingLogForm
+        open={addOpen}
+        onOpenChange={(open) => {
+          setAddOpen(open);
+          if (!open) setEditingDraft(undefined);
+        }}
+        editLog={editingDraft}
+      />
 
       {logs && summary && (
         <CoachingReportDialog

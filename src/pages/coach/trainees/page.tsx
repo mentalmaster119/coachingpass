@@ -29,6 +29,8 @@ export default function CoachTraineesPage() {
   const [selectedTraineeName, setSelectedTraineeName] = useState("");
 
   const pendingTotal = trainees?.reduce((s, t) => s + t.pendingReviewCount, 0) ?? 0;
+  const completedOrPendingMentoringCount =
+    trainees?.reduce((s, t) => s + (t.myMentoringCount ?? 0), 0) ?? 0;
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-6">
@@ -44,9 +46,16 @@ export default function CoachTraineesPage() {
               <UserCheck className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">배정 코치 명단</h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl font-bold text-foreground">배정 코치 명단</h1>
+                {trainees !== undefined && (
+                  <Badge variant="outline" className="text-xs border-purple-200 bg-purple-50 text-purple-700 font-semibold">
+                    멘토링 할당 실적 {completedOrPendingMentoringCount} / 4건 · 배정 {trainees.length} / 4명
+                  </Badge>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">
-                배정된 코치의 진행 상황을 확인합니다.
+                배정된 코치별 멘토링 진행 현황(코치당 1건 인정, 총 4건 할당)을 확인합니다.
               </p>
             </div>
           </div>
@@ -131,6 +140,21 @@ export default function CoachTraineesPage() {
                         {trainee.certificationGoal && (
                           <Badge className={`text-[11px] px-1.5 py-0 ${CERT_COLORS[trainee.certificationGoal] ?? ""}`}>
                             {trainee.certificationGoal}
+                          </Badge>
+                        )}
+                        {trainee.myMentoringStatus === "approved" && (
+                          <Badge className="text-[11px] px-1.5 py-0 bg-emerald-100 text-emerald-700 border-emerald-200">
+                            멘토링 1건 완료
+                          </Badge>
+                        )}
+                        {trainee.myMentoringStatus === "pending" && (
+                          <Badge className="text-[11px] px-1.5 py-0 bg-purple-100 text-purple-700 border-purple-200">
+                            멘토링 1건 검토 대기
+                          </Badge>
+                        )}
+                        {(!trainee.myMentoringStatus || trainee.myMentoringStatus === "none") && (
+                          <Badge variant="outline" className="text-[11px] px-1.5 py-0 text-muted-foreground">
+                            멘토링 미진행 (0/1건)
                           </Badge>
                         )}
                         {trainee.pendingReviewCount > 0 && (

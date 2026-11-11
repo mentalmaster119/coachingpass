@@ -3,6 +3,7 @@ import { query } from "./mockAuth";
 import { ConvexError } from "convex/values";
 import { calculateUserCohortAttendance } from "./attendance";
 import { calculateCoachingQuotas } from "./assessmentLogic";
+import { normalizeCoachName } from "./mentorCoaching";
 import type { QueryCtx } from "./_generated/server.d.ts";
 import type { Id } from "./_generated/dataModel.d.ts";
 
@@ -56,10 +57,17 @@ export async function calculateCoachingProgress(ctx: QueryCtx, userId: Id<"users
   const legacyBuddyCount = bcpLogs.length;
   const buddyCount = newBuddyCount + legacyBuddyCount;
 
-  // 2. Mentor coaching count
-  const newMentorCount = coachingLogs.filter((l) => l.coachingType === "mentor").length;
-  const legacyMentorCount = mentorLogs.filter((l) => l.sessionType === "mentor_coaching").length;
-  const mentorCount = newMentorCount + legacyMentorCount;
+  // 2. Mentor coaching count (건당 집계 · 동일 멘토코치 중복 등록 시 1건으로 집계)
+  const mentorCoachKeys = new Set<string>();
+  for (const l of mentorLogs.filter((m) => m.sessionType === "mentor_coaching")) {
+    const key = normalizeCoachName(l.coachName) || `mentor:${l._id}`;
+    mentorCoachKeys.add(key);
+  }
+  for (const l of coachingLogs.filter((c) => c.coachingType === "mentor")) {
+    const key = normalizeCoachName(l.coacheeInfo) || `coach_mentor:${l._id}`;
+    mentorCoachKeys.add(key);
+  }
+  const mentorCount = mentorCoachKeys.size;
 
   // 3. SV coaching count
   const newSvCount = coachingLogs.filter((l) => l.coachingType === "sv").length;

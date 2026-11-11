@@ -170,60 +170,74 @@ export default function AdminAssignmentsPage() {
                 <p className="text-sm text-muted-foreground italic">등록된 멘토코치가 없습니다.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {uniqueCoaches.map((coach) => {
-                    const matched = trainees.filter((t) => 
-                      t.assignedCoachId === coach._id || 
-                      t.assignedCoachId2 === coach._id ||
-                      t.assignedCoachId3 === coach._id ||
-                      t.assignedCoachId4 === coach._id ||
-                      t.assignedCoachId5 === coach._id
-                    );
-                    const isFull = matched.length >= 4;
-                    return (
-                      <div
-                        key={coach._id}
-                        className={cn(
-                          "p-3 rounded-lg border text-sm flex flex-col justify-between space-y-2.5",
-                          isFull
-                            ? "bg-red-50/30 dark:bg-red-950/10 border-red-200 dark:border-red-900/50"
-                            : "bg-background border-border"
-                        )}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-semibold text-foreground">{coach.name ?? "이름 미설정"}</p>
-                            <p className="text-[10px] text-muted-foreground">{coach.email}</p>
-                          </div>
-                          <Badge
-                            className={cn(
-                              "text-[10px] font-semibold px-1.5 py-0.5",
-                              isFull
-                                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                                : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
-                            )}
-                            variant="secondary"
-                          >
-                            {matched.length} / 4명
-                          </Badge>
-                        </div>
-                        <div className="space-y-1">
-                          {matched.length === 0 ? (
-                            <p className="text-[11px] text-muted-foreground italic">배정된 코치 없음</p>
-                          ) : (
-                            matched.map((t) => (
-                              <div
-                                key={t._id}
-                                className="flex justify-between items-center text-xs bg-muted/50 dark:bg-muted/30 px-2 py-1 rounded border border-muted"
-                              >
-                                <span className="font-medium">{t.name ?? "이름 미설정"}</span>
-                                <span className="text-[10px] text-muted-foreground">{t.phone ?? "연락처 없음"}</span>
-                              </div>
-                            ))
+                  {uniqueCoaches
+                    .filter((coach) => {
+                      const hasAnyMatched = trainees.some(
+                        (t) =>
+                          t.assignedCoachId === coach._id ||
+                          t.assignedCoachId2 === coach._id ||
+                          t.assignedCoachId3 === coach._id ||
+                          t.assignedCoachId4 === coach._id ||
+                          t.assignedCoachId5 === coach._id
+                      );
+                      return coach.isMentorCoach || hasAnyMatched;
+                    })
+                    .map((coach) => {
+                      const matched = trainees.filter(
+                        (t) =>
+                          t.isCurrentCohort !== false &&
+                          (t.assignedCoachId === coach._id ||
+                            t.assignedCoachId2 === coach._id ||
+                            t.assignedCoachId3 === coach._id ||
+                            t.assignedCoachId4 === coach._id ||
+                            t.assignedCoachId5 === coach._id)
+                      );
+                      const isFull = matched.length >= 4;
+                      return (
+                        <div
+                          key={coach._id}
+                          className={cn(
+                            "p-3 rounded-lg border text-sm flex flex-col justify-between space-y-2.5",
+                            isFull
+                              ? "bg-red-50/30 dark:bg-red-950/10 border-red-200 dark:border-red-900/50"
+                              : "bg-background border-border"
                           )}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-semibold text-foreground">{coach.name ?? "이름 미설정"}</p>
+                              <p className="text-[10px] text-muted-foreground">{coach.email}</p>
+                            </div>
+                            <Badge
+                              className={cn(
+                                "text-[10px] font-semibold px-1.5 py-0.5",
+                                isFull
+                                  ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                  : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                              )}
+                              variant="secondary"
+                            >
+                              {matched.length} / 4명
+                            </Badge>
+                          </div>
+                          <div className="space-y-1">
+                            {matched.length === 0 ? (
+                              <p className="text-[11px] text-muted-foreground italic">배정된 코치 없음</p>
+                            ) : (
+                              matched.map((t) => (
+                                <div
+                                  key={t._id}
+                                  className="flex justify-between items-center text-xs bg-muted/50 dark:bg-muted/30 px-2 py-1 rounded border border-muted"
+                                >
+                                  <span className="font-medium">{t.name ?? "이름 미설정"}</span>
+                                  <span className="text-[10px] text-muted-foreground">{t.phone ?? "연락처 없음"}</span>
+                                </div>
+                              ))
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               )}
             </CardContent>

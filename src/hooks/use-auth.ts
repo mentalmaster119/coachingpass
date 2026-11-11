@@ -20,18 +20,29 @@ function parseJwt(token: string) {
 export function useAuth() {
   const [token, setToken] = useState<string | null>(() => {
     const stored = localStorage.getItem("auth_token");
-    if (!stored) return null;
+    if (!stored) {
+      localStorage.removeItem("admin_preview_mode");
+      localStorage.removeItem("preview_role");
+      localStorage.removeItem("real_role");
+      return null;
+    }
 
     // Check expiry on mount
     const payload = parseJwt(stored);
     if (!payload || !payload.exp) {
       localStorage.removeItem("auth_token");
+      localStorage.removeItem("admin_preview_mode");
+      localStorage.removeItem("preview_role");
+      localStorage.removeItem("real_role");
       return null;
     }
 
     const currentTimestamp = Math.floor(Date.now() / 1000);
     if (currentTimestamp > payload.exp) {
       localStorage.removeItem("auth_token");
+      localStorage.removeItem("admin_preview_mode");
+      localStorage.removeItem("preview_role");
+      localStorage.removeItem("real_role");
       return null; // Expired
     }
 

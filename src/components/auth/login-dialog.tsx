@@ -55,13 +55,23 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
 
     setIsLoading(true);
     try {
+      localStorage.removeItem("admin_preview_mode");
+      localStorage.removeItem("preview_role");
+
       const result = await signInMutation({
         email: email.trim(),
         password: password.trim(),
       });
 
       if (result.success && result.token) {
-        toast.success(`${result.user.name}님, 환영합니다!`);
+        if (result.user?.role) {
+          localStorage.setItem("real_role", result.user.role);
+        }
+        const welcomeLabel =
+          result.user?.role === "senior_coach"
+            ? `${result.user.name} 멘토코치님, 환영합니다!`
+            : `${result.user.name}님, 환영합니다!`;
+        toast.success(welcomeLabel);
         await auth.signin(result.token);
         onClose();
         const searchParams = new URLSearchParams(window.location.search);
@@ -91,6 +101,9 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
 
     setIsLoading(true);
     try {
+      localStorage.removeItem("admin_preview_mode");
+      localStorage.removeItem("preview_role");
+
       const result = await signUpMutation({
         name: name.trim(),
         email: email.trim(),
@@ -129,6 +142,9 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
 
     setIsLoading(true);
     try {
+      localStorage.removeItem("admin_preview_mode");
+      localStorage.removeItem("preview_role");
+
       await selfResetMutation({
         name: name.trim(),
         email: email.trim(),

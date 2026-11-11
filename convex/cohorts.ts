@@ -300,20 +300,48 @@ export const getMyMembership = query({
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
       .unique();
     if (!user) return null;
-    const membership = await ctx.db
+    const memberships = await ctx.db
       .query("cohortMembers")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .first();
-    if (!membership) return null;
-    const cohort = await ctx.db.get(membership.cohortId);
+      .collect();
+    if (memberships.length === 0) return null;
+
+    const enriched = (
+      await Promise.all(
+        memberships.map(async (m) => {
+          const cohort = await ctx.db.get(m.cohortId);
+          return cohort ? { membership: m, cohort } : null;
+        })
+      )
+    ).filter((item): item is { membership: Doc<"cohortMembers">; cohort: Doc<"cohorts"> } => item !== null);
+
+    if (enriched.length === 0) {
+      return { membership: memberships[0], cohort: null };
+    }
+
+    const nonWithdrawn = enriched.filter((e) => e.membership.status !== "withdrawn");
+    const pool = nonWithdrawn.length > 0 ? nonWithdrawn : enriched;
+
+    const activeExpert = pool
+      .filter((e) => getResolvedCohortCategory(e.cohort) === "expert" && e.cohort.status === "active")
+      .sort((a, b) => (b.cohort.number ?? 0) - (a.cohort.number ?? 0));
+    const anyExpert = pool
+      .filter((e) => getResolvedCohortCategory(e.cohort) === "expert")
+      .sort((a, b) => (b.cohort.number ?? 0) - (a.cohort.number ?? 0));
+    const anyActive = pool
+      .filter((e) => e.cohort.status === "active")
+      .sort((a, b) => (b.cohort.number ?? 0) - (a.cohort.number ?? 0));
+
+    const chosen = activeExpert[0] || anyExpert[0] || anyActive[0] || pool[0];
     return {
-      membership,
-      cohort: cohort
-        ? {
-            ...cohort,
-            maxMentors: cohort.maxMentors !== undefined && cohort.maxMentors !== 2 ? cohort.maxMentors : 4,
-          }
-        : null,
+      membership: chosen.membership,
+      cohort: {
+        ...chosen.cohort,
+        maxMentors:
+          chosen.cohort.maxMentors !== undefined && chosen.cohort.maxMentors !== 2
+            ? chosen.cohort.maxMentors
+            : 4,
+      },
     };
   },
 });

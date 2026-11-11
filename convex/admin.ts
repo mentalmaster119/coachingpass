@@ -1,11 +1,12 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./mockAuth";
 import type { Doc, Id } from "./_generated/dataModel.d.ts";
-import { requireAdmin } from "./helpers";
+import { getAuthenticatedUser, requireAdmin } from "./helpers";
 import { hashPassword } from "./authUtils";
 import { calculateUserEducation } from "./educationCalculator";
 import { calculateCoachingProgress } from "./completion";
 import { calculateUserCohortAttendance } from "./attendance";
+import { isSameCoachName, normalizeCoachName } from "./mentorCoaching";
 
 // ── Dashboard stats ──────────────────────────────────────────────────────────
 
@@ -360,13 +361,16 @@ export const getAllUsers = query({
     const users = await ctx.db.query("users").collect();
     return await Promise.all(
       users.map(async (u) => {
+        const normalizedRole =
+          u.role === "trainee" && u.isMentorCoach ? ("senior_coach" as const) : u.role;
+        const normalizedUser = { ...u, role: normalizedRole };
         const member = await ctx.db
           .query("cohortMembers")
           .withIndex("by_user", (q) => q.eq("userId", u._id))
           .first();
-        if (!member) return { ...u, cohortId: null, cohortName: null, cohortNumber: null };
+        if (!member) return { ...normalizedUser, cohortId: null, cohortName: null, cohortNumber: null };
         const cohort = await ctx.db.get(member.cohortId);
-        return { ...u, cohortId: member.cohortId, cohortName: cohort?.name ?? null, cohortNumber: cohort?.number ?? null };
+        return { ...normalizedUser, cohortId: member.cohortId, cohortName: cohort?.name ?? null, cohortNumber: cohort?.number ?? null };
       }),
     );
   },
@@ -439,7 +443,17 @@ export const updateUserRole = mutation({
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    await ctx.db.patch(args.userId, { role: args.role });
+    const patchData: Record<string, any> = {
+      role: args.role,
+      activeMockRole: undefined,
+      activeMockTraineeId: undefined,
+    };
+    if (args.role === "senior_coach") {
+      patchData.isMentorCoach = true;
+    } else if (args.role === "trainee") {
+      patchData.isMentorCoach = false;
+    }
+    await ctx.db.patch(args.userId, patchData);
   },
 });
 
@@ -450,7 +464,21 @@ export const toggleMentorCoach = mutation({
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    await ctx.db.patch(args.userId, { isMentorCoach: args.isMentorCoach });
+    const targetUser = await ctx.db.get(args.userId);
+    if (!targetUser) {
+      throw new ConvexError({ message: "User not found", code: "NOT_FOUND" });
+    }
+    const patchData: Record<string, any> = {
+      isMentorCoach: args.isMentorCoach,
+      activeMockRole: undefined,
+      activeMockTraineeId: undefined,
+    };
+    if (args.isMentorCoach && targetUser.role === "trainee") {
+      patchData.role = "senior_coach";
+    } else if (!args.isMentorCoach && targetUser.role === "senior_coach") {
+      patchData.role = "trainee";
+    }
+    await ctx.db.patch(args.userId, patchData);
   },
 });
 
@@ -682,6 +710,34 @@ export const getUserAvatarUrl = query({
 
 // ── Coach assignment ──────────────────────────────────────────────────────────
 
+function isPreviewOrMockUser(u: any): boolean {
+  if (!u) return true;
+  if (u.isMockActive) return true;
+  const email = (u.email || "").toLowerCase();
+  const name = (u.name || "").trim();
+  if (
+    email === "preview_trainee@mcci.com" ||
+    email === "preview_coach@mcci.com" ||
+    email === "mentalcoach119@naver.com"
+  ) {
+    return true;
+  }
+  if (name.includes("(미리보기)") || name === "코치 테스터" || name === "교육생 테스터") {
+    return true;
+  }
+  return false;
+}
+
+function getAdminCohortCategory(cohort: any): "expert" | "common" | "kca" {
+  if (cohort.educationCategory) return cohort.educationCategory;
+  const name = (cohort.name || "").trim();
+  if (name.includes("심리학") || name.includes("강독") || name.includes("SP") || name.includes("CP")) return "common";
+  if (name.includes("MSPE") || name.includes("mspe") || name.includes("명상")) return "common";
+  if (name.includes("트레이닝") || name.includes("멘탈트레이닝")) return "common";
+  if (name.includes("KAC") || name.includes("kac") || name.includes("KPC") || name.includes("kpc")) return "kca";
+  return "expert";
+}
+
 export const getAllSeniorCoaches = query({
   args: {},
   handler: async (ctx) => {
@@ -707,8 +763,8 @@ export const getAllSeniorCoaches = query({
       )
       .collect();
 
-    // 3. Deduplicate by email and id
-    const combined = [...seniorCoaches, ...mentorAdmins];
+    // 3. Deduplicate by email and id, excluding preview/mock accounts
+    const combined = [...seniorCoaches, ...mentorAdmins].filter((c) => !isPreviewOrMockUser(c));
     const seen = new Set<string>();
     const result = [];
     for (const coach of combined) {
@@ -733,7 +789,17 @@ export const getApprovedTrainees = query({
       .withIndex("by_role", (q) => q.eq("role", "trainee"))
       .collect();
 
-    const approvedTrainees = trainees.filter((t) => t.approvalStatus === "approved");
+    const approvedTrainees = trainees.filter(
+      (t) => t.approvalStatus === "approved" && !isPreviewOrMockUser(t)
+    );
+
+    const allCohorts = await ctx.db.query("cohorts").collect();
+    const cohortMap = new Map<string, any>(allCohorts.map((c) => [c._id, c]));
+    const activeExpertCohortIds = new Set(
+      allCohorts
+        .filter((c) => getAdminCohortCategory(c) === "expert" && c.status === "active")
+        .map((c) => c._id)
+    );
 
     return await Promise.all(
       approvedTrainees.map(async (trainee) => {
@@ -745,30 +811,54 @@ export const getApprovedTrainees = query({
           trainee.assignedCoachId5
         ];
         const coaches = await Promise.all(
-          coachIds.map(async (id) => id ? await ctx.db.get(id) : null)
+          coachIds.map(async (id) => (id ? await ctx.db.get(id) : null))
         );
+
         let maxMentorsLimit = 4;
-        const membership = await ctx.db
+        let cohortName: string | null = null;
+        let isCurrentCohort = activeExpertCohortIds.size === 0;
+
+        const memberships = await ctx.db
           .query("cohortMembers")
           .withIndex("by_user", (q) => q.eq("userId", trainee._id))
-          .first();
-        if (membership) {
-          const cohort = await ctx.db.get(membership.cohortId);
-          if (cohort && cohort.maxMentors !== undefined && cohort.maxMentors !== 2) {
-            maxMentorsLimit = Math.max(1, Math.min(5, cohort.maxMentors));
-          } else {
-            maxMentorsLimit = 4;
+          .collect();
+        const activeMemberships = memberships.filter((m) => m.status !== "withdrawn");
+        const userCohorts = activeMemberships
+          .map((m) => cohortMap.get(m.cohortId))
+          .filter(Boolean);
+
+        if (userCohorts.some((c: any) => activeExpertCohortIds.has(c._id))) {
+          isCurrentCohort = true;
+        }
+
+        const primaryCohort =
+          userCohorts.find((c: any) => getAdminCohortCategory(c) === "expert" && c.status === "active") ||
+          userCohorts.sort((a: any, b: any) => (b.number ?? 0) - (a.number ?? 0))[0] ||
+          null;
+
+        if (primaryCohort) {
+          cohortName = primaryCohort.name;
+          if (primaryCohort.maxMentors !== undefined && primaryCohort.maxMentors !== 2) {
+            maxMentorsLimit = Math.max(1, Math.min(5, primaryCohort.maxMentors));
           }
         }
 
         return {
           ...trainee,
+          // Normalize deleted/non-existent coach IDs to undefined so they don't inflate counts
+          assignedCoachId: coaches[0] ? trainee.assignedCoachId : undefined,
+          assignedCoachId2: coaches[1] ? trainee.assignedCoachId2 : undefined,
+          assignedCoachId3: coaches[2] ? trainee.assignedCoachId3 : undefined,
+          assignedCoachId4: coaches[3] ? trainee.assignedCoachId4 : undefined,
+          assignedCoachId5: coaches[4] ? trainee.assignedCoachId5 : undefined,
           coachName: coaches[0]?.name ?? null,
           coachEmail: coaches[0]?.email ?? null,
           coachName2: coaches[1]?.name ?? null,
           coachEmail2: coaches[1]?.email ?? null,
           coachNames: coaches.map((c) => c?.name ?? null),
           coachEmails: coaches.map((c) => c?.email ?? null),
+          cohortName,
+          isCurrentCohort,
           maxMentorsLimit,
         };
       }),
@@ -1012,14 +1102,8 @@ export const getTraineeFullProfile = query({
 export const getMyAssignedTrainees = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError({ message: "Unauthenticated", code: "UNAUTHENTICATED" });
-    const me = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
-      .unique();
-    if (!me) throw new ConvexError({ message: "User not found", code: "NOT_FOUND" });
-    if (me.role !== "senior_coach" && me.role !== "admin") {
+    const me = await getAuthenticatedUser(ctx);
+    if (me.role !== "senior_coach" && me.role !== "admin" && me.role !== "admin3") {
       throw new ConvexError({ message: "수퍼바이저 권한이 필요합니다.", code: "FORBIDDEN" });
     }
 
@@ -1028,13 +1112,18 @@ export const getMyAssignedTrainees = query({
       (u) =>
         u.role === "trainee" &&
         u.approvalStatus === "approved" &&
-        (u.assignedCoachId === me._id || u.assignedCoachId2 === me._id),
+        !isPreviewOrMockUser(u) &&
+        (u.assignedCoachId === me._id ||
+          u.assignedCoachId2 === me._id ||
+          u.assignedCoachId3 === me._id ||
+          u.assignedCoachId4 === me._id ||
+          u.assignedCoachId5 === me._id),
     );
 
-    // Attach counts of pending records for quick overview
+    // Attach counts of pending records and 1-per-trainee mentoring status with this mentor coach
     return await Promise.all(
       trainees.map(async (trainee) => {
-        const [eduPending, coachPending, mentorPending] = await Promise.all([
+        const [eduPending, allCoachLogs, allMentorLogs] = await Promise.all([
           ctx.db
             .query("educationRecords")
             .withIndex("by_user_and_status", (q) =>
@@ -1043,20 +1132,58 @@ export const getMyAssignedTrainees = query({
             .collect(),
           ctx.db
             .query("coachingLogs")
-            .withIndex("by_user_and_status", (q) =>
-              q.eq("userId", trainee._id).eq("approvalStatus", "pending"),
-            )
+            .withIndex("by_user", (q) => q.eq("userId", trainee._id))
             .collect(),
           ctx.db
             .query("mentorCoachingLogs")
-            .withIndex("by_user_and_status", (q) =>
-              q.eq("userId", trainee._id).eq("approvalStatus", "pending"),
-            )
+            .withIndex("by_user", (q) => q.eq("userId", trainee._id))
             .collect(),
         ]);
+
+        // 이 멘토코치에게 해당하는 멘토코칭 기록만 필터링 (임시저장 제외, 타 멘토코치 기록 제외)
+        const myMentorLogs = allMentorLogs.filter((l) => {
+          if (l.approvalStatus === "draft") return false;
+          const hasCoachName = normalizeCoachName(l.coachName).length > 0;
+          if (hasCoachName) return isSameCoachName(l.coachName, me.name);
+          return l.sessionType === "mentor_coaching";
+        });
+
+        const myGeneralMentorLogs = allCoachLogs.filter((l) => {
+          if (l.approvalStatus === "draft" || l.coachingType !== "mentor") return false;
+          const hasCoachName = normalizeCoachName(l.coacheeInfo).length > 0;
+          if (hasCoachName) return isSameCoachName(l.coacheeInfo, me.name);
+          return true;
+        });
+
+        const hasApprovedMentoring =
+          myMentorLogs.some((l) => l.approvalStatus === "approved") ||
+          myGeneralMentorLogs.some((l) => l.approvalStatus === "approved");
+        const hasPendingMentoring =
+          !hasApprovedMentoring &&
+          (myMentorLogs.some((l) => l.approvalStatus === "pending") ||
+            myGeneralMentorLogs.some((l) => l.approvalStatus === "pending"));
+
+        const myMentoringStatus: "approved" | "pending" | "none" = hasApprovedMentoring
+          ? "approved"
+          : hasPendingMentoring
+            ? "pending"
+            : "none";
+
+        // 교육생당 멘토링 실적은 최대 1건으로 집계
+        const myMentoringCount = myMentoringStatus !== "none" ? 1 : 0;
+
+        // 일반 코칭일지 대기 건수 (멘토코칭 중복 제외)
+        const generalCoachPendingCount = allCoachLogs.filter(
+          (l) => l.approvalStatus === "pending" && l.coachingType !== "mentor",
+        ).length;
+        const mentorPendingCount = hasPendingMentoring ? 1 : 0;
+
         return {
           ...trainee,
-          pendingReviewCount: eduPending.length + coachPending.length + mentorPending.length,
+          pendingReviewCount:
+            eduPending.length + generalCoachPendingCount + mentorPendingCount,
+          myMentoringStatus,
+          myMentoringCount,
         };
       }),
     );

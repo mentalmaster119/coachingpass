@@ -111,29 +111,42 @@ export const getMyProgress = query({
 export const getAllTraineesProgress = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin", "senior_coach"]);
+    const viewer = await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
 
-    const trainees = await ctx.db
+    const allTrainees = await ctx.db
       .query("users")
       .withIndex("by_role", (q) => q.eq("role", "trainee"))
       .filter((q) => q.eq(q.field("approvalStatus"), "approved"))
       .collect();
 
+    const trainees =
+      viewer.role === "senior_coach"
+        ? allTrainees.filter(
+            (u) =>
+              u.assignedCoachId === viewer._id ||
+              u.assignedCoachId2 === viewer._id ||
+              u.assignedCoachId3 === viewer._id ||
+              u.assignedCoachId4 === viewer._id ||
+              u.assignedCoachId5 === viewer._id,
+          )
+        : allTrainees;
+
     return await Promise.all(
       trainees.map(async (trainee) => {
         const eduCalc = await calculateUserEducation(ctx, trainee._id);
-        const { coachingLogs } = eduCalc;
+        const coachingProgress = await calculateCoachingProgress(ctx, trainee._id);
+        const submittedCoachingLogs = eduCalc.coachingLogs.filter(
+          (l) => l.approvalStatus !== "draft",
+        );
 
-        const approvedCoachingHours =
-          coachingLogs
-            .filter((l) => l.approvalStatus === "approved")
-            .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
+        // 코칭 실적은 작성 시간이 아닌 건당(1회 = 1건)으로 집계
+        const approvedCoachingCount = coachingProgress.totalCount;
 
         const educationTarget = 60;
-        const coachingTarget = 100;
+        const coachingTarget = 20;
 
         const educationPct = Math.min((eduCalc.approvedEducationHours / educationTarget) * 100, 100);
-        const coachingPct = Math.min((approvedCoachingHours / coachingTarget) * 100, 100);
+        const coachingPct = Math.min((approvedCoachingCount / coachingTarget) * 100, 100);
         const overallPct = Math.round((educationPct + coachingPct) / 2);
 
         return {
@@ -142,12 +155,13 @@ export const getAllTraineesProgress = query({
           email: trainee.email ?? "",
           certificationGoal: "SMPCC" as const,
           approvedEducationHours: eduCalc.approvedEducationHours,
-          approvedCoachingHours: Math.round(approvedCoachingHours * 10) / 10,
+          approvedCoachingHours: approvedCoachingCount,
+          approvedCoachingCount,
           educationTarget,
           coachingTarget,
           overallPct,
           educationPendingCount: eduCalc.educationPendingCount,
-          coachingPendingCount: coachingLogs.filter((l) => l.approvalStatus === "pending").length,
+          coachingPendingCount: submittedCoachingLogs.filter((l) => l.approvalStatus === "pending").length,
         };
       }),
     );
@@ -159,7 +173,7 @@ export const getAllTraineesProgress = query({
 export const getPendingReviewCounts = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin", "senior_coach"]);
+    const viewer = await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
 
     const pendingEducation = await ctx.db
       .query("educationRecords")
@@ -170,6 +184,29 @@ export const getPendingReviewCounts = query({
       .query("coachingLogs")
       .withIndex("by_approval_status", (q) => q.eq("approvalStatus", "pending"))
       .collect();
+
+    if (viewer.role === "senior_coach") {
+      const assignedTrainees = await ctx.db
+        .query("users")
+        .filter((q) =>
+          q.or(
+            q.eq(q.field("assignedCoachId"), viewer._id),
+            q.eq(q.field("assignedCoachId2"), viewer._id),
+            q.eq(q.field("assignedCoachId3"), viewer._id),
+            q.eq(q.field("assignedCoachId4"), viewer._id),
+            q.eq(q.field("assignedCoachId5"), viewer._id),
+          ),
+        )
+        .collect();
+      const assignedIds = new Set(assignedTrainees.map((t) => t._id));
+      const myEdu = pendingEducation.filter((r) => assignedIds.has(r.userId));
+      const myCoach = pendingCoaching.filter((l) => assignedIds.has(l.userId));
+      return {
+        educationPending: myEdu.length,
+        coachingPending: myCoach.length,
+        total: myEdu.length + myCoach.length,
+      };
+    }
 
     return {
       educationPending: pendingEducation.length,
@@ -187,27 +224,28 @@ export const getTraineeDetail = query({
     user: { _id: Id<"users">; name: string; email: string; certificationGoal: string };
     approvedEducationHours: number;
     approvedCoachingHours: number;
+    approvedCoachingCount: number;
     educationTarget: number;
     coachingTarget: number;
     educationRecords: { _id: Id<"educationRecords">; educationName: string; institution: string; educationDate: string; hours: number; approvalStatus: string }[];
     coachingLogs: { _id: Id<"coachingLogs">; topic: string; coachingDate: string; durationMinutes: number; approvalStatus: string; coachingType: string }[];
     monthlyActivity: { month: string; educationHours: number; coachingHours: number }[];
   } | null> => {
-    await requireRole(ctx, ["admin", "senior_coach"]);
+    await requireRole(ctx, ["admin", "senior_coach", "admin3"]);
 
     const trainee = await ctx.db.get(args.userId);
     if (!trainee) return null;
 
     const eduCalc = await calculateUserEducation(ctx, args.userId);
-    const { educationRecords, coachingLogs } = eduCalc;
+    const coachingProgress = await calculateCoachingProgress(ctx, args.userId);
+    const { educationRecords } = eduCalc;
+    const coachingLogs = eduCalc.coachingLogs.filter((l) => l.approvalStatus !== "draft");
 
-    const approvedCoachingHours =
-      coachingLogs
-        .filter((l) => l.approvalStatus === "approved")
-        .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
+    // 코칭 실적은 작성 시간이 아닌 건당(1회 = 1건)으로 집계
+    const approvedCoachingCount = coachingProgress.totalCount;
 
     const educationTarget = 60;
-    const coachingTarget = 100;
+    const coachingTarget = 20;
 
     const now = new Date();
     const months: { key: string; label: string }[] = [];
@@ -226,14 +264,13 @@ export const getTraineeDetail = query({
         }
       }
 
-      const coHours =
-        coachingLogs
-          .filter((l) => l.approvalStatus === "approved" && l.coachingDate.startsWith(key))
-          .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
+      const coCount = coachingLogs.filter(
+        (l) => l.approvalStatus === "approved" && l.coachingDate.startsWith(key),
+      ).length;
       return {
         month: label,
         educationHours: Math.round(eduHours * 10) / 10,
-        coachingHours: Math.round(coHours * 10) / 10,
+        coachingHours: coCount,
       };
     });
 
@@ -245,7 +282,8 @@ export const getTraineeDetail = query({
         certificationGoal: "SMPCC" as const,
       },
       approvedEducationHours: eduCalc.approvedEducationHours,
-      approvedCoachingHours: Math.round(approvedCoachingHours * 10) / 10,
+      approvedCoachingHours: approvedCoachingCount,
+      approvedCoachingCount,
       educationTarget,
       coachingTarget,
       educationRecords: educationRecords

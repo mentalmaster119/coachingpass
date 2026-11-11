@@ -45,10 +45,25 @@ export const updateCurrentUser = mutation({
     if (user !== null) {
       // Update name/email in case they changed.
       // Prioritize the existing database name/email if set, to prevent OAuth name from overriding custom name updates.
+      // 멘토로 지정(isMentorCoach: true)되어 있는데 역할이 일반 코치(trainee)로 남아 있는 경우 자동으로 멘토코치(senior_coach)로 승격
+      const resolvedRole =
+        user.role === "trainee" && user.isMentorCoach ? ("senior_coach" as const) : user.role;
       await ctx.db.patch(user._id, {
         name: user.name || identity.name?.trim(),
         email: user.email || identity.email?.trim(),
+        ...(resolvedRole !== user.role ? { role: resolvedRole } : {}),
+        ...(resolvedRole === "senior_coach" && !user.isMentorCoach ? { isMentorCoach: true } : {}),
       });
+
+      // DB 내 다른 멘토 지정 사용자들 중 role이 trainee로 남아 있는 계정도 함께 동기화
+      const unsyncedMentors = await ctx.db
+        .query("users")
+        .withIndex("by_role", (q) => q.eq("role", "trainee"))
+        .filter((q) => q.eq(q.field("isMentorCoach"), true))
+        .collect();
+      for (const m of unsyncedMentors) {
+        await ctx.db.patch(m._id, { role: "senior_coach" });
+      }
 
       // Clean up any test records mentioning "홍길동" for Sunju Park
       if (user.name?.includes("선주") || user.name?.includes("Sunju")) {
@@ -153,7 +168,19 @@ export const getCurrentUser = query({
 
     if (!user) return null;
     const { passwordHash: _, ...safeUser } = user;
-    return safeUser;
+    const baseRole =
+      safeUser.role === "trainee" && safeUser.isMentorCoach
+        ? ("senior_coach" as const)
+        : safeUser.role;
+    const effectiveRole =
+      baseRole === "senior_coach" && safeUser.activeMockRole === "trainee"
+        ? ("trainee" as const)
+        : baseRole;
+    return {
+      ...safeUser,
+      role: effectiveRole,
+      isMentorCoach: Boolean(safeUser.isMentorCoach || baseRole === "senior_coach"),
+    };
   },
 });
 
@@ -375,7 +402,15 @@ export const getRealUser = query({
 
     if (!user) return null;
     const { passwordHash: _, ...safeUser } = user;
-    return safeUser;
+    const realRole =
+      safeUser.role === "trainee" && safeUser.isMentorCoach
+        ? ("senior_coach" as const)
+        : safeUser.role;
+    return {
+      ...safeUser,
+      role: realRole,
+      isMentorCoach: Boolean(safeUser.isMentorCoach || realRole === "senior_coach"),
+    };
   },
 });
 
@@ -441,6 +476,9 @@ export const setActiveMockUser = mutation({
 
     if (args.role === "admin" || args.role === "admin3" || args.role === "senior_coach") {
       await ctx.db.patch(realUser._id, { activeMockRole: undefined, activeMockTraineeId: undefined });
+    } else if (realUser.role === "senior_coach") {
+      // 멘토코치가 코치(교육생) 화면으로 전환할 때는 가상 테스터가 아닌 본인 계정을 그대로 사용
+      await ctx.db.patch(realUser._id, { activeMockRole: "trainee", activeMockTraineeId: undefined });
     } else {
       let activeMockTraineeId: any = undefined;
       if (args.role === "trainee") {
@@ -596,6 +634,104 @@ export const forceClearMockRoles = mutation({
   },
 });
 
+function getCohortCategory(cohort: any): "expert" | "common" | "kca" {
+  if (cohort.educationCategory) return cohort.educationCategory;
+  const name = (cohort.name || "").trim();
+  if (name.includes("심리학") || name.includes("강독") || name.includes("SP") || name.includes("CP")) return "common";
+  if (name.includes("MSPE") || name.includes("mspe") || name.includes("명상")) return "common";
+  if (name.includes("트레이닝") || name.includes("멘탈트레이닝")) return "common";
+  if (name.includes("KAC") || name.includes("kac") || name.includes("KPC") || name.includes("kpc")) return "kca";
+  return "expert";
+}
+
+function isRealApprovedTrainee(u: any): boolean {
+  if (!u || u.role !== "trainee" || u.approvalStatus !== "approved") return false;
+  if (u.isMockActive) return false;
+  const email = (u.email || "").toLowerCase();
+  const name = (u.name || "").trim();
+  if (email === "preview_trainee@mcci.com" || email === "mentalcoach119@naver.com") return false;
+  if (name.includes("(미리보기)") || name === "코치 테스터" || name === "교육생 테스터") return false;
+  return true;
+}
+
+async function resolveTargetCohortContext(ctx: any, viewerUser: any): Promise<{
+  cohortUserIds: Set<string>;
+  maxMentorsLimit: number;
+}> {
+  const allCohorts = await ctx.db.query("cohorts").collect();
+  const cohortMap = new Map<string, any>(allCohorts.map((c: any) => [c._id, c]));
+
+  let targetCohortIds: string[] = [];
+  let maxMentorsLimit = 4;
+
+  if (viewerUser && viewerUser.role === "trainee") {
+    const memberships = await ctx.db
+      .query("cohortMembers")
+      .withIndex("by_user", (q: any) => q.eq("userId", viewerUser._id))
+      .collect();
+    const activeMemberships = memberships.filter((m: any) => m.status !== "withdrawn");
+    const userCohorts = activeMemberships
+      .map((m: any) => cohortMap.get(m.cohortId))
+      .filter(Boolean);
+
+    const activeExpert = userCohorts
+      .filter((c: any) => getCohortCategory(c) === "expert" && c.status === "active")
+      .sort((a: any, b: any) => (b.number ?? 0) - (a.number ?? 0));
+    const anyExpert = userCohorts
+      .filter((c: any) => getCohortCategory(c) === "expert")
+      .sort((a: any, b: any) => (b.number ?? 0) - (a.number ?? 0));
+    const anyActive = userCohorts
+      .filter((c: any) => c.status === "active")
+      .sort((a: any, b: any) => (b.number ?? 0) - (a.number ?? 0));
+
+    const chosenCohort = activeExpert[0] || anyExpert[0] || anyActive[0] || userCohorts[0];
+    if (chosenCohort) {
+      targetCohortIds = [chosenCohort._id];
+      if (chosenCohort.maxMentors !== undefined && chosenCohort.maxMentors !== 2) {
+        maxMentorsLimit = Math.max(1, Math.min(5, chosenCohort.maxMentors));
+      }
+    }
+  }
+
+  // Fallback for admins, senior_coaches (who may be registered in old graduation cohorts like 14기), or unassigned trainees:
+  // Use the currently active expert cohort(s)
+  if (targetCohortIds.length === 0) {
+    const activeExpertCohorts = allCohorts
+      .filter((c: any) => getCohortCategory(c) === "expert" && c.status === "active")
+      .sort((a: any, b: any) => (b.number ?? 0) - (a.number ?? 0));
+
+    if (activeExpertCohorts.length > 0) {
+      targetCohortIds = activeExpertCohorts.map((c: any) => c._id);
+      const primary = activeExpertCohorts[0];
+      if (primary.maxMentors !== undefined && primary.maxMentors !== 2) {
+        maxMentorsLimit = Math.max(1, Math.min(5, primary.maxMentors));
+      }
+    } else {
+      const latestExpert = allCohorts
+        .filter((c: any) => getCohortCategory(c) === "expert")
+        .sort((a: any, b: any) => (b.number ?? 0) - (a.number ?? 0))[0];
+      if (latestExpert) {
+        targetCohortIds = [latestExpert._id];
+      }
+    }
+  }
+
+  const cohortUserIds = new Set<string>();
+  for (const cohortId of targetCohortIds) {
+    const members = await ctx.db
+      .query("cohortMembers")
+      .withIndex("by_cohort", (q: any) => q.eq("cohortId", cohortId))
+      .collect();
+    for (const m of members) {
+      if (m.status !== "withdrawn") {
+        cohortUserIds.add(m.userId);
+      }
+    }
+  }
+
+  return { cohortUserIds, maxMentorsLimit };
+}
+
 // 멘토코치 리스트 조회 (코치 열람용)
 export const listMentorCoaches = query({
   args: {},
@@ -614,28 +750,15 @@ export const listMentorCoaches = query({
     assignedTraineesCount: number;
   }>> => {
     const identity = await ctx.auth.getUserIdentity();
-    let cohortUserIds = new Set<string>();
+    let viewerUser = null;
     if (identity) {
-      const user = await ctx.db
+      viewerUser = await ctx.db
         .query("users")
         .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
         .first();
-      if (user) {
-        const membership = await ctx.db
-          .query("cohortMembers")
-          .withIndex("by_user", (q) => q.eq("userId", user._id))
-          .first();
-        if (membership) {
-          const cohortMembers = await ctx.db
-            .query("cohortMembers")
-            .withIndex("by_cohort", (q) => q.eq("cohortId", membership.cohortId))
-            .collect();
-          for (const m of cohortMembers) {
-            cohortUserIds.add(m.userId);
-          }
-        }
-      }
     }
+
+    const { cohortUserIds } = await resolveTargetCohortContext(ctx, viewerUser);
 
     const mentorCoaches = await ctx.db
       .query("users")
@@ -661,7 +784,7 @@ export const listMentorCoaches = query({
           }
         }
 
-        // Count assigned trainees in same cohort
+        // Count assigned trainees in target cohort (excluding preview/mock/unapproved accounts)
         const currentTrainees = await ctx.db
           .query("users")
           .filter((q) =>
@@ -675,9 +798,11 @@ export const listMentorCoaches = query({
           )
           .collect();
 
+        const validTrainees = currentTrainees.filter((t) => isRealApprovedTrainee(t));
+
         const assignedTraineesCount = cohortUserIds.size > 0
-          ? currentTrainees.filter((t) => cohortUserIds.has(t._id)).length
-          : currentTrainees.length;
+          ? validTrainees.filter((t) => cohortUserIds.has(t._id)).length
+          : validTrainees.length;
 
         return {
           _id: u._id,
@@ -726,22 +851,26 @@ export const requestMentoring = mutation({
       throw new ConvexError({ message: "이미 이 멘토코치님께 신청된 상태입니다.", code: "BAD_REQUEST" });
     }
 
-    let maxMentorsLimit = 4; // Default to 4
-    const membership = await ctx.db
-      .query("cohortMembers")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .first();
-    if (membership) {
-      const cohort = await ctx.db.get(membership.cohortId);
-      if (cohort && cohort.maxMentors !== undefined && cohort.maxMentors !== 2) {
-        maxMentorsLimit = Math.max(1, Math.min(5, cohort.maxMentors));
+    const { cohortUserIds, maxMentorsLimit } = await resolveTargetCohortContext(ctx, user);
+
+    // Validate existing slots: ignore deleted users, non-mentor coaches, or duplicates
+    const validAssignedIds: Id<"users">[] = [];
+    const seenIds = new Set<string>();
+    const cleanupPatch: Record<string, Id<"users"> | undefined> = {};
+
+    for (const field of coachFields) {
+      const existingId = user[field];
+      if (!existingId) continue;
+      const existingDoc = await ctx.db.get(existingId);
+      if (existingDoc && existingDoc.isMentorCoach && !seenIds.has(existingId)) {
+        seenIds.add(existingId);
+        validAssignedIds.push(existingId);
       } else {
-        maxMentorsLimit = 4;
+        cleanupPatch[field] = undefined;
       }
     }
 
-    const assignedCount = coachFields.filter((field) => !!user[field]).length;
-    if (assignedCount >= maxMentorsLimit) {
+    if (validAssignedIds.length >= maxMentorsLimit) {
       throw new ConvexError({ 
         message: `이미 이번 기수 최대 ${maxMentorsLimit}명의 멘토코치와 매칭된 상태입니다. 다른 코치로 신청하려면 기존 배정을 해제하거나 취소해 주세요.`, 
         code: "BAD_REQUEST" 
@@ -766,26 +895,26 @@ export const requestMentoring = mutation({
       )
       .collect();
 
-    let count = currentTrainees.length;
-    if (membership) {
-      const cohortMembers = await ctx.db
-        .query("cohortMembers")
-        .withIndex("by_cohort", (q) => q.eq("cohortId", membership.cohortId))
-        .collect();
-      const cohortUserIds = new Set(cohortMembers.map((m) => m.userId));
-      count = currentTrainees.filter((t) => cohortUserIds.has(t._id)).length;
-    }
+    const validTrainees = currentTrainees.filter((t) => isRealApprovedTrainee(t));
+    const count = cohortUserIds.size > 0
+      ? validTrainees.filter((t) => cohortUserIds.has(t._id)).length
+      : validTrainees.length;
 
     if (count >= 4) {
       throw new ConvexError({ message: "해당 멘토코치님은 이미 이번 기수 신청이 마감되었습니다 (최대 4명).", code: "BAD_REQUEST" });
     }
 
-    const emptyField = coachFields.slice(0, maxMentorsLimit).find((field) => !user[field]);
+    const emptyField = coachFields
+      .slice(0, maxMentorsLimit)
+      .find((field) => !user[field] || field in cleanupPatch);
     if (!emptyField) {
       throw new ConvexError({ message: "더 이상 신청을 보낼 수 있는 빈 슬롯이 없습니다.", code: "BAD_REQUEST" });
     }
 
-    await ctx.db.patch(user._id, { [emptyField]: args.mentorId });
+    await ctx.db.patch(user._id, {
+      ...cleanupPatch,
+      [emptyField]: args.mentorId,
+    });
 
     // 멘토용 알림 생성
     await ctx.db.insert("notifications", {
@@ -829,19 +958,20 @@ export const cancelMentoring = mutation({
       "assignedCoachId5"
     ] as const;
 
-    let matchedField: typeof coachFields[number] | null = null;
+    const patchFields: Record<string, undefined> = {};
+    let matched = false;
     for (const field of coachFields) {
       if (user[field] === args.mentorId) {
-        matchedField = field;
-        break;
+        patchFields[field] = undefined;
+        matched = true;
       }
     }
 
-    if (!matchedField) {
+    if (!matched) {
       throw new ConvexError({ message: "해당 코치님과 매칭 신청된 내역이 없습니다.", code: "BAD_REQUEST" });
     }
 
-    await ctx.db.patch(user._id, { [matchedField]: undefined });
+    await ctx.db.patch(user._id, patchFields);
 
     // Send notification to the previous mentor
     await ctx.db.insert("notifications", {

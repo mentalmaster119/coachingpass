@@ -7,36 +7,57 @@ import { toast } from "sonner";
 const convexUrl = import.meta.env.VITE_CONVEX_URL ?? "http://localhost:3000";
 const convex = new ConvexReactClient(convexUrl);
 
+// Helper to extract Convex function name safely from FunctionReference Proxy
+function getConvexFunctionName(fnRef: any): string {
+  if (!fnRef) return "";
+  if (typeof fnRef === "string") return fnRef;
+  try {
+    const symName = fnRef[Symbol.for("functionName")];
+    if (typeof symName === "string") return symName;
+  } catch {
+    // ignore
+  }
+  if (typeof fnRef._path === "string") return fnRef._path;
+  if (typeof fnRef.name === "string") return fnRef.name;
+  return "";
+}
+
+function isReadOnlyAdminPreview(): boolean {
+  const isPreviewMode = localStorage.getItem("admin_preview_mode") === "true";
+  if (!isPreviewMode) return false;
+  const hasToken = Boolean(localStorage.getItem("auth_token"));
+  if (!hasToken) {
+    localStorage.removeItem("admin_preview_mode");
+    localStorage.removeItem("preview_role");
+    return false;
+  }
+  const realRole = localStorage.getItem("real_role");
+  // 멘토코치(senior_coach)가 본인 계정으로 코치(교육생) 모드로 전환한 경우는 실제 활동 모드이므로 읽기 전용 제한을 걸지 않음
+  if (realRole === "senior_coach") {
+    return false;
+  }
+  return realRole === "admin" || realRole === "admin3";
+}
+
 // Intercept mutations/actions in preview mode to make it Read-Only
 const originalMutation = convex.mutation;
 (convex as any).mutation = function (mutation: any, ...args: any[]) {
-  const isPreviewMode = localStorage.getItem("admin_preview_mode") === "true";
-  
-  // Extract path safely checking for primitive strings to avoid Convex API ProxyObjects
-  let path = "";
-  if (typeof mutation === "string") {
-    path = mutation;
-  } else if (mutation && (typeof mutation === "object" || typeof mutation === "function")) {
-    if (typeof mutation._path === "string") {
-      path = mutation._path;
-    } else if (typeof mutation.name === "string") {
-      path = mutation.name;
-    } else if (typeof mutation.toString === "function") {
-      try {
-        const str = mutation.toString();
-        if (typeof str === "string") {
-          path = str;
-        }
-      } catch (e) {
-        // ignore
-      }
-    }
-  }
-  
-  const isSetActiveMockUser = args && args[0] && typeof args[0] === "object" && ("role" in args[0]);
-  const isBypass = path.includes("updateCurrentUser") || path.includes("setActiveMockUser") || isSetActiveMockUser;
+  const path = getConvexFunctionName(mutation);
+  const firstArg = args && args[0] && typeof args[0] === "object" ? args[0] : null;
 
-  if (isPreviewMode && !isBypass) {
+  const isAuthCall =
+    path.startsWith("auth:") ||
+    (firstArg !== null && "email" in firstArg && "password" in firstArg);
+  const isSetActiveMockUser =
+    firstArg !== null && "role" in firstArg && Object.keys(firstArg).length <= 2;
+  const isBypass =
+    isAuthCall ||
+    path.includes("updateCurrentUser") ||
+    path.includes("setActiveMockUser") ||
+    path.includes("acceptInvitation") ||
+    isSetActiveMockUser;
+
+  if (isReadOnlyAdminPreview() && !isBypass) {
     toast.error("미리보기 모드(Read-only)에서는 데이터를 수정할 수 없습니다.", {
       description: "관리자 모드로 복귀하거나 미리보기를 종료해 주세요.",
     });
@@ -47,31 +68,13 @@ const originalMutation = convex.mutation;
 
 const originalAction = convex.action;
 (convex as any).action = function (action: any, ...args: any[]) {
-  const isPreviewMode = localStorage.getItem("admin_preview_mode") === "true";
-  
-  let path = "";
-  if (typeof action === "string") {
-    path = action;
-  } else if (action && (typeof action === "object" || typeof action === "function")) {
-    if (typeof action._path === "string") {
-      path = action._path;
-    } else if (typeof action.name === "string") {
-      path = action.name;
-    } else if (typeof action.toString === "function") {
-      try {
-        const str = action.toString();
-        if (typeof str === "string") {
-          path = str;
-        }
-      } catch (e) {
-        // ignore
-      }
-    }
-  }
-  
-  const isBypass = path.includes("updateCurrentUser") || path.includes("setActiveMockUser");
+  const path = getConvexFunctionName(action);
+  const isBypass =
+    path.startsWith("auth:") ||
+    path.includes("updateCurrentUser") ||
+    path.includes("setActiveMockUser");
 
-  if (isPreviewMode && !isBypass) {
+  if (isReadOnlyAdminPreview() && !isBypass) {
     toast.error("미리보기 모드(Read-only)에서는 액션을 실행할 수 없습니다.", {
       description: "관리자 모드로 복귀하거나 미리보기를 종료해 주세요.",
     });
