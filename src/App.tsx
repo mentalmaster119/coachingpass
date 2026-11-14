@@ -4,6 +4,13 @@ import { DefaultProviders } from "./components/providers/default.tsx";
 import { useServiceWorker } from "@/hooks/use-service-worker.ts";
 import { NetworkStatusBanner } from "@/components/common/network-status-banner.tsx";
 import AppLayout from "./components/layout/app-layout.tsx";
+import DashboardPage from "./pages/dashboard/page.tsx";
+import CoachingLogPage from "./pages/coaching-log/page.tsx";
+import BcpPage from "./pages/bcp/page.tsx";
+import MentorCoachingPage from "./pages/mentor-coaching/page.tsx";
+import SupervisionPage from "./pages/supervision/page.tsx";
+import ReflectionPage from "./pages/reflection/page.tsx";
+import DailyCheckInPage from "./pages/daily-checkin/page.tsx";
 
 // Retry dynamic imports once on chunk load mismatch (e.g., after a fresh Vercel deployment)
 function lazyWithRetry<T extends ComponentType<any>>(
@@ -74,10 +81,10 @@ const InviteLandingPage = lazyWithRetry(() => import("./pages/invite/page.tsx"))
 const VerifyCertPage = lazyWithRetry(() => import("./pages/verify/page.tsx"));
 
 // Lazy-loaded protected routes
-const DashboardPage = lazyWithRetry(() => import("./pages/dashboard/page.tsx"));
-const CoachingLogPage = lazyWithRetry(() => import("./pages/coaching-log/page.tsx"));
+
+
 const CoachingQualityPage = lazy(() => import("./pages/coaching-quality/page.tsx"));
-const MentorCoachingPage = lazy(() => import("./pages/mentor-coaching/page.tsx"));
+
 const MentorsPage = lazy(() => import("./pages/mentors/page.tsx"));
 const ProgressPage = lazy(() => import("./pages/progress/page.tsx"));
 const TraineeDetailPage = lazy(() => import("./pages/progress/trainee/page.tsx"));
@@ -91,7 +98,6 @@ const AdminCertificationPage = lazy(() => import("./pages/admin/certification/pa
 const CoachTraineesPage = lazy(() => import("./pages/coach/trainees/page.tsx"));
 const CoachMentoringHistoryPage = lazy(() => import("./pages/coach/mentoring-history/page.tsx"));
 const CertificationPage = lazy(() => import("./pages/certification/page.tsx"));
-const ReflectionPage = lazy(() => import("./pages/reflection/page.tsx"));
 const AnnouncementsPage = lazy(() => import("./pages/announcements/page.tsx"));
 const AdminAnnouncementsPage = lazy(() => import("./pages/admin/announcements/page.tsx"));
 const CompetencyAssessmentPage = lazy(() => import("./pages/competency/page.tsx"));
@@ -115,16 +121,13 @@ const QrCheckInLandingPage = lazy(() => import("./pages/attendance/qr-checkin/pa
 const SettingsPage = lazy(() => import("./pages/settings/page.tsx"));
 const AdminSmpccPage = lazy(() => import("./pages/admin/smpcc/page.tsx"));
 const MentalForumPage = lazy(() => import("./pages/mental-forum/page.tsx"));
-const DailyCheckInPage = lazy(() => import("./pages/daily-checkin/page.tsx"));
 const AdminCheckInPage = lazy(() => import("./pages/admin/checkin/page.tsx"));
 const InstallGuidePage = lazy(() => import("./pages/install-guide/page.tsx"));
 const AdminTraineeProfilePage = lazy(() => import("./pages/admin/trainee-profile/page.tsx"));
-const BcpPage = lazy(() => import("./pages/bcp/page.tsx"));
 const AdminBcpPage = lazy(() => import("./pages/admin/bcp/page.tsx"));
 const RecognitionStatusPage = lazy(() => import("./pages/recognition-status/page.tsx"));
 const SearchPage = lazy(() => import("./pages/search/page.tsx"));
 const ClassroomBookingPage = lazy(() => import("./pages/classroom-booking/page.tsx"));
-const SupervisionPage = lazy(() => import("./pages/supervision/page.tsx"));
 const SubmissionsPage = lazy(() => import("./pages/submissions/page.tsx"));
 const AdminCoachingAnalysisPage = lazy(() => import("./pages/admin/coaching-analysis/page.tsx"));
 const AdminErrorsPage = lazy(() => import("./pages/admin/errors/page.tsx"));

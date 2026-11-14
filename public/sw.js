@@ -1,4 +1,4 @@
-const CACHE_NAME = "coachpass-v8";
+const CACHE_NAME = "coachpass-v9";
 const urlsToCache = ["/", "/icon/icon-192.png", "/icon/icon-512.png", "/offline.html"];
 
 // Install event - cache core assets and skip waiting

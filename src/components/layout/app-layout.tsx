@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext, Suspense } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Authenticated, useQuery, useMutation } from "convex/react";
 import {
@@ -1088,7 +1088,15 @@ function AppLayoutInner() {
           )}
           <PageTransition key={location.pathname}>
             <ErrorBoundary>
-              <Outlet />
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center min-h-[50vh] w-full p-8">
+                    <div className="w-7 h-7 border-2 border-primary/25 border-t-primary rounded-full animate-spin" />
+                  </div>
+                }
+              >
+                <Outlet />
+              </Suspense>
             </ErrorBoundary>
           </PageTransition>
         </main>
