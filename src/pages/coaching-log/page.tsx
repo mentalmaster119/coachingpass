@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -113,11 +113,22 @@ function NcpProgressCard({
 }
 
 export default function CoachingLogPage() {
-  const [addOpen, setAddOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [addOpen, setAddOpen] = useState(() => searchParams.get("new") === "1");
   const [editingDraft, setEditingDraft] = useState<
     (Doc<"coachingLogs"> & { evidenceUrl?: string | null }) | undefined
   >(undefined);
   const [reportOpen, setReportOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      setEditingDraft(undefined);
+      setAddOpen(true);
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("new");
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
   const [activeTab, setActiveTab] = useState("all");
   const logs = useQuery(api.coaching.getMyLogs);
   const summary = useQuery(api.coaching.getMySummary);

@@ -1,22 +1,81 @@
-import { lazy, Suspense } from "react";
+import { Component, lazy, Suspense, type ComponentType, type ReactNode } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { DefaultProviders } from "./components/providers/default.tsx";
 import { useServiceWorker } from "@/hooks/use-service-worker.ts";
 import { NetworkStatusBanner } from "@/components/common/network-status-banner.tsx";
 import AppLayout from "./components/layout/app-layout.tsx";
 
+// Retry dynamic imports once on chunk load mismatch (e.g., after a fresh Vercel deployment)
+function lazyWithRetry<T extends ComponentType<any>>(
+  factory: () => Promise<{ default: T }>,
+) {
+  return lazy(async () => {
+    const reloadKey = "coachingpass_chunk_reload";
+    try {
+      const mod = await factory();
+      sessionStorage.removeItem(reloadKey);
+      return mod;
+    } catch (error) {
+      const hasReloaded = sessionStorage.getItem(reloadKey) === "true";
+      if (!hasReloaded) {
+        sessionStorage.setItem(reloadKey, "true");
+        window.location.reload();
+        return new Promise<{ default: T }>(() => {});
+      }
+      throw error;
+    }
+  });
+}
+
+class RouteErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center space-y-4">
+          <p className="text-base font-semibold text-foreground">
+            화면을 불러오는 중 일시적인 오류가 발생했습니다.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            최신 버전이 배포되었거나 네트워크가 불안정할 수 있습니다. 새로고침해 주세요.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium cursor-pointer"
+          >
+            새로고침
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Lazy-loaded public & auth routes
-const AuthCallback = lazy(() => import("./pages/auth/Callback.tsx"));
-const Index = lazy(() => import("./pages/Index.tsx"));
-const NotFound = lazy(() => import("./pages/NotFound.tsx"));
-const PendingPage = lazy(() => import("./pages/pending/page.tsx"));
-const OnboardingPage = lazy(() => import("./pages/onboarding/page.tsx"));
-const InviteLandingPage = lazy(() => import("./pages/invite/page.tsx"));
-const VerifyCertPage = lazy(() => import("./pages/verify/page.tsx"));
+const AuthCallback = lazyWithRetry(() => import("./pages/auth/Callback.tsx"));
+const Index = lazyWithRetry(() => import("./pages/Index.tsx"));
+const NotFound = lazyWithRetry(() => import("./pages/NotFound.tsx"));
+const PendingPage = lazyWithRetry(() => import("./pages/pending/page.tsx"));
+const OnboardingPage = lazyWithRetry(() => import("./pages/onboarding/page.tsx"));
+const InviteLandingPage = lazyWithRetry(() => import("./pages/invite/page.tsx"));
+const VerifyCertPage = lazyWithRetry(() => import("./pages/verify/page.tsx"));
 
 // Lazy-loaded protected routes
-const DashboardPage = lazy(() => import("./pages/dashboard/page.tsx"));
-const CoachingLogPage = lazy(() => import("./pages/coaching-log/page.tsx"));
+const DashboardPage = lazyWithRetry(() => import("./pages/dashboard/page.tsx"));
+const CoachingLogPage = lazyWithRetry(() => import("./pages/coaching-log/page.tsx"));
 const CoachingQualityPage = lazy(() => import("./pages/coaching-quality/page.tsx"));
 const MentorCoachingPage = lazy(() => import("./pages/mentor-coaching/page.tsx"));
 const MentorsPage = lazy(() => import("./pages/mentors/page.tsx"));
@@ -87,7 +146,8 @@ export default function App() {
     <DefaultProviders>
       <BrowserRouter>
         <NetworkStatusBanner />
-        <Suspense fallback={<PageLoadingFallback />}>
+        <RouteErrorBoundary>
+          <Suspense fallback={<PageLoadingFallback />}>
           <Routes>
             {/* Non-layout routes */}
             <Route path="/auth/callback" element={<AuthCallback />} />
@@ -162,7 +222,8 @@ export default function App() {
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </Suspense>
+          </Suspense>
+        </RouteErrorBoundary>
       </BrowserRouter>
     </DefaultProviders>
   );

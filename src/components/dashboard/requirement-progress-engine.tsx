@@ -100,7 +100,7 @@ export default function RequirementProgressEngine() {
 
   // Next Milestone Recommendation Engine
   let nextMilestoneText = "";
-  let nextMilestoneAction = "/coaching-log";
+  let nextMilestoneAction = "/coaching-log?new=1";
   let nextMilestoneButtonText = "코칭 실습 등록";
 
   if (!status.isCompletionMet) {
@@ -111,7 +111,7 @@ export default function RequirementProgressEngine() {
     } else {
       const coachingLeft = Math.max(0, 15 - (status.criteria.find((c) => c.key === "totalCoaching")?.current || 0));
       nextMilestoneText = `1단계 수료를 위해 기본 코칭 실습 ${coachingLeft}회가 추가로 필요합니다.`;
-      nextMilestoneAction = "/coaching-log";
+      nextMilestoneAction = "/coaching-log?new=1";
       nextMilestoneButtonText = "코칭 실습 작성";
     }
   } else if (!status.isCertEligible) {
@@ -121,7 +121,7 @@ export default function RequirementProgressEngine() {
 
     if (coachingLeft > 0) {
       nextMilestoneText = `2단계 인증 요건 충족까지 심화 코칭 실습 ${coachingLeft}회 남았습니다.`;
-      nextMilestoneAction = "/coaching-log";
+      nextMilestoneAction = "/coaching-log?new=1";
       nextMilestoneButtonText = "코칭 실습 등록";
     } else if (bookReports && !bookReports.met) {
       nextMilestoneText = `2단계 인증 요건 충족을 위해 지정 도서 독후감 제출이 필요합니다.`;

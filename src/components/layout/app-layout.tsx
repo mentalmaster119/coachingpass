@@ -891,7 +891,11 @@ function PreviewModeBanner() {
           <span>현재 코치(교육생) 화면 모드로 이용 중입니다 (멘토코치 본인 계정)</span>
         ) : (
           <>
-            <span>관리자 미리보기 모드 (Read-only)</span>
+            <span>
+              {realRole === "admin3"
+                ? "관리자 미리보기 모드 (Read-only)"
+                : "관리자 화면 전환 모드 (실습 기록/테스트 가능)"}
+            </span>
             <div className="flex rounded-md bg-amber-500/10 p-0.5 border border-amber-400/20">
               <button
                 onClick={() => handleRoleChange("trainee")}
