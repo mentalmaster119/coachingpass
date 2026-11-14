@@ -47,6 +47,7 @@ export default function SupervisionPracticeDialog({
   const createLog = useMutation(api.coaching.create);
   const updateLog = useMutation(api.coaching.update);
   const saveDraft = useMutation(api.coaching.saveDraft);
+  const submitDraft = useMutation(api.coaching.submitDraft);
 
   // A. 기본 정보
   const [coachName, setCoachName] = useState("");
@@ -267,7 +268,13 @@ export default function SupervisionPracticeDialog({
     setSaving(true);
     try {
       const payload = compilePayload();
-      if (editingLog && editingLog.approvalStatus !== "draft") {
+      if (editingLog && editingLog.approvalStatus === "draft") {
+        await submitDraft({
+          logId: editingLog._id,
+          ...payload,
+        });
+        toast.success("수퍼비전 실습 기록이 제출되었습니다!");
+      } else if (editingLog && editingLog.approvalStatus !== "draft") {
         await updateLog({
           logId: editingLog._id,
           ...payload,

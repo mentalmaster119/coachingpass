@@ -55,8 +55,8 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
-    if (user.role !== "trainee") {
-      throw new ConvexError({ message: "코치만 기록을 추가할 수 있습니다.", code: "FORBIDDEN" });
+    if (user.role === "admin3") {
+      throw new ConvexError({ message: "열람 전용 계정은 기록을 추가할 수 없습니다.", code: "FORBIDDEN" });
     }
 
     // 동일 멘토코치에 대해 이미 임시저장(draft) 또는 대기(pending) 중인 기록이 있다면 중복 생성 방지 후 덮어쓰기
@@ -383,8 +383,8 @@ export const saveDraft = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
-    if (user.role !== "trainee") {
-      throw new ConvexError({ message: "코치만 임시저장할 수 있습니다.", code: "FORBIDDEN" });
+    if (user.role === "admin3") {
+      throw new ConvexError({ message: "열람 전용 계정은 임시저장할 수 없습니다.", code: "FORBIDDEN" });
     }
     const { logId, ...fields } = args;
 

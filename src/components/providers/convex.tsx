@@ -32,11 +32,9 @@ function isReadOnlyAdminPreview(): boolean {
     return false;
   }
   const realRole = localStorage.getItem("real_role");
-  // 멘토코치(senior_coach)가 본인 계정으로 코치(교육생) 모드로 전환한 경우는 실제 활동 모드이므로 읽기 전용 제한을 걸지 않음
-  if (realRole === "senior_coach") {
-    return false;
-  }
-  return realRole === "admin" || realRole === "admin3";
+  // 관리자(admin) 및 멘토코치(senior_coach)가 역할 전환 스위처를 통해 코치(교육생) 화면을 사용할 때는
+  // Mock Auth 연동 규칙(AGENTS.md)에 따라 정상적인 기록/수정이 가능해야 하므로 읽기 전용 제한을 걸지 않음
+  return realRole === "admin3";
 }
 
 // Intercept mutations/actions in preview mode to make it Read-Only

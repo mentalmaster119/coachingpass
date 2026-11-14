@@ -249,7 +249,15 @@ function DiagnosisPanel({
 }
 
 // ── Step progress bar ────────────────────────────────────────────────────────
-function StepIndicator({ currentStep, steps }: { currentStep: number; steps: readonly { id: number; title: string; short: string }[] }) {
+function StepIndicator({
+  currentStep,
+  steps,
+  onSelectStep,
+}: {
+  currentStep: number;
+  steps: readonly { id: number; title: string; short: string }[];
+  onSelectStep?: (stepId: number) => void;
+}) {
   return (
     <div className="flex items-center gap-0 mb-5">
       {steps.map((step, idx) => {
@@ -257,10 +265,15 @@ function StepIndicator({ currentStep, steps }: { currentStep: number; steps: rea
         const isActive = currentStep === step.id;
         return (
           <div key={step.id} className="flex items-center flex-1 last:flex-none">
-            <div className="flex flex-col items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onSelectStep?.(step.id)}
+              className="flex flex-col items-center gap-1 group cursor-pointer focus:outline-none"
+              title={`${step.id}단계: ${step.title}`}
+            >
               <div
                 className={cn(
-                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors border-2",
+                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors border-2 group-hover:border-primary/80",
                   isCompleted
                     ? "bg-primary border-primary text-primary-foreground"
                     : isActive
@@ -273,12 +286,12 @@ function StepIndicator({ currentStep, steps }: { currentStep: number; steps: rea
               <span
                 className={cn(
                   "text-[10px] font-medium hidden sm:block",
-                  isActive ? "text-primary" : isCompleted ? "text-primary/70" : "text-muted-foreground",
+                  isActive ? "text-primary font-bold" : isCompleted ? "text-primary/70" : "text-muted-foreground",
                 )}
               >
                 {step.short}
               </span>
-            </div>
+            </button>
             {idx < steps.length - 1 && (
               <div
                 className={cn(
@@ -491,13 +504,23 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
     }
   }, [defaultCoachingType]);
 
-  // Sync editLog when dialog opens
+  const prevOpenRef = useRef(false);
+  const prevEditIdRef = useRef<string | undefined>(undefined);
+
+  // Sync editLog or reset form cleanly when dialog opens
   useEffect(() => {
-    if (open && editLog) {
+    const justOpened = open && !prevOpenRef.current;
+    const editIdChanged = open && editLog?._id !== prevEditIdRef.current;
+    prevOpenRef.current = open;
+    prevEditIdRef.current = editLog?._id;
+
+    if (!justOpened && !editIdChanged) return;
+
+    if (editLog) {
       applyLogToForm(editLog);
       setCurrentStep(1);
       setSubmitted(false);
-    } else if (open && !editLog && currentDraftId) {
+    } else {
       resetForm(false);
     }
   }, [open, editLog, applyLogToForm]);
@@ -895,10 +918,10 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
 
       if (isDraft && editLog) {
         await saveDraft({ logId: editLog._id, ...payload });
-        toast.success("임시저장되었습니다. '임시저장' 목록 또는 작성 창 상단에서 언제든 불러올 수 있습니다.");
+        toast.success("임시저장되었습니다. '임시저장 불러오기'에서 언제든 이어 작성할 수 있습니다.");
       } else if (currentDraftId) {
         await saveDraft({ logId: currentDraftId, ...payload });
-        toast.success("임시저장되었습니다. '임시저장' 목록 또는 작성 창 상단에서 언제든 불러올 수 있습니다.");
+        toast.success("임시저장되었습니다. '임시저장 불러오기'에서 언제든 이어 작성할 수 있습니다.");
       } else {
         const newId = await saveDraft(payload);
         setCurrentDraftId(newId as Id<"coachingLogs">);
@@ -906,6 +929,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
       }
       localStorage.removeItem("coachingpass_autosave_log");
       setHasAutosave(false);
+      handleClose();
     } catch (err) {
       if (err instanceof ConvexError) {
         const { message } = err.data as { message: string };
@@ -933,6 +957,11 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
       if (hasMissingSv) { setCurrentStep(6); return; }
       return;
     }
+    if (coachingStartTime && coachingEndTime && coachingStartTime >= coachingEndTime) {
+      toast.error("종료 시각은 시작 시각 이후여야 합니다.");
+      setCurrentStep(1);
+      return;
+    }
     const hoursNum = parseFloat(hours);
     if (isNaN(hoursNum) || hoursNum < 0.5) {
       toast.error("코칭 시간은 최소 0.5시간 이상 입력해 주세요.");
@@ -956,7 +985,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
         toast.success("코칭 기록이 수정되었습니다.");
       } else {
         await createLog(payload);
-        toast.success("코칭 기록이 등록되었습니다. 승인 후 시간이 반영됩니다.");
+        toast.success("코칭 기록이 등록되었습니다. 승인 후 실적이 반영됩니다.");
       }
 
       if (!isEdit) {
@@ -1000,12 +1029,51 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
   // Validate step 1 required fields before advancing
   const canAdvanceStep1 = coachingDate.length > 0 && coacheeInfo.trim().length > 0;
   const canAdvanceStep2 = topic.trim().length > 0;
+  const canSubmitAll = Boolean(
+    coachingDate &&
+    coacheeInfo.trim() &&
+    topic.trim() &&
+    goals.trim() &&
+    summary.trim() &&
+    (coachingType !== "sv" || svReflectionLearning.trim()) &&
+    !(coachingStartTime && coachingEndTime && coachingStartTime >= coachingEndTime) &&
+    !isNaN(parseFloat(hours)) &&
+    parseFloat(hours) >= 0.5
+  );
 
-  const handleNext = () => {
-    if (currentStep === 1 && !canAdvanceStep1) {
+  const handleSelectStep = (targetStep: number) => {
+    if (targetStep === currentStep) return;
+    if (targetStep > 1 && !canAdvanceStep1) {
       setSubmitted(true);
       toast.error(`${getCoacheeLabel("날짜와 코치이 이름")}은 필수 항목입니다.`);
+      setCurrentStep(1);
       return;
+    }
+    if (targetStep > 2 && !canAdvanceStep2) {
+      setSubmitted(true);
+      toast.error("코칭 주제를 입력해 주세요.");
+      setCurrentStep(2);
+      return;
+    }
+    setCurrentStep(targetStep);
+  };
+
+  const handleNext = () => {
+    if (currentStep === 1) {
+      if (!canAdvanceStep1) {
+        setSubmitted(true);
+        toast.error(`${getCoacheeLabel("날짜와 코치이 이름")}은 필수 항목입니다.`);
+        return;
+      }
+      if (coachingStartTime && coachingEndTime && coachingStartTime >= coachingEndTime) {
+        toast.error("종료 시각은 시작 시각 이후여야 합니다.");
+        return;
+      }
+      const hoursNum = parseFloat(hours);
+      if (isNaN(hoursNum) || hoursNum < 0.5) {
+        toast.error("코칭 시간은 최소 0.5시간(30분) 이상 입력해 주세요.");
+        return;
+      }
     }
     if (currentStep === 2 && !canAdvanceStep2) {
       setSubmitted(true);
@@ -1052,12 +1120,12 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="coachingStartTime">코칭 시작 시각</Label>
-                  <Input id="coachingStartTime" type="time" value={coachingStartTime} step={600}
+                  <Input id="coachingStartTime" type="time" value={coachingStartTime}
                     onChange={(e) => handleStartTimeChange(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="coachingEndTime">코칭 종료 시각</Label>
-                  <Input id="coachingEndTime" type="time" value={coachingEndTime} step={600}
+                  <Input id="coachingEndTime" type="time" value={coachingEndTime}
                     onChange={(e) => handleEndTimeChange(e.target.value)} />
                 </div>
               </div>
@@ -1158,10 +1226,29 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
                 {submitted && !coacheeInfo.trim() && <p className="text-xs text-destructive">{getCoacheeLabel("코치이 이름을 입력해 주세요.")}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="hours">코칭 시간 (시간) <span className="text-destructive">*</span></Label>
-                <Input id="hours" type="number" step="0.5" min="0.5" max="24"
-                  placeholder="예: 1.5" value={hours} onChange={(e) => setHours(e.target.value)} />
-                {parseFloat(hours) > 4 && (
+                <Label htmlFor="hours">코칭 시간 (시간 단위) <span className="text-destructive">*</span></Label>
+                <Input id="hours" type="number" step="0.1" min="0.5" max="24"
+                  placeholder="예: 1 (60분), 1.5 (90분)" value={hours} onChange={(e) => setHours(e.target.value)} />
+                {parseFloat(hours) >= 15 && (
+                  <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-300 text-xs text-amber-800 dark:text-amber-300">
+                    <span>
+                      ⚠️ 분(분 단위)으로 입력하셨나요? ({hours}분 ={" "}
+                      <strong>{Math.max(0.5, Math.round((parseFloat(hours) / 60) * 10) / 10)}시간</strong>)
+                    </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-[11px] border-amber-400 bg-white dark:bg-slate-900 cursor-pointer"
+                      onClick={() =>
+                        setHours(String(Math.max(0.5, Math.round((parseFloat(hours) / 60) * 10) / 10)))
+                      }
+                    >
+                      시간으로 변환
+                    </Button>
+                  </div>
+                )}
+                {parseFloat(hours) > 4 && parseFloat(hours) < 15 && (
                   <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
                     ⚠️ 1회 코칭 시간이 4시간을 초과합니다. 올바른 시간인지 확인해 주세요.
                   </p>
@@ -1652,7 +1739,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
         {/* Step indicator */}
         {coachingType !== "sv" ? (
           <div className="flex-shrink-0 pt-1 pb-2">
-            <StepIndicator currentStep={currentStep} steps={steps} />
+            <StepIndicator currentStep={currentStep} steps={steps} onSelectStep={handleSelectStep} />
             <p className="text-sm font-semibold text-foreground">
               {currentStep}단계: {stepTitle}
             </p>
@@ -1698,7 +1785,7 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
             )}
           </div>
 
-          <div className="flex gap-2 ml-auto">
+          <div className="flex gap-2 ml-auto flex-wrap">
             {/* 임시저장 - new/draft records only */}
             {isNewOrDraft && (
               <Button
@@ -1711,12 +1798,14 @@ export default function CoachingLogForm({ open, onOpenChange, editLog, defaultCo
               </Button>
             )}
 
-            {!isLastStep ? (
+            {!isLastStep && (
               <Button onClick={handleNext} disabled={isPending || isSavingDraft}>
                 다음
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
-            ) : (
+            )}
+
+            {(isLastStep || canSubmitAll) && (
               <Button
                 onClick={handleSubmit}
                 disabled={isPending || isSavingDraft}

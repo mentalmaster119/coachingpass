@@ -361,17 +361,16 @@ export const getMySummary = query({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
+    const submittedLogs = logs.filter((l) => l.approvalStatus !== "draft");
     const approvedLogs = logs.filter((l) => l.approvalStatus === "approved");
     const approvedMinutes = approvedLogs.reduce((sum, l) => sum + l.durationMinutes, 0);
     const approvedHours = approvedMinutes / 60;
+    const individualLogs = approvedLogs.filter((l) => l.coachingType === "individual");
+    const groupLogs = approvedLogs.filter((l) => l.coachingType === "group");
     const individualHours =
-      approvedLogs
-        .filter((l) => l.coachingType === "individual")
-        .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
+      individualLogs.reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
     const groupHours =
-      approvedLogs
-        .filter((l) => l.coachingType === "group")
-        .reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
+      groupLogs.reduce((sum, l) => sum + l.durationMinutes, 0) / 60;
     const teamHours =
       approvedLogs
         .filter((l) => l.coachingType === "team")
@@ -402,13 +401,15 @@ export const getMySummary = query({
       approvedHours,
       individualHours,
       groupHours,
+      individualCount: individualLogs.length,
+      groupCount: groupLogs.length,
       teamHours,
       buddyHours,
       mentorHours,
       svHours,
       pendingCount,
       rejectedCount,
-      totalCount: logs.length,
+      totalCount: submittedLogs.length,
       athleteClientCount,
       approvedSessionCount,
     };

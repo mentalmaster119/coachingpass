@@ -41,8 +41,8 @@ export const create = mutation({
   args: bcpFields,
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
-    if (user.role !== "trainee") {
-      throw new ConvexError({ message: "코치만 기록을 추가할 수 있습니다.", code: "FORBIDDEN" });
+    if (user.role === "admin3") {
+      throw new ConvexError({ message: "열람 전용 계정은 기록을 추가할 수 없습니다.", code: "FORBIDDEN" });
     }
     return await ctx.db.insert("bcpLogs", {
       ...args,
@@ -343,8 +343,8 @@ export const saveDraft = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
-    if (user.role !== "trainee") {
-      throw new ConvexError({ message: "코치만 임시저장할 수 있습니다.", code: "FORBIDDEN" });
+    if (user.role === "admin3") {
+      throw new ConvexError({ message: "열람 전용 계정은 임시저장할 수 없습니다.", code: "FORBIDDEN" });
     }
     const { logId, ...fields } = args;
 

@@ -122,9 +122,8 @@ export default function CoachingLogPage() {
   const logs = useQuery(api.coaching.getMyLogs);
   const summary = useQuery(api.coaching.getMySummary);
   const removeLog = useMutation(api.coaching.remove);
-  const { user, realUser } = useCurrentUser();
-  const activeRole =
-    user?.role || realUser?.role || (localStorage.getItem("real_role") as string | null);
+  const { user } = useCurrentUser();
+  const activeRole = user?.role;
   const isAdmin =
     activeRole === "admin" || activeRole === "senior_coach" || activeRole === "admin3";
 
@@ -369,19 +368,21 @@ export default function CoachingLogPage() {
           <>
             <StatCard
               icon={<Clock className="w-4.5 h-4.5" />}
-              label="총 승인 시간"
-              value={formatHours(summary.approvedHours)}
-              sub={`전체 ${summary.totalCount}건`}
+              label="총 승인 건수"
+              value={`${summary.approvedSessionCount}건`}
+              sub={`제출 ${summary.totalCount}건 · 누적 ${formatHours(summary.approvedHours)}`}
             />
             <StatCard
               icon={<User className="w-4.5 h-4.5" />}
               label="개인 코칭"
-              value={formatHours(summary.individualHours)}
+              value={`${summary.individualCount ?? 0}건`}
+              sub={formatHours(summary.individualHours)}
             />
             <StatCard
               icon={<Users className="w-4.5 h-4.5" />}
               label="그룹 코칭"
-              value={formatHours(summary.groupHours)}
+              value={`${summary.groupCount ?? 0}건`}
+              sub={formatHours(summary.groupHours)}
             />
             <StatCard
               icon={
