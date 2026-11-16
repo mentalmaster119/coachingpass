@@ -352,26 +352,26 @@ export default function ScoreTrendCard({
                     stroke="none"
                   />
 
-                  {/* Individual session score line */}
+                  {/* Individual session score line (굵은 선) */}
                   <Line
                     type="monotone"
                     dataKey="sessionScore"
                     name="회차별 점수"
                     stroke="#a855f7"
-                    strokeWidth={2}
-                    dot={{ r: 3.5, fill: "#a855f7", strokeWidth: 1, stroke: "#fff" }}
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: "#a855f7", strokeWidth: 1.5, stroke: "#fff" }}
                     activeDot={{ r: 6, fill: "#a855f7" }}
                   />
 
-                  {/* Cumulative average trendline */}
+                  {/* Cumulative average trendline (가는 선) */}
                   <Line
                     type="monotone"
                     dataKey="cumulativeScore"
                     name="누적 평균 추세"
                     stroke="#4f46e5"
-                    strokeWidth={3}
-                    dot={{ r: 3, fill: "#4f46e5" }}
-                    activeDot={{ r: 6, fill: "#4f46e5" }}
+                    strokeWidth={1.5}
+                    dot={{ r: 2.5, fill: "#4f46e5" }}
+                    activeDot={{ r: 5, fill: "#4f46e5" }}
                   />
 
                   <Tooltip content={<CustomTooltip />} />
