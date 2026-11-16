@@ -341,6 +341,14 @@ export default defineSchema({
     .index("by_category", ["category"])
     .index("by_uploader", ["uploadedBy"]),
 
+  resourceComments: defineTable({
+    resourceId: v.id("resources"),
+    authorId: v.id("users"),
+    content: v.string(),
+  })
+    .index("by_resource", ["resourceId"])
+    .index("by_author", ["authorId"]),
+
   calendarEvents: defineTable({
     userId: v.id("users"),
     title: v.string(),

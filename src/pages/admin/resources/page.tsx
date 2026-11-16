@@ -38,9 +38,19 @@ import {
   FileSpreadsheet,
   FileImage,
   File,
+  MessageSquare,
+  Sparkles,
 } from "lucide-react";
 import UploadResourceDialog from "@/pages/resources/_components/upload-resource-dialog.tsx";
-import { CATEGORY_LABELS, CATEGORY_COLORS } from "@/pages/resources/_components/resource-constants.ts";
+import ResourceCommentsDialog, {
+  type ResourceItem,
+} from "@/pages/resources/_components/resource-comments-dialog.tsx";
+import {
+  CATEGORY_LABELS,
+  CATEGORY_COLORS,
+  isNewResource,
+  formatResourceDate,
+} from "@/pages/resources/_components/resource-constants.ts";
 import type { Id } from "@/convex/_generated/dataModel.d.ts";
 
 function formatBytes(bytes: number): string {
@@ -63,6 +73,7 @@ function AdminResourcesInner() {
   const [showUpload, setShowUpload] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteTargetId, setDeleteTargetId] = useState<Id<"resources"> | null>(null);
+  const [commentTarget, setCommentTarget] = useState<ResourceItem | null>(null);
 
   const resources = useQuery(api.resources.listAll, {});
   const togglePublish = useMutation(api.resources.togglePublish);
@@ -191,6 +202,7 @@ function AdminResourcesInner() {
                     resource={r}
                     onToggle={() => handleTogglePublish(r._id, r.isPublished)}
                     onDelete={() => setDeleteTargetId(r._id)}
+                    onOpenComments={() => setCommentTarget(r)}
                   />
                 ))}
               </div>
@@ -209,6 +221,7 @@ function AdminResourcesInner() {
                     resource={r}
                     onToggle={() => handleTogglePublish(r._id, r.isPublished)}
                     onDelete={() => setDeleteTargetId(r._id)}
+                    onOpenComments={() => setCommentTarget(r)}
                   />
                 ))}
               </div>
@@ -218,6 +231,14 @@ function AdminResourcesInner() {
       )}
 
       <UploadResourceDialog open={showUpload} onClose={() => setShowUpload(false)} />
+
+      <ResourceCommentsDialog
+        resource={commentTarget}
+        open={!!commentTarget}
+        onOpenChange={(v) => {
+          if (!v) setCommentTarget(null);
+        }}
+      />
 
       {/* Delete confirm */}
       <AlertDialog open={!!deleteTargetId} onOpenChange={(v) => { if (!v) setDeleteTargetId(null); }}>
@@ -246,6 +267,7 @@ function AdminResourcesInner() {
 type ResourceRowProps = {
   resource: {
     _id: Id<"resources">;
+    _creationTime: number;
     title: string;
     description?: string;
     category: "education" | "form" | "guideline" | "reference" | "other";
@@ -254,14 +276,20 @@ type ResourceRowProps = {
     mimeType: string;
     isPublished: boolean;
     downloadCount: number;
+    commentCount?: number;
     fileUrl: string | null;
+    uploaderName: string;
     tags?: string[];
   };
   onToggle: () => void;
   onDelete: () => void;
+  onOpenComments: () => void;
 };
 
-function ResourceRow({ resource, onToggle, onDelete }: ResourceRowProps) {
+function ResourceRow({ resource, onToggle, onDelete, onOpenComments }: ResourceRowProps) {
+  const isNew = isNewResource(resource._creationTime);
+  const commentCount = resource.commentCount ?? 0;
+
   return (
     <Card className={!resource.isPublished ? "opacity-70" : ""}>
       <CardContent className="p-4">
@@ -273,6 +301,12 @@ function ResourceRow({ resource, onToggle, onDelete }: ResourceRowProps) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-medium text-sm truncate">{resource.title}</span>
+              {isNew && (
+                <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-[10px] px-1.5 py-0 gap-0.5">
+                  <Sparkles className="w-2.5 h-2.5" />
+                  최신자료
+                </Badge>
+              )}
               <span
                 className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${CATEGORY_COLORS[resource.category]}`}
               >
@@ -283,11 +317,22 @@ function ResourceRow({ resource, onToggle, onDelete }: ResourceRowProps) {
               )}
             </div>
             <p className="text-xs text-muted-foreground mt-0.5 truncate" title={resource.fileName}>
-              {resource.fileName} · {formatBytes(resource.fileSize)}
+              {formatResourceDate(resource._creationTime)} · {resource.fileName} · {formatBytes(resource.fileSize)}
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onOpenComments}
+              className="h-7 px-2 text-xs gap-1 cursor-pointer"
+              title="교육생 소감 및 댓글 보기"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>{commentCount}</span>
+            </Button>
             <span className="text-xs text-muted-foreground flex items-center gap-0.5">
               <Download className="w-3 h-3" />
               {resource.downloadCount}

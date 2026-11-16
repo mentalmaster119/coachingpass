@@ -16,3 +16,17 @@ export const CATEGORY_COLORS: Record<string, string> = {
   reference: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
   other: "bg-muted text-muted-foreground",
 };
+
+const NEW_RESOURCE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
+export function isNewResource(creationTime: number): boolean {
+  return Date.now() - creationTime <= NEW_RESOURCE_WINDOW_MS;
+}
+
+export function formatResourceDate(creationTime: number): string {
+  const d = new Date(creationTime);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}.${m}.${day}`;
+}
