@@ -969,18 +969,22 @@ function AppLayoutInner() {
       navigate("/onboarding", { replace: true });
       return;
     }
-    // Trainees cannot access admin or coach pages
-    if (user.role === "trainee" && (window.location.pathname.startsWith("/admin") || window.location.pathname.startsWith("/coach"))) {
+    const pathname = window.location.pathname;
+    const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+    const isCoachOnlyRoute = pathname === "/coach" || pathname.startsWith("/coach/");
+
+    // Trainees cannot access admin or mentor-coach-only (/coach/*) pages
+    if (user.role === "trainee" && (isAdminRoute || isCoachOnlyRoute)) {
       navigate("/dashboard", { replace: true });
       return;
     }
     // Admin in preview mode should not be on admin pages
-    if ((user.role === "admin" || user.role === "admin3") && isPreviewMode && window.location.pathname.startsWith("/admin")) {
+    if ((user.role === "admin" || user.role === "admin3") && isPreviewMode && isAdminRoute) {
       navigate("/dashboard", { replace: true });
       return;
     }
     // Senior coaches cannot access full admin-only pages
-    if (user.role === "senior_coach" && window.location.pathname.startsWith("/admin")) {
+    if (user.role === "senior_coach" && isAdminRoute) {
       const allowedCoachAdminPaths = [
         "/admin/education",
         "/admin/coaching",
@@ -992,7 +996,7 @@ function AppLayoutInner() {
         "/admin/feedback",
         "/admin/resources",
       ];
-      const isAllowed = allowedCoachAdminPaths.some((p) => window.location.pathname.startsWith(p));
+      const isAllowed = allowedCoachAdminPaths.some((p) => pathname.startsWith(p));
       if (!isAllowed) {
         navigate("/dashboard", { replace: true });
         return;
@@ -1007,8 +1011,8 @@ function AppLayoutInner() {
         "/admin/resources",
         "/admin/feedback"
       ];
-      const isPathAllowed = allowedAdminPaths.some((p) => window.location.pathname.startsWith(p));
-      if (window.location.pathname.startsWith("/admin") && !isPathAllowed) {
+      const isPathAllowed = allowedAdminPaths.some((p) => pathname.startsWith(p));
+      if (isAdminRoute && !isPathAllowed) {
         navigate("/admin/coaching", { replace: true });
         return;
       }
